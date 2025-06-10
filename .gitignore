@@ -1,0 +1,18 @@
+# Build results
+bin/
+obj/
+*.user
+*.suo
+*.db
+
+# Visual Studio
+.vscode/
+*.vs/
+*.DS_Store
+
+# Logs
+*.log
+
+# Secrets
+appsettings.*.json
+
