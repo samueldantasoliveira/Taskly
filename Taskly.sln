@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Taskly.Tests", "Taskly.Tests\Taskly.Tests.csproj", "{41DC1345-185C-4627-86B0-112AB82D8971}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Taskly.API", "Taskly.API\Taskly.API.csproj", "{221BC364-F44B-491D-B328-C8745F365B5F}"
 EndProject
 Global
