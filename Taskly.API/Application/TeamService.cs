@@ -1,5 +1,6 @@
-﻿using Taskly.Infrastructure;
-using Taskly.Domain.Entities;
+﻿using Taskly.Domain.Entities;
+using Taskly.Application.Results;
+using Taskly.Infrastructure;
 
 namespace Taskly.Application
 {
@@ -14,31 +15,38 @@ namespace Taskly.Application
             _userRepository = userRepository;
         }
 
-        public async Task AddTeamAsync(Team team)
+        public async Task<OperationResult<AddTeamFailureReason>> AddTeamAsync(Team team)
         {
-            if (String.IsNullOrEmpty(team.Name))
-                throw new ArgumentException("Name must not be empty");
+            if (String.IsNullOrWhiteSpace(team.Name))
+                return OperationResult<AddTeamFailureReason>.Fail(AddTeamFailureReason.InvalidName);
 
             await _teamRepository.AddAsync(team);
+            return OperationResult<AddTeamFailureReason>.Ok();
         }
 
-        public async Task<bool> AddMemberAsync(Guid teamId, Guid userId)
+        public async Task<OperationResult<AddMemberFailureReason>> AddMemberAsync(Guid teamId, Guid userId)
         {
             var team = await _teamRepository.GetByIdAsync(teamId);
-            if (team == null || !team.IsActive)
-                return false;
-
+            if (team == null)
+                return OperationResult<AddMemberFailureReason>.Fail(AddMemberFailureReason.TeamNotFound);
+            if (!team.IsActive)
+                return OperationResult<AddMemberFailureReason>.Fail(AddMemberFailureReason.TeamInactive);
+           
             var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null || !user.IsActive)
-                return false;
+
+            if (user == null)
+                return OperationResult<AddMemberFailureReason>.Fail(AddMemberFailureReason.UserNotFound);
+            if (!user.IsActive)
+                return OperationResult<AddMemberFailureReason>.Fail(AddMemberFailureReason.UserInactive);
 
             if (team.UserIds.Contains(userId))
-                return false;
+                return OperationResult<AddMemberFailureReason>.Fail(AddMemberFailureReason.UserAlreadyMember);
 
             team.UserIds.Add(userId);
+
             await _teamRepository.UpdateAsync(team);
 
-            return true;
+            return OperationResult<AddMemberFailureReason>.Ok();
         }
         //outras funções 
     }
