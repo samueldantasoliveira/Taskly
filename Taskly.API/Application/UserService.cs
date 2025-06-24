@@ -1,22 +1,24 @@
-﻿using Taskly.Domain.Entities;
+﻿using Taskly.Application.Results;
+using Taskly.Domain.Entities;
 using Taskly.Infrastructure;
 
 namespace Taskly.Application
 {
     public class UserService
     {
-        private readonly IUserRepository _UserRepository;
+        private readonly IUserRepository _userRepository;
         public UserService(IUserRepository repository) 
         {
-            _UserRepository = repository;
+            _userRepository = repository;
         }
 
-        public async Task AddUserAsync(User user)
+        public async Task<OperationResult<AddUserFailureReason>> AddUserAsync(User user)
         {
-            if (String.IsNullOrEmpty(user.Name))
-                throw new ArgumentException("Name must not be empty");
+            if (String.IsNullOrWhiteSpace(user.Name))
+                return OperationResult<AddUserFailureReason>.Fail(AddUserFailureReason.InvalidName);
 
-            await _UserRepository.AddAsync(user);
+            await _userRepository.AddAsync(user);
+            return OperationResult<AddUserFailureReason>.Ok();
         }
         // outras coisas
     }

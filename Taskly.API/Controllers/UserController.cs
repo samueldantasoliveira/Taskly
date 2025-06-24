@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Taskly.Application;
+using Taskly.Application.Results;
 using Taskly.Domain.Entities;
 
 namespace Taskly.Controllers
@@ -18,7 +19,15 @@ namespace Taskly.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(User user)
         {
-            await _userService.AddUserAsync(user);
+            var result = await _userService.AddUserAsync(user);
+            if (!result.Success)
+            {
+                return result.FailureReason switch
+                {
+                AddUserFailureReason.InvalidName => BadRequest("User name is invalid."),
+                _ => StatusCode(500, "An unexpected error occurred.")
+                };
+            }
             return Ok(user);
         }
     }
