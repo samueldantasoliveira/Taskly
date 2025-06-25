@@ -1,4 +1,5 @@
-﻿using Taskly.Domain.Entities;
+﻿using Taskly.Application.Results;
+using Taskly.Domain.Entities;
 
 namespace Taskly.Application
 {
@@ -13,16 +14,19 @@ namespace Taskly.Application
             _teamRepository = teamRepository;
         }
 
-        public async Task<bool> AddProjectAsync(Project project)
+        public async Task<OperationResult<AddProjectFailureReason>> AddProjectAsync(Project project)
         {
             var team = await _teamRepository.GetByIdAsync(project.TeamId);
-            if (team == null || !team.IsActive)
-                return false;
+            if (team == null)
+                return OperationResult<AddProjectFailureReason>.Fail(AddProjectFailureReason.TeamNotFound);
+            if (!team.IsActive)
+                    return OperationResult<AddProjectFailureReason>.Fail(AddProjectFailureReason.TeamInactive);
 
-            if (String.IsNullOrEmpty(project.Name))
-                throw new ArgumentException("Name must not be empty");
+            if (String.IsNullOrWhiteSpace(project.Name))
+                return OperationResult<AddProjectFailureReason>.Fail(AddProjectFailureReason.InvalidName);
+
             await _projectRepository.AddAsync(project);
-            return true;
+            return OperationResult<AddProjectFailureReason>.Ok();
         }
     }
 }
