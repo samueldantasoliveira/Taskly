@@ -1,5 +1,7 @@
 ﻿using Taskly.Application.Results;
+using Taskly.Application.DTOs;
 using Taskly.Domain.Entities;
+using Taskly.Domain;
 
 namespace Taskly.Application
 {
@@ -14,17 +16,24 @@ namespace Taskly.Application
             _teamRepository = teamRepository;
         }
 
-        public async Task<OperationResult<AddProjectFailureReason>> AddProjectAsync(Project project)
+        public async Task<OperationResult<AddProjectFailureReason>> AddProjectAsync(CreateProjectDto projectDto)
         {
-            var team = await _teamRepository.GetByIdAsync(project.TeamId);
+            var team = await _teamRepository.GetByIdAsync(projectDto.TeamId);
             if (team == null)
                 return OperationResult<AddProjectFailureReason>.Fail(AddProjectFailureReason.TeamNotFound);
             if (!team.IsActive)
                     return OperationResult<AddProjectFailureReason>.Fail(AddProjectFailureReason.TeamInactive);
 
-            if (String.IsNullOrWhiteSpace(project.Name))
+            if (String.IsNullOrWhiteSpace(projectDto.Name))
                 return OperationResult<AddProjectFailureReason>.Fail(AddProjectFailureReason.InvalidName);
 
+            var project = new Project
+            (
+                projectDto.Name,
+                projectDto.Description,
+                projectDto.TeamId,
+                ProjectStatus.Active
+            );
             await _projectRepository.AddAsync(project);
             return OperationResult<AddProjectFailureReason>.Ok();
         }

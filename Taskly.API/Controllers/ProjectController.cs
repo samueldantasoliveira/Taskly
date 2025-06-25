@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Taskly.Application;
+using Taskly.Application.DTOs;
 using Taskly.Application.Results;
 using Taskly.Domain.Entities;
 
@@ -17,7 +18,7 @@ namespace Taskly.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(Project project)
+        public async Task<IActionResult> Create(CreateProjectDto project)
         {
             var result = await _projectService.AddProjectAsync(project);
             if (!result.Success)
