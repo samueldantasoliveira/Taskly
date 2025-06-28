@@ -1,4 +1,5 @@
-﻿using Taskly.Application.Results;
+﻿using Taskly.Application.DTOs;
+using Taskly.Application.Results;
 using Taskly.Domain.Entities;
 using Taskly.Infrastructure;
 
@@ -12,13 +13,15 @@ namespace Taskly.Application
             _userRepository = repository;
         }
 
-        public async Task<OperationResult<AddUserFailureReason>> AddUserAsync(User user)
+        public async Task<OperationResult<AddUserFailureReason, User>> AddUserAsync(CreateUserDto userDto)
         {
-            if (String.IsNullOrWhiteSpace(user.Name))
-                return OperationResult<AddUserFailureReason>.Fail(AddUserFailureReason.InvalidName);
 
+            if (String.IsNullOrWhiteSpace(userDto.Name))
+                return OperationResult<AddUserFailureReason, User>.Fail(AddUserFailureReason.InvalidName);
+
+            var user = new User(userDto.Name);
             await _userRepository.AddAsync(user);
-            return OperationResult<AddUserFailureReason>.Ok();
+            return OperationResult<AddUserFailureReason, User>.Ok(user);
         }
         // outras coisas
     }
