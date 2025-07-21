@@ -22,14 +22,19 @@ namespace Taskly.Controllers
             var result = await _userService.AddUserAsync(userDto);
             if (!result.Success)
             {
-                return result.FailureReason switch
-                {
-                    AddUserFailureReason.InvalidName => BadRequest("User name is invalid."),
-                    _ => StatusCode(500, "An unexpected error occurred.")
-                };
+                return MapErrorToResponse(result.Error!);
             }
-            var user = result.Value!;
+            var user = result.Value;
             return Ok(user);
+        }
+
+        private IActionResult MapErrorToResponse(Error error)
+        {
+            return error.Code switch
+                {
+                    "InvalidName" => BadRequest(error.Message),
+                    _ => StatusCode(500, error.Message)
+                };
         }
     }
 }

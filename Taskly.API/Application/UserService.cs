@@ -13,15 +13,16 @@ namespace Taskly.Application
             _userRepository = repository;
         }
 
-        public async Task<OperationResult<AddUserFailureReason, User>> AddUserAsync(CreateUserDto userDto)
+        public async Task<StructuredOperationResult<User>> AddUserAsync(CreateUserDto userDto)
         {
 
             if (String.IsNullOrWhiteSpace(userDto.Name))
-                return OperationResult<AddUserFailureReason, User>.Fail(AddUserFailureReason.InvalidName);
+                return StructuredOperationResult<User>.Fail(Error.FromEnum(AddUserFailureReason.InvalidName));
 
             var user = new User(userDto.Name);
             await _userRepository.AddAsync(user);
-            return OperationResult<AddUserFailureReason, User>.Ok(user);
+            
+            return StructuredOperationResult<User>.Ok(user);
         }
         // outras coisas
     }
