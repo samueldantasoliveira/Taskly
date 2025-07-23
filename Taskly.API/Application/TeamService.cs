@@ -1,6 +1,7 @@
 ﻿using Taskly.Domain.Entities;
 using Taskly.Application.Results;
 using Taskly.Infrastructure;
+using Taskly.Application.DTOs;
 
 namespace Taskly.Application
 {
@@ -15,39 +16,45 @@ namespace Taskly.Application
             _userRepository = userRepository;
         }
 
-        public async Task<OperationResult<AddTeamFailureReason>> AddTeamAsync(Team team)
+        public async Task<StructuredOperationResult<Team>> AddTeamAsync(CreateTeamDto teamDto)
         {
+            var team = new Team(teamDto.Name);
             if (String.IsNullOrWhiteSpace(team.Name))
-                return OperationResult<AddTeamFailureReason>.Fail(AddTeamFailureReason.InvalidName);
+                return StructuredOperationResult<Team>.Fail(Error.FromEnum(AddTeamFailureReason.InvalidName));
 
             await _teamRepository.AddAsync(team);
-            return OperationResult<AddTeamFailureReason>.Ok();
+            return StructuredOperationResult<Team>.Ok(team);
         }
 
-        public async Task<OperationResult<AddMemberFailureReason>> AddMemberAsync(Guid teamId, Guid userId)
+        public async Task<StructuredOperationResult<AddMemberResponseDto>> AddMemberAsync(Guid teamId, Guid userId)
         {
             var team = await _teamRepository.GetByIdAsync(teamId);
             if (team == null)
-                return OperationResult<AddMemberFailureReason>.Fail(AddMemberFailureReason.TeamNotFound);
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.TeamNotFound));
             if (!team.IsActive)
-                return OperationResult<AddMemberFailureReason>.Fail(AddMemberFailureReason.TeamInactive);
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.TeamInactive));
            
             var user = await _userRepository.GetByIdAsync(userId);
 
             if (user == null)
-                return OperationResult<AddMemberFailureReason>.Fail(AddMemberFailureReason.UserNotFound);
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.UserNotFound));
             if (!user.IsActive)
-                return OperationResult<AddMemberFailureReason>.Fail(AddMemberFailureReason.UserInactive);
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.UserInactive));
 
             if (team.UserIds.Contains(userId))
-                return OperationResult<AddMemberFailureReason>.Fail(AddMemberFailureReason.UserAlreadyMember);
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.UserAlreadyMember));
 
             team.UserIds.Add(userId);
 
             await _teamRepository.UpdateAsync(team);
 
-            return OperationResult<AddMemberFailureReason>.Ok();
+            return StructuredOperationResult<AddMemberResponseDto>.Ok(new AddMemberResponseDto
+            {
+                UserId = user.Id,
+                TeamId = team.Id,
+                AddedAt = DateTime.UtcNow
+            });
         }
-        //outras funções 
+        
     }
 }

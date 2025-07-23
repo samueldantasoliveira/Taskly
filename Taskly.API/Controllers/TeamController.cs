@@ -21,19 +21,15 @@ namespace Taskly.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTeamDto dto)
         {
-            var team = new Team(dto.Name);
-            var result = await _teamService.AddTeamAsync(team);
+            
+            var result = await _teamService.AddTeamAsync(dto);
 
             if (!result.Success)
             {
-                return result.FailureReason switch
-                { 
-                    AddTeamFailureReason.InvalidName => BadRequest("Team name is invalid."),
-                    _ => StatusCode(500, "An unexpected error occurred.")
-                };
-                
+                return MapErrorToResponse(result.Error!);
+
             }
-            return Ok(team);
+            return Ok(result.Value);
         }
 
         [HttpPost("{teamId}/add-member")]
@@ -42,18 +38,24 @@ namespace Taskly.Controllers
             var result = await _teamService.AddMemberAsync(teamId, userId);
             if (!result.Success)
             {
-                return result.FailureReason switch
-                {
-                    AddMemberFailureReason.TeamNotFound => NotFound("Team not found."),
-                    AddMemberFailureReason.TeamInactive => BadRequest("Team is inactive."),
-                    AddMemberFailureReason.UserNotFound => NotFound("User not found."),
-                    AddMemberFailureReason.UserInactive => BadRequest("User is inactive."),
-                    AddMemberFailureReason.UserAlreadyMember => Conflict("User is already a member of the team."),
-                    _ => StatusCode(500, "Unexpected error.")
-                };
-                    
+                return MapErrorToResponse(result.Error!);
+
             }
-            return Ok();
+            return Ok(result.Value);
+        }
+
+        private IActionResult MapErrorToResponse(Error error)
+        {
+            return error.Code switch
+            {
+                "TeamNotFound" => NotFound(error.Message),
+                "TeamInactive" => BadRequest(error.Message),
+                "UserNotFound" => NotFound(error.Message),
+                "UserInactive" => BadRequest(error.Message),
+                "UserAlreadyMember" => Conflict(error.Message),
+                "InvalidName" => BadRequest(error.Message),
+                _ => StatusCode(500, error.Message)
+            };
         }
 
     }
