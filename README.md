@@ -20,6 +20,7 @@ This project is under development and aims to simulate a real-world backend syst
 - MongoDB
 - Clean architecture principles
 - Git for version control
+- xUnit for testing
 
 ## 🎯 Project Goals
 
@@ -30,14 +31,30 @@ This is a personal learning and portfolio project. The goal is to improve backen
 - Practical application of tools and patterns used in real companies
 
 ## 📂 Project Structure
+```
 Taskly/
-├── Application/
-├── Domain/
-├── Infrastructure/
-├── Controllers/
-├── Program.cs
-└── appsettings.json
+├── Taskly.API
+  ├── Application/
+  ├── Domain/
+  ├── Infrastructure/
+  ├── Controllers/
+  ├── Program.cs
+  └── appsettings.json
+├── Taskly.Tests
+```
 
+## 🚀 Getting Started
+1- Clone the repository:
+```
+  git clone https://github.com/samueldantasoliveira/Taskly.git
+  cd Taskly/Taskly.API
+```  
+2- Configure the Program.cs with your MongoDB connection string.
+
+3- Run the application:
+```
+  dotnet run
+```
 ## 📌 Status
 
 🧱 **Currently in development** — core features being built and improved continuously.
