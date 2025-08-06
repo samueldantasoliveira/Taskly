@@ -19,6 +19,9 @@ public class Error
             AddMemberFailureReason.UserAlreadyMember => "User is already a member of the team",
             AddTeamFailureReason.InvalidName => "User name is invalid",
             AddUserFailureReason.InvalidName => "User name is invalid",
+            AddProjectFailureReason.TeamNotFound => "Team not found",
+            AddProjectFailureReason.TeamInactive => "Team is inactive",
+            AddProjectFailureReason.InvalidName => "Project name is invalid",
             _ => "Unknow error."
         };
     }

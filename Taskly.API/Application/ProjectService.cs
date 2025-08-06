@@ -16,16 +16,15 @@ namespace Taskly.Application
             _teamRepository = teamRepository;
         }
 
-        public async Task<OperationResult<AddProjectFailureReason>> AddProjectAsync(CreateProjectDto projectDto)
+        public async Task<StructuredOperationResult<Project>> AddProjectAsync(CreateProjectDto projectDto)
         {
             var team = await _teamRepository.GetByIdAsync(projectDto.TeamId);
             if (team == null)
-                return OperationResult<AddProjectFailureReason>.Fail(AddProjectFailureReason.TeamNotFound);
+                return StructuredOperationResult<Project>.Fail(Error.FromEnum(AddProjectFailureReason.TeamNotFound));
             if (!team.IsActive)
-                    return OperationResult<AddProjectFailureReason>.Fail(AddProjectFailureReason.TeamInactive);
-
+                return StructuredOperationResult<Project>.Fail(Error.FromEnum(AddProjectFailureReason.TeamInactive));
             if (String.IsNullOrWhiteSpace(projectDto.Name))
-                return OperationResult<AddProjectFailureReason>.Fail(AddProjectFailureReason.InvalidName);
+                return StructuredOperationResult<Project>.Fail(Error.FromEnum(AddProjectFailureReason.InvalidName));
 
             var project = new Project
             (
@@ -34,8 +33,9 @@ namespace Taskly.Application
                 projectDto.TeamId,
                 ProjectStatus.Active
             );
+            
             await _projectRepository.AddAsync(project);
-            return OperationResult<AddProjectFailureReason>.Ok();
+            return StructuredOperationResult<Project>.Ok(project);
         }
     }
 }

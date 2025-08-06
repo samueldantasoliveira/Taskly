@@ -23,15 +23,20 @@ namespace Taskly.Controllers
             var result = await _projectService.AddProjectAsync(project);
             if (!result.Success)
             {
-                return result.FailureReason switch
-                {
-                    AddProjectFailureReason.TeamNotFound => NotFound("Team not found."),
-                    AddProjectFailureReason.TeamInactive => BadRequest("Team is inactive."),
-                    AddProjectFailureReason.InvalidName => BadRequest("Project name is invalid."),
-                    _ => StatusCode(500, "Unexpected error")
-                };
+                return MapErrorToResponse(result.Error!);
             }
-                return Ok(project);
+            return Ok(result.Value);
+        }
+
+        private IActionResult MapErrorToResponse(Error error)
+        {
+            return error.Code switch
+            {
+                "TeamNotFound" => NotFound(error.Message),
+                "TeamInactive" => BadRequest(error.Message),
+                "InvalidName" => BadRequest(error.Message),
+                _ => StatusCode(500, "Unexpected error")
+            };
         }
     }
 }
