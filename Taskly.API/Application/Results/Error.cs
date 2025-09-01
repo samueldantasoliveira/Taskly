@@ -8,6 +8,10 @@ public class Error
     public static Error FromEnum(Enum e) =>
         new() { Code = e.ToString(), Message = FormatMessage(e) };
 
+    public static Error Create(string code, string message)
+    {
+        return new Error(){Code = code, Message = message};
+    }
     public static string FormatMessage(Enum e)
     {
         return e switch
