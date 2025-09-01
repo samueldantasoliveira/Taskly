@@ -21,23 +21,13 @@ namespace Taskly.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateTodoTaskDto todoTask)
         {
-            try
-            {
-                var newTodoTask = await _todoTaskService.AddTodoTaskAsync(todoTask);
-                return CreatedAtAction(nameof(GetById), new { id = newTodoTask.Id }, newTodoTask);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var result = await _todoTaskService.AddTodoTaskAsync(todoTask);
+
+            if (!result.Success)
+                return MapErrorToResponse(result.Error!);
+
+            return Ok(result.Value);
+
         }
 
         [HttpGet("{id}")]
@@ -50,16 +40,8 @@ namespace Taskly.Controllers
         [HttpGet("project/{projectId}")]
         public async Task<IActionResult> GetAllByProjectAsync(Guid projectId)
         {
-            try
-            {
-                var todoTasks = await _todoTaskService.GetAllByProjectIdAsync(projectId);
-                return Ok(todoTasks);
-            }
-            catch(Exception ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-
+            var todoTasks = await _todoTaskService.GetAllByProjectIdAsync(projectId);
+            return todoTasks is null ? NotFound() : Ok(todoTasks);
         }
 
         [HttpPut("{id}")]
@@ -69,21 +51,27 @@ namespace Taskly.Controllers
                 return BadRequest(ModelState);
             var result = await _todoTaskService.UpdateAsync(id, todoTaskDto);
 
-            if (!result.Sucess)
+            if (!result.Success)
             {
-                return result.FailureReason switch
-                {
-                    UpdateFailureReason.TaskNotFound => NotFound("Task not found."),
-                    UpdateFailureReason.AssignedUserInvalid => BadRequest("Invalid assigned user."),
-                    _ => StatusCode(500, "Unexpected error.")
-                };
+                return MapErrorToResponse(result.Error!);
             }
 
-            return result.Modified ? NoContent() : Ok("No modifications made"); // HTTP 204
-            
+            return Ok(result.Value);
 
-
-            
+        }
+        
+        private IActionResult MapErrorToResponse(Error error)
+        {
+            return error.Code switch
+                {
+                    "Project.NotFound" => NotFound(error.Message),
+                    "Project.Inactive" => BadRequest(error.Message),
+                    "User.NotFound" => NotFound(error.Message),
+                    "User.Inactive" => BadRequest(error.Message),
+                    "TodoTask.InvalidTitle" => BadRequest(error.Message),
+                    "TodoTask.NoChangesDetected" => Ok(error.Message),
+                    _ => StatusCode(500, error.Message)
+                };
         }
     }
 }
