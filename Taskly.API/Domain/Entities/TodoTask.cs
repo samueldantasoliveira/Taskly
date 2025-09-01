@@ -17,7 +17,7 @@ namespace Taskly.Domain.Entities
         [BsonRepresentation(BsonType.String)]
         public Guid? AssignedUserId {get; set; }
 
-        public TodoTask(string title, string description, Guid projectId, Guid assignedUserId)
+        public TodoTask(string title, string description, Guid projectId, Guid? assignedUserId)
         {
             Title = title;
             Description = description;
