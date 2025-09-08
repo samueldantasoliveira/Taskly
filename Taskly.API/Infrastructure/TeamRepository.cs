@@ -26,7 +26,7 @@ namespace Taskly.Infrastructure
             throw new NotImplementedException();
         }
 
-        public async Task<Team> GetByIdAsync(Guid id)
+        public async Task<Team?> GetByIdAsync(Guid id)
         {
             return await _context.Teams.Find(t => t.Id == id).FirstOrDefaultAsync();
             
