@@ -2,8 +2,7 @@
 using Taskly.Application;
 using Taskly.Application.DTOs;
 using Moq;
-using System.Runtime.CompilerServices;
-using Microsoft.OpenApi.Any;
+
 
 namespace Taskly.Tests;
 
@@ -39,7 +38,7 @@ public class TeamServiceTests
     public async Task AddTeam_ValidInput_CallsRepositoryAddAsync()
     {
         // Arrange
-        var teamDto = new CreateTeamDto { Name = "Time Amora" };
+        var teamDto = new CreateTeamDto { Name = "Team Test" };
 
         // Act
         await _teamService.AddTeamAsync(teamDto);

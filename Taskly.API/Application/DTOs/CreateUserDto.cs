@@ -1,10 +1,8 @@
-using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
-
-namespace Taskly.Application.DTOs;
-
-public class CreateUserDto
+namespace Taskly.Application.DTOs
 {
-    [Required]
-    public required string Name {get; set;}
+
+    public class CreateUserDto
+    {
+        public required string Name { get; set; }
+    }
 }
