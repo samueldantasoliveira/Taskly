@@ -20,7 +20,7 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task AddTeam_WithEmptyName_ReturnFail()
+    public async Task AddTeam_InvalidName_ReturnFail()
     {
         // Arrange
         var teamDto = new CreateTeamDto { Name = "" };
@@ -67,7 +67,7 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task AddMember_TeamInvalid_ReturnsFail()
+    public async Task AddMember_TeamInactive_ReturnsFail()
     {
         // Arrange
         var team = new Team("Team Test");
@@ -105,7 +105,7 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task AddMember_UserInvalid_ReturnsFail()
+    public async Task AddMember_UserInactive_ReturnsFail()
     {
         // Arrange
         var team = new Team("Team Test");
