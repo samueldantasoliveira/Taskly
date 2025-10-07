@@ -19,7 +19,7 @@ public class ProjectServiceTests
     }
 
     [Fact]
-    public async Task AddService_TeamNotFound_ReturnsFail()
+    public async Task AddProject_TeamNotFound_ReturnsFail()
     {
         // Arrange
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test" };
@@ -34,7 +34,7 @@ public class ProjectServiceTests
     }
 
     [Fact]
-    public async Task AddService_TeamInactive_ReturnsFail()
+    public async Task AddProject_TeamInactive_ReturnsFail()
     {
         // Arrange
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = Guid.NewGuid() };
@@ -53,7 +53,7 @@ public class ProjectServiceTests
     }
 
     [Fact]
-    public async Task AddService_InvalidName_returnsFail()
+    public async Task AddProject_InvalidName_returnsFail()
     {
         // Arrange
         var projectDto = new CreateProjectDto { Name = "", Description = "Project Test", TeamId = Guid.NewGuid() };
@@ -71,7 +71,7 @@ public class ProjectServiceTests
     }
 
     [Fact]
-    public async Task AddService_ValidInput_CallsRepositoryAddAsync()
+    public async Task AddProject_ValidInput_CallsRepositoryAddAsync()
     {
         // Arrange
         var team = new Team("Team Test");
