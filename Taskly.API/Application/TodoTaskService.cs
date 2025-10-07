@@ -10,12 +10,12 @@ namespace Taskly.Application
 {
     public class TodoTaskService
     {
-        private readonly ITodoTaskRepository _todoTaskReposiory;
+        private readonly ITodoTaskRepository _todoTaskRepository;
         private readonly IProjectRepository _projectRepository;
         private readonly IUserRepository _userRepository;
         public TodoTaskService(ITodoTaskRepository todoTaskrepository, IProjectRepository projectRepository, IUserRepository userRepository)
         {
-            _todoTaskReposiory = todoTaskrepository;
+            _todoTaskRepository = todoTaskrepository;
             _projectRepository = projectRepository;
             _userRepository = userRepository;
         }
@@ -48,23 +48,23 @@ namespace Taskly.Application
                 projectId: todoTaskDto.ProjectId,
                 assignedUserId: todoTaskDto.AssignedUserId
             );
-            await _todoTaskReposiory.AddAsync(todoTask);
+            await _todoTaskRepository.AddAsync(todoTask);
             return StructuredOperationResult<TodoTask>.Ok(todoTask);
         }
 
         public async Task<TodoTask?> GetByIdAsync(Guid todoTaskId)
         {
-            return await _todoTaskReposiory.GetByIdAsync(todoTaskId);
+            return await _todoTaskRepository.GetByIdAsync(todoTaskId);
         }
 
         public async Task<List<TodoTask>> GetAllByProjectIdAsync(Guid projectId)
         {
-            return await _todoTaskReposiory.GetAllByProjectAsync(projectId);
+            return await _todoTaskRepository.GetAllByProjectAsync(projectId);
         }
 
         public async Task<StructuredOperationResult<TodoTask>> UpdateAsync(Guid id, UpdateTodoTaskDto dto)
         {
-            var existingTask = await _todoTaskReposiory.GetByIdAsync(id);
+            var existingTask = await _todoTaskRepository.GetByIdAsync(id);
 
             if (existingTask is null)
                 return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.NotFound);
@@ -93,7 +93,7 @@ namespace Taskly.Application
             existingTask.AssignedUserId = dto.AssignedUserId;
             
 
-            var modified = await _todoTaskReposiory.UpdateAsync(existingTask);
+            var modified = await _todoTaskRepository.UpdateAsync(existingTask);
 
             if (!modified)
                 return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.NoChangesDetected);
