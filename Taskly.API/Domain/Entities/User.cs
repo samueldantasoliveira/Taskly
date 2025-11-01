@@ -7,13 +7,17 @@ namespace Taskly.Domain.Entities
     {
         [BsonRepresentation(BsonType.String)]
         public Guid Id { get; private set; }
-        public string Name { get; set; }
+        public string Name { get; private set; }
         public bool IsActive { get; set; }
 
-        public User(string name)
+        // Stores the password hash along with all parameters needed for verification:
+        // algorithm$iterations$saltBase64$hashBase64
+        public string PasswordHash { get; private set; }
+        public User(string name, string passwordHash)
         {
             Id = Guid.NewGuid();
             Name = name;
+            PasswordHash = passwordHash;
             IsActive = true;
         }
     }
