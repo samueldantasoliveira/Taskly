@@ -1,68 +1,73 @@
-# Taskly - Task Manager API
+# 🗂️ Taskly
 
-**Taskly** is a task management API developed in C# using .NET and MongoDB.
+O **Taskly** é um sistema de gerenciamento de tarefas de projetos desenvolvido com **.NET 8** e **MongoDB**.
+O projeto foi criado como parte do meu aprendizado em **desenvolvimento back-end** e serve para entender melhor e colocar em prática conceitos de arquitetura, boas práticas e organização de código.
 
-This project is under development and aims to simulate a real-world backend system, applying clean architecture, good practices, and modern technologies.
+---
 
-## 🚀 Features (in progress)
+## 🧭 Objetivo do Projeto
 
-- [x] Project structure with Clean Architecture
-- [x] MongoDB integration
-- [x] Basic CRUD operations for tasks
-- [ ] User authentication
-- [ ] Task filtering and prioritization
-- [ ] Swagger documentation
+O principal objetivo é **aprender na prática** como estruturar um sistema em camadas, aplicar padrões de retorno e começar a escrever testes.
+Estou desenvolvendo o Taskly de forma progressiva, simulando como seria o back-end de um projeto real.
 
-## 🛠️ Technologies Used
+---
 
-- C# / .NET
-- ASP.NET Core Web API
-- MongoDB
-- Clean architecture principles
-- Git for version control
-- xUnit for testing
+## ⚙️ Tecnologias e Conceitos Estudados
 
-## 🎯 Project Goals
+* **.NET 8 (C#)**
+* **MongoDB** (driver 3.3.0)
+* **Arquitetura em camadas** (Application, Domain, Infrastructure)
+* **Controllers e DTOs**
+* **Padrão de retorno `OperationResult`**
+* **Injeção de dependência**
+* **Testes unitários**
+* **Cadastro, Login e controle de autenticação**
 
-This is a personal learning and portfolio project. The goal is to improve backend development skills by simulating a real system, focusing on:
+---
 
-- Scalable architecture
-- Maintainable code
-- Practical application of tools and patterns used in real companies
+## 🧱 Estrutura do Projeto
 
-## 📂 Project Structure
 ```
 Taskly/
-├── Taskly.API
-  ├── Application/
-  ├── Domain/
-  ├── Infrastructure/
-  ├── Controllers/
-  ├── Program.cs
-  └── appsettings.json
-├── Taskly.Tests
+ ├── Taskly.API/
+ │   ├── Application/     → Lógica de aplicação e serviços  
+ │   ├── Controllers/     → Endpoints da API  
+ │   ├── Domain/          → Entidades e regras de negócio  
+ │   └── Infrastructure/  → Integração com banco e serviços externos  
+ └── Taskly.Tests/        → Testes unitários (em progresso)
 ```
 
-## 🚀 Getting Started
-1- Clone the repository:
-```
-  git clone https://github.com/samueldantasoliveira/Taskly.git
-  cd Taskly/Taskly.API
-```  
-2- Configure the Program.cs with your MongoDB connection string.
+## 🚧 Estado Atual do Projeto
 
-3- Run the application:
-```
-  dotnet run
-```
-## 📌 Status
+| Funcionalidade                          | Status                |
+| --------------------------------------- | --------------------- |
+| CRUD de tarefas (`TodoTask`)            | ✅ Concluído           |
+| Estrutura de camadas                    | ✅ Concluída           |
+| Retorno padrão (`OperationResult`)      | ✅ Implementado        |
+| DTOs e validações básicas               | ✅ Implementados       |
+| Sistema de usuários, equipes e projetos | 🚧 Em desenvolvimento |
+| Testes unitários                        | 🧪 Em desenvolvimento       |
+| Autenticação e autorização              | 🚧 Em desenvolvimento  |
 
-🧱 **Currently in development** — core features being built and improved continuously.
+---
 
-## 🙋‍♂️ Author
+## 🧠 Próximos Passos
 
-[Samuel Dantas de Oliveira](https://www.linkedin.com/in/samuel-dantas-de-oliveira/)
+* Aprimorar os testes unitários
+* Implementar autenticação e autorização
+* Ter um funcionamento mínimo da API para criação de tarefas por um User
+* Realizar o Deploy da aplicação
 
-## 📎 License
+---
 
-MIT — feel free to use and adapt it.
+## 📚 O que estou aprendendo com este projeto
+
+Esse projeto tem sido uma forma prática de estudar **.NET**, **MongoDB**, **Deploy de APIs** e **boas práticas de arquitetura**, entendendo melhor como um sistema real se organiza.
+O foco é continuar evoluindo o código conforme aprendo mais sobre **padrões, testes e escalabilidade**.
+
+---
+
+## 💬 Contato
+
+* **LinkedIn:** [linkedin.com/in/samuel-dantas-de-oliveira](https://www.linkedin.com/in/samuel-dantas-de-oliveira/)
+* **GitHub:** [github.com/samueldantasoliveira](https://github.com/samueldantasoliveira)
