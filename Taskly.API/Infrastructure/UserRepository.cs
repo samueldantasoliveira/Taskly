@@ -31,6 +31,17 @@ namespace Taskly.Infrastructure
             return await _context.Users.Find(u => u.Id == id).FirstOrDefaultAsync();
         }
 
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            return await _context.Users.Find(u => u.Email == email).FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> ExistsByEmailAsync(string email)
+        {
+            var filter = Builders<User>.Filter.Eq(u => u.Email, email);
+            return await _context.Users.Find(filter).AnyAsync();
+        }
+
         public async Task UpdateAsync(User user)
         {
             

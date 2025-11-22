@@ -15,14 +15,12 @@ namespace Taskly.Application
 
         public async Task<StructuredOperationResult<User>> AddUserAsync(CreateUserDto userDto)
         {
-            if (String.IsNullOrWhiteSpace(userDto.Name))
-                return StructuredOperationResult<User>.Fail(UserErrors.InvalidName);
-            if (String.IsNullOrWhiteSpace(userDto.Password))
-                return StructuredOperationResult<User>.Fail(UserErrors.InvalidPassword);
+            if (await _userRepository.ExistsByEmailAsync(userDto.Email))
+                return StructuredOperationResult<User>.Fail(UserErrors.EmailAlreadyExists);
 
             var hash = PasswordHasher.HashPassword(userDto.Password);
             
-            var user = new User(userDto.Name, hash);
+            var user = new User(userDto.Name, userDto.Email, hash);
             await _userRepository.AddAsync(user);
             
             return StructuredOperationResult<User>.Ok(user);

@@ -82,7 +82,7 @@ public class TodoTaskServiceTests
         // Arrange
         CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto { Title = "Title Test", Description = "Description Test", ProjectId = Guid.NewGuid(), AssignedUserId = Guid.NewGuid() };
         Project project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Active);
-        User user = new User("User Test") { IsActive = false };
+        User user = new User("User Test", "Test@Test.com", "Test") { IsActive = false };
 
         _projectRepositoryMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync(project);
@@ -104,7 +104,7 @@ public class TodoTaskServiceTests
         // Arrange
         CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto { Title = "", Description = "Description Test", ProjectId = Guid.NewGuid(), AssignedUserId = Guid.NewGuid() };
         Project project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Active);
-        User user = new User("User Test");
+        User user = new User("User Test", "Test@Test.com", "Test");
 
         _projectRepositoryMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync(project);
@@ -124,7 +124,7 @@ public class TodoTaskServiceTests
     public async Task AddTodoTask_ValidInput_CallsRepositoryAddAsync()
     {
         // Arrange
-        User user = new User("User Test");
+        User user = new User("User Test", "Test@Test.com", "Test");
         Project project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Active);
         CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto { Title = "TodoTask Test", Description = "Description Test", ProjectId = project.Id, AssignedUserId = user.Id };
 
@@ -235,7 +235,7 @@ public class TodoTaskServiceTests
     public async Task UpdateAsync_AssignedUserInactive_ReturnsFail()
     {
         // Arrange
-        var user = new User("User Test") { IsActive = false };
+        var user = new User("User Test", "Test@Test.com", "Test") { IsActive = false };
         var project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Active);
         var updateDto = new UpdateTodoTaskDto { Title = "Title Test", Description = "Desctiption Test", AssignedUserId = user.Id };
         var todoTask = new TodoTask("TodoTask Title", "Description Test", project.Id, Guid.NewGuid());
@@ -258,7 +258,7 @@ public class TodoTaskServiceTests
     public async Task UpdateAsync_NoChanges_ReturnsFail()
     {
         // Arrange
-        var user = new User("User Test");
+        var user = new User("User Test", "Test@Test.com", "Test");
         var project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Active);
         var updateDto = new UpdateTodoTaskDto { Title = "Title Test", Description = "Desctiption Test", AssignedUserId = user.Id };
         var todoTask = new TodoTask("Title Test", "Description Test", project.Id, user.Id);
@@ -288,7 +288,7 @@ public class TodoTaskServiceTests
         Guid? userId = Guid.Parse(userIdString);
         User? user = null;
         if (userId != Guid.Empty)
-            user = new User("User Test");
+            user = new User("User Test", "Test@Test.com", "Test");
 
         var project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Active);
         var updateDto = new UpdateTodoTaskDto { Title = "Title Test", Description = "Desctiption Test", AssignedUserId = userId };

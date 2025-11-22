@@ -17,25 +17,26 @@ public class UserServiceTests
     }
 
     [Fact]
-    public async Task AddUser_InvalidName_ReturnsFail()
+    public async Task AddUser_EmailAlreadyExists_ReturnsFail()
     {
         // Arrange
-        var userDto = new CreateUserDto { Name = "" };
+        var userDto = new CreateUserDto { Name = "User Test", Password = "Password", Email = "Test@Test.com"};
+        _userRepositoryMock.Setup(u => u.ExistsByEmailAsync(It.IsAny<string>())).ReturnsAsync(true);
+
         // Act
         var result = await _userService.AddUserAsync(userDto);
 
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("InvalidName", result.Error.Code);
-
+        Assert.Equal("User.EmailAlreadyExists", result.Error.Code);
     }
-
+    
     [Fact]
     public async Task AddUser_ValidInput_CallsRepositoryAddAsync()
     {
         // Arrange
-        var userDto = new CreateUserDto { Name = "User Test" };
+        var userDto = new CreateUserDto { Name = "User Test", Password = "Password", Email = "Test@Test.com"};
 
         // Act
         var result = await _userService.AddUserAsync(userDto);

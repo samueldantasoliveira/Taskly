@@ -109,7 +109,7 @@ public class TeamServiceTests
     {
         // Arrange
         var team = new Team("Team Test");
-        var user = new User("User Test");
+        var user = new User("User Test", "Test@Test.com", "Test");
         user.IsActive = false;
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
@@ -129,7 +129,7 @@ public class TeamServiceTests
     {
         // Arrange
         var team = new Team("Team Test");
-        var user = new User("User Test");
+        var user = new User("User Test", "Test@Test.com", "Test");
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(team.Id)).ReturnsAsync(team);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
