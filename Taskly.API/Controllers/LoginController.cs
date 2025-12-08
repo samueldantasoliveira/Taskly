@@ -25,11 +25,13 @@ public class LoginController : ControllerBase
             return Ok(new
         {
             message = "Login successful.",
+            token = result.Value.token,
+            expiresAt = result.Value.expiresAt,
             user = new
             {
-                result.Value!.Id,
-                result.Value.Name,
-                result.Value.Email
+                result.Value.user.Id,
+                result.Value.user.Name,
+                result.Value.user.Email
             }
         });
     }   
