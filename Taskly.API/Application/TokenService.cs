@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Taskly.Domain.Entities;
@@ -21,7 +20,7 @@ public class TokenService : ITokenService
     {
         var jwt = configuration.GetSection("Jwt");
 
-        _key = Encoding.UTF8.GetBytes(
+        _key = Convert.FromBase64String(
             jwt["Key"] ??
             throw new InvalidOperationException("JWT Key is missing in configuration.")
         );

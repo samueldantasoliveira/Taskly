@@ -16,7 +16,7 @@ namespace Taskly.Application
             _teamRepository = teamRepository;
         }
 
-        public async Task<StructuredOperationResult<Project>> AddProjectAsync(CreateProjectDto projectDto)
+        public async Task<StructuredOperationResult<Project>> AddProjectAsync(CreateProjectDto projectDto, Guid ownerId)
         {
             var team = await _teamRepository.GetByIdAsync(projectDto.TeamId);
             if (team == null)
@@ -31,7 +31,8 @@ namespace Taskly.Application
                 projectDto.Name,
                 projectDto.Description,
                 projectDto.TeamId,
-                ProjectStatus.Active
+                ProjectStatus.Active,
+                ownerId
             );
             
             await _projectRepository.AddAsync(project);

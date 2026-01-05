@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Taskly.Application;
 using Taskly.Application.DTOs;
 using Taskly.Application.Results;
@@ -16,11 +18,18 @@ namespace Taskly.Controllers
         {
             _projectService = projectService;
         }
-
+        
+        [Authorize]              
         [HttpPost]
         public async Task<IActionResult> Create(CreateProjectDto project)
         {
-            var result = await _projectService.AddProjectAsync(project);
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userIdString is null)
+            return Unauthorized("Invalid token.");
+            var userId = Guid.Parse(userIdString);
+
+
+            var result = await _projectService.AddProjectAsync(project, userId);
             if (!result.Success)
             {
                 return MapErrorToResponse(result.Error!);

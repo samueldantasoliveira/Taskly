@@ -4,10 +4,22 @@ using Taskly.Application;
 using Taskly.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+foreach (var kv in builder.Configuration.AsEnumerable())
+{
+    if (kv.Key.Contains("Jwt"))
+    {
+        Console.WriteLine($"{kv.Key} = {kv.Value}");
+    }
+}
 
 // JWT CONFIG
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -36,9 +48,39 @@ builder.Services.AddControllers();
 
 //Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "Taskly API", Version = "v1" });
+
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "Insira o token JWT desta forma: Bearer {seu_token}",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement {
+    {
+        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+            {
+                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        },
+        Array.Empty<string>()
+    }});
+});
+
 
 // MongoClient
+
+BsonSerializer.RegisterSerializer(
+    new GuidSerializer(GuidRepresentation.Standard)
+);
 var mongoClient = new MongoClient("mongodb://localhost:27017");
 builder.Services.AddSingleton(mongoClient);
 
