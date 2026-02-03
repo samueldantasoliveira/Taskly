@@ -4,6 +4,8 @@ using Taskly.Application;
 using Taskly.Domain.Entities;
 using Taskly.Application.DTOs;
 using Taskly.Application.Results;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Taskly.Controllers
 {
@@ -18,10 +20,10 @@ namespace Taskly.Controllers
             _teamService = teamService;
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTeamDto dto)
         {
-            
             var result = await _teamService.AddTeamAsync(dto);
 
             if (!result.Success)
@@ -32,6 +34,7 @@ namespace Taskly.Controllers
             return Ok(result.Value);
         }
 
+        [Authorize]
         [HttpPost("{teamId}/add-member")]
         public async Task<IActionResult> AddMember(Guid teamId, Guid userId)
         {

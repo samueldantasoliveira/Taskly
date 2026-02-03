@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel;
 using Taskly.Application;
 using Taskly.Application.DTOs;
@@ -18,6 +19,7 @@ namespace Taskly.Controllers
             _todoTaskService = todoTaskService;
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create(CreateTodoTaskDto todoTask)
         {
@@ -30,6 +32,7 @@ namespace Taskly.Controllers
 
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
@@ -37,6 +40,7 @@ namespace Taskly.Controllers
             return todoTask is null ? NotFound() : Ok(todoTask);
         }
 
+        [Authorize]
         [HttpGet("project/{projectId}")]
         public async Task<IActionResult> GetAllByProjectAsync(Guid projectId)
         {
@@ -44,6 +48,7 @@ namespace Taskly.Controllers
             return todoTasks is null ? NotFound() : Ok(todoTasks);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTodoTaskDto todoTaskDto)
         {

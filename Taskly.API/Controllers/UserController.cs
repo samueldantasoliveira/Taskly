@@ -2,6 +2,7 @@
 using Taskly.Application;
 using Taskly.Application.Results;
 using Taskly.Application.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Taskly.Controllers
 {
@@ -16,6 +17,7 @@ namespace Taskly.Controllers
             _userService = userService;
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create(CreateUserDto userDto)
         {
