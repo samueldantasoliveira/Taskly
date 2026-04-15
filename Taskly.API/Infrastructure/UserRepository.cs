@@ -1,4 +1,5 @@
-﻿using MongoDB.Driver;
+﻿using System.Linq.Expressions;
+using MongoDB.Driver;
 using Taskly.Application;
 using Taskly.Domain.Entities;
 
@@ -16,9 +17,17 @@ namespace Taskly.Infrastructure
             await _context.Users.InsertOneAsync(user);
         }
 
-        public Task DeleteAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var update = Builders<User>.Update
+                .Set(u => u.DeletedAt, DateTime.UtcNow);
+
+            var result = await _context.Users.UpdateOneAsync(
+                u => u.Id == id && u.DeletedAt == null,
+                update
+            );
+
+            return result.ModifiedCount == 1;
         }
 
         public Task<List<User>> GetAllAsync()
@@ -28,12 +37,12 @@ namespace Taskly.Infrastructure
 
         public async Task<User?> GetByIdAsync(Guid id)
         {
-            return await _context.Users.Find(u => u.Id == id).FirstOrDefaultAsync();
+            return await _context.Users.Find(BaseFilter(u => u.Id == id)).FirstOrDefaultAsync();
         }
 
         public async Task<User?> GetByEmailAsync(string email)
         {
-            return await _context.Users.Find(u => u.Email == email).FirstOrDefaultAsync();
+            return await _context.Users.Find(BaseFilter(u => u.Email == email)).FirstOrDefaultAsync();
         }
 
         public async Task<bool> ExistsByEmailAsync(string email)
@@ -46,6 +55,13 @@ namespace Taskly.Infrastructure
         {
             
             throw new NotImplementedException();
+        }
+        private FilterDefinition<User> BaseFilter(Expression<Func<User, bool>> filter)
+{
+            return Builders<User>.Filter.And(
+                filter,
+                Builders<User>.Filter.Eq(u => u.DeletedAt, null)
+            );
         }
     }
 }

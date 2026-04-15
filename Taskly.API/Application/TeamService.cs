@@ -38,8 +38,6 @@ namespace Taskly.Application
 
             if (user == null)
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.UserNotFound));
-            if (!user.IsActive)
-                return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.UserInactive));
 
             if (team.UserIds.Contains(userId))
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.UserAlreadyMember));

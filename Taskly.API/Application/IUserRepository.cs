@@ -10,6 +10,6 @@ namespace Taskly.Application
         Task<bool> ExistsByEmailAsync(string email);
         Task AddAsync(User user);
         Task UpdateAsync(User user);
-        Task DeleteAsync(Guid id);
+        Task<bool> DeleteAsync(Guid id);
     }
 }

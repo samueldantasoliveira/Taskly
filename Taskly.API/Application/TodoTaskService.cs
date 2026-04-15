@@ -34,8 +34,6 @@ namespace Taskly.Application
                 var user = await _userRepository.GetByIdAsync(todoTaskDto.AssignedUserId.Value);
                 if (user == null)
                     return StructuredOperationResult<TodoTask>.Fail(UserErrors.NotFound);
-                if (!user.IsActive)
-                    return StructuredOperationResult<TodoTask>.Fail(UserErrors.Inactive);
             }
             
 
@@ -82,8 +80,6 @@ namespace Taskly.Application
                 var user = await _userRepository.GetByIdAsync(dto.AssignedUserId.Value);
                 if (user == null)
                     return StructuredOperationResult<TodoTask>.Fail(UserErrors.NotFound);
-                if (!user.IsActive)
-                    return StructuredOperationResult<TodoTask>.Fail(UserErrors.Inactive);
             }
 
             existingTask.Title = dto.Title;

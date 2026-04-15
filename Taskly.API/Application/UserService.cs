@@ -25,6 +25,11 @@ namespace Taskly.Application
             
             return StructuredOperationResult<User>.Ok(user);
         }
+
+        public async Task<bool> DeleteUserAsync(Guid id)
+        {
+            return await _userRepository.DeleteAsync(id);
+        }
         // outras coisas
     }
 }

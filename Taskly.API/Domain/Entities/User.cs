@@ -9,7 +9,7 @@ namespace Taskly.Domain.Entities
         public Guid Id { get; private set; }
         public string Name { get; private set; }
         public string Email { get; private set; }
-        public bool IsActive { get; set; }
+        public DateTime? DeletedAt { get; set; }
 
         // Stores the password hash along with all parameters needed for verification:
         // algorithm$iterations$saltBase64$hashBase64
@@ -28,7 +28,6 @@ namespace Taskly.Domain.Entities
             Name = name;
             Email = email.ToLowerInvariant();
             PasswordHash = passwordHash;
-            IsActive = true;
         }
         
         public static bool IsValidEmail(string email)

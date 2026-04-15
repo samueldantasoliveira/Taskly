@@ -17,7 +17,6 @@ namespace Taskly.Controllers
             _userService = userService;
         }
 
-        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create(CreateUserDto userDto)
         {
@@ -30,6 +29,15 @@ namespace Taskly.Controllers
             return Ok(user);
         }
 
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var deleted = await _userService.DeleteUserAsync(id);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
+        }
         private IActionResult MapErrorToResponse(Error error)
         {
             return error.Code switch
