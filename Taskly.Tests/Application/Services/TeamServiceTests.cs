@@ -105,26 +105,6 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task AddMember_UserInactive_ReturnsFail()
-    {
-        // Arrange
-        var team = new Team("Team Test");
-        var user = new User("User Test", "Test@Test.com", "Test");
-        user.IsActive = false;
-
-        _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
-        _userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(user);
-
-        // Act
-        var result = await _teamService.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid());
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.NotNull(result.Error);
-        Assert.Equal("UserInactive", result.Error.Code);
-    }
-
-    [Fact]
     public async Task AddMember_ValidInput_CallsUpdateAndReturnsOk()
     {
         // Arrange

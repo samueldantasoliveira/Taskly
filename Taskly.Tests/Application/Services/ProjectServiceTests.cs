@@ -23,9 +23,10 @@ public class ProjectServiceTests
     {
         // Arrange
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test" };
+        var ownerId = Guid.NewGuid();
 
         // Act
-        var result = await _projectService.AddProjectAsync(projectDto);
+        var result = await _projectService.AddProjectAsync(projectDto, ownerId);
 
         // Assert
         Assert.False(result.Success);
@@ -39,12 +40,13 @@ public class ProjectServiceTests
         // Arrange
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = Guid.NewGuid() };
         var team = new Team("Team Test");
+        var ownerId = Guid.NewGuid();
         team.IsActive = false;
 
         _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
-        var result = await _projectService.AddProjectAsync(projectDto);
+        var result = await _projectService.AddProjectAsync(projectDto, ownerId);
 
         // Assert
         Assert.False(result.Success);
@@ -58,11 +60,12 @@ public class ProjectServiceTests
         // Arrange
         var projectDto = new CreateProjectDto { Name = "", Description = "Project Test", TeamId = Guid.NewGuid() };
         var team = new Team("Team Test");
+        var ownerId = Guid.NewGuid();
 
         _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
-        var result = await _projectService.AddProjectAsync(projectDto);
+        var result = await _projectService.AddProjectAsync(projectDto, ownerId);
 
         // Assert
         Assert.False(result.Success);
@@ -76,11 +79,12 @@ public class ProjectServiceTests
         // Arrange
         var team = new Team("Team Test");
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = team.Id };
+        var ownerId = Guid.NewGuid();
 
         _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
-        var result = await _projectService.AddProjectAsync(projectDto);
+        var result = await _projectService.AddProjectAsync(projectDto, ownerId);
 
         // Assert
         Assert.True(result.Success);
