@@ -51,11 +51,23 @@ namespace Taskly.Infrastructure
             return await _context.Users.Find(filter).AnyAsync();
         }
 
-        public async Task UpdateAsync(User user)
+        public async Task<bool> UpdateAsync(User user)
         {
+            var update = Builders<User>.Update
+                .Set(u => u.Name, user.Name)
+                .Set(u => u.Email, user.Email)
+                .Set(u => u.PasswordHash, user.PasswordHash)
+                .Set(u => u.UpdatedAt, DateTime.UtcNow);
+
+            var result = await _context.Users.UpdateOneAsync(
+                u => u.Id == user.Id 
+                && u.DeletedAt == null
+                && u.UpdatedAt == user.UpdatedAt,
+                update
+            );
             
-            throw new NotImplementedException();
-        }
+            return result.MatchedCount == 1;
+        }       
         private FilterDefinition<User> BaseFilter(Expression<Func<User, bool>> filter)
 {
             return Builders<User>.Filter.And(

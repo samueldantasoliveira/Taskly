@@ -38,6 +38,16 @@ namespace Taskly.Controllers
                 return NotFound();
             return NoContent();
         }
+        [Authorize]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, UpdateUserDto dto){
+            var result = await _userService.UpdateUserAsync(id, dto);
+            if(!result.Success)
+                return MapErrorToResponse(result.Error!);
+            
+            return Ok(result.Value);
+        }
+
         private IActionResult MapErrorToResponse(Error error)
         {
             return error.Code switch

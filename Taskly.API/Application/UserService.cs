@@ -30,6 +30,29 @@ namespace Taskly.Application
         {
             return await _userRepository.DeleteAsync(id);
         }
+
+        public async Task<StructuredOperationResult<User>> UpdateUserAsync(Guid id, UpdateUserDto userDto)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+                return StructuredOperationResult<User>.Fail(UserErrors.NotFound);
+
+            if (userDto.Email != null && user.Email != userDto.Email)
+                if (await _userRepository.ExistsByEmailAsync(userDto.Email))
+                    return StructuredOperationResult<User>.Fail(UserErrors.EmailAlreadyExists);
+            
+            string? passwordHash = null;
+            if (userDto.Password != null)
+                passwordHash = PasswordHasher.HashPassword(userDto.Password);
+            user.Update(userDto.Name, userDto.Email, passwordHash);
+
+            var updated = await _userRepository.UpdateAsync(user);
+
+            if (!updated)
+                return StructuredOperationResult<User>.Fail(UserErrors.NotFound);
+                
+            return StructuredOperationResult<User>.Ok(user);
+        }
         // outras coisas
     }
 }

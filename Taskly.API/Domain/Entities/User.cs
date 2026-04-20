@@ -7,13 +7,17 @@ namespace Taskly.Domain.Entities
     {
         [BsonRepresentation(BsonType.String)]
         public Guid Id { get; private set; }
-        public string Name { get; private set; }
-        public string Email { get; private set; }
-        public DateTime? DeletedAt { get; set; }
+        public string Name { get; private set; } = null!;
+        public string Email { get; private set; } = null!;
+        public DateTime CreatedAt { get; private set;}
+        public DateTime UpdatedAt { get; private set;}
+        public DateTime? DeletedAt { get; private set; }
 
         // Stores the password hash along with all parameters needed for verification:
         // algorithm$iterations$saltBase64$hashBase64
-        public string PasswordHash { get; private set; }
+        public string PasswordHash { get; private set; } = null!;
+
+        protected User() { }
         public User(string name, string email, string passwordHash)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -24,12 +28,27 @@ namespace Taskly.Domain.Entities
                 throw new ArgumentException("Invalid Email format.", nameof(email));
             if (string.IsNullOrWhiteSpace(passwordHash))
                 throw new ArgumentException("Password cannot be empty.", nameof(passwordHash));
+                
             Id = Guid.NewGuid();
             Name = name;
             Email = email.ToLowerInvariant();
             PasswordHash = passwordHash;
+            var now = DateTime.UtcNow;
+            CreatedAt = now;
+            UpdatedAt = now;
         }
         
+        public void Update(string? name, string? email, string? passwordHash)
+        {
+            if (name != null)
+                Name = name;
+
+            if (email != null)
+                Email = email;
+                
+            if (passwordHash != null)
+                PasswordHash = passwordHash;
+        }
         public static bool IsValidEmail(string email)
         {
             try
