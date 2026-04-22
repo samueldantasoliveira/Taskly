@@ -21,5 +21,22 @@ namespace Taskly.Infrastructure
         public IMongoCollection<User> Users => _database.GetCollection<User>("Users");
         public IMongoCollection<Team> Teams => _database.GetCollection<Team>("Teams");
         public IMongoCollection<Project> Projects => _database.GetCollection<Project>("Projects");
+    
+        public async Task EnsureIndexesAsync()
+        {
+            await EnsureUserIndexes();
+        }
+
+        private async Task EnsureUserIndexes()
+        {
+            var emailIndex = new CreateIndexModel<User>(
+                Builders<User>.IndexKeys.Ascending(u => u.Email),
+                new CreateIndexOptions
+                {
+                    Unique = true
+                });
+
+            await Users.Indexes.CreateOneAsync(emailIndex);
+        }
     }
 }

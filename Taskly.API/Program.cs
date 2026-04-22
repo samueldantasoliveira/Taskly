@@ -101,6 +101,12 @@ builder.Services.AddScoped<LoginService>();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+    await context.EnsureIndexesAsync();
+}
+
 //Swagger
 app.UseSwagger();
 app.UseSwaggerUI();
