@@ -2,23 +2,24 @@
 using Taskly.Application.DTOs;
 using Taskly.Domain.Entities;
 using Taskly.Domain;
+using Taskly.Infrastructure;
 
 namespace Taskly.Application
 {
-    public class ProjectService
+    public class ProjectService : IProjectService
     {
         private readonly IProjectRepository _projectRepository;
-        private readonly ITeamRepository _teamRepository;
+        private readonly ITeamService _teamService;
 
-        public ProjectService(IProjectRepository projectRepository, ITeamRepository teamRepository)
+        public ProjectService(IProjectRepository projectRepository, ITeamService teamService)
         {
             _projectRepository = projectRepository;
-            _teamRepository = teamRepository;
+            _teamService = teamService;
         }
 
         public async Task<StructuredOperationResult<Project>> AddProjectAsync(CreateProjectDto projectDto, Guid ownerId)
         {
-            var team = await _teamRepository.GetByIdAsync(projectDto.TeamId);
+            var team = await _teamService.GetByIdAsync(projectDto.TeamId);
             if (team == null)
                 return StructuredOperationResult<Project>.Fail(Error.FromEnum(AddProjectFailureReason.TeamNotFound));
             if (!team.IsActive)
@@ -37,6 +38,11 @@ namespace Taskly.Application
             
             await _projectRepository.AddAsync(project);
             return StructuredOperationResult<Project>.Ok(project);
+        }
+
+        public async Task<Project?> GetByIdAsync(Guid id)
+        {
+            return await _projectRepository.GetByIdAsync(id);
         }
     }
 }

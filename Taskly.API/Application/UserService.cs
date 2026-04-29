@@ -5,7 +5,7 @@ using Taskly.Infrastructure;
 
 namespace Taskly.Application
 {
-    public class UserService
+    public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
         public UserService(IUserRepository repository) 
@@ -31,6 +31,16 @@ namespace Taskly.Application
             return await _userRepository.DeleteAsync(id);
         }
 
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            return await _userRepository.GetByEmailAsync(email);
+        }
+
+        public async Task<User?> GetByIdAsync(Guid id)
+        {
+            return await _userRepository.GetByIdAsync(id);
+        }
+
         public async Task<StructuredOperationResult<User>> UpdateUserAsync(Guid id, UpdateUserDto userDto)
         {
             var user = await _userRepository.GetByIdAsync(id);
@@ -53,6 +63,5 @@ namespace Taskly.Application
                 
             return StructuredOperationResult<User>.Ok(user);
         }
-        // outras coisas
     }
 }

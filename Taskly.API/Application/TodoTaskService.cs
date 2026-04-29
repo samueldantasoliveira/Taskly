@@ -11,18 +11,18 @@ namespace Taskly.Application
     public class TodoTaskService
     {
         private readonly ITodoTaskRepository _todoTaskRepository;
-        private readonly IProjectRepository _projectRepository;
-        private readonly IUserRepository _userRepository;
-        public TodoTaskService(ITodoTaskRepository todoTaskrepository, IProjectRepository projectRepository, IUserRepository userRepository)
+        private readonly IProjectService _projectService;
+        private readonly IUserService _userService;
+        public TodoTaskService(ITodoTaskRepository todoTaskrepository, IProjectService projectService, IUserService userService)
         {
             _todoTaskRepository = todoTaskrepository;
-            _projectRepository = projectRepository;
-            _userRepository = userRepository;
+            _projectService = projectService;
+            _userService = userService;
         }
 
         public async Task<StructuredOperationResult<TodoTask>> AddTodoTaskAsync(CreateTodoTaskDto todoTaskDto)
         {
-            var project = await _projectRepository.GetByIdAsync(todoTaskDto.ProjectId);
+            var project = await _projectService.GetByIdAsync(todoTaskDto.ProjectId);
             if (project == null)
                 return StructuredOperationResult<TodoTask>.Fail(ProjectErrors.NotFound);
 
@@ -31,7 +31,7 @@ namespace Taskly.Application
 
             if (todoTaskDto.AssignedUserId.HasValue && todoTaskDto.AssignedUserId != Guid.Empty)
             {
-                var user = await _userRepository.GetByIdAsync(todoTaskDto.AssignedUserId.Value);
+                var user = await _userService.GetByIdAsync(todoTaskDto.AssignedUserId.Value);
                 if (user == null)
                     return StructuredOperationResult<TodoTask>.Fail(UserErrors.NotFound);
             }
@@ -67,7 +67,7 @@ namespace Taskly.Application
             if (existingTask is null)
                 return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.NotFound);
 
-            var project = await _projectRepository.GetByIdAsync(dto.ProjectId);
+            var project = await _projectService.GetByIdAsync(dto.ProjectId);
 
             if (project == null)
                 return StructuredOperationResult<TodoTask>.Fail(ProjectErrors.NotFound);
@@ -77,7 +77,7 @@ namespace Taskly.Application
                 
             if (dto.AssignedUserId.HasValue && dto.AssignedUserId != Guid.Empty)
             {
-                var user = await _userRepository.GetByIdAsync(dto.AssignedUserId.Value);
+                var user = await _userService.GetByIdAsync(dto.AssignedUserId.Value);
                 if (user == null)
                     return StructuredOperationResult<TodoTask>.Fail(UserErrors.NotFound);
             }

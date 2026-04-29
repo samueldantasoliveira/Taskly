@@ -9,13 +9,13 @@ namespace Taskly.Tests;
 public class ProjectServiceTests
 {
     public readonly Mock<IProjectRepository> _projectRepositoryMock;
-    public readonly Mock<ITeamRepository> _teamRepositoryMock;
+    public readonly Mock<ITeamService> _teamServiceMock;
     public readonly ProjectService _projectService;
     public ProjectServiceTests()
     {
         _projectRepositoryMock = new Mock<IProjectRepository>();
-        _teamRepositoryMock = new Mock<ITeamRepository>();
-        _projectService = new ProjectService(_projectRepositoryMock.Object, _teamRepositoryMock.Object);
+        _teamServiceMock = new Mock<ITeamService>();
+        _projectService = new ProjectService(_projectRepositoryMock.Object, _teamServiceMock.Object);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class ProjectServiceTests
         var ownerId = Guid.NewGuid();
         team.IsActive = false;
 
-        _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+        _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
         var result = await _projectService.AddProjectAsync(projectDto, ownerId);
@@ -62,7 +62,7 @@ public class ProjectServiceTests
         var team = new Team("Team Test");
         var ownerId = Guid.NewGuid();
 
-        _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+        _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
         var result = await _projectService.AddProjectAsync(projectDto, ownerId);
@@ -81,7 +81,7 @@ public class ProjectServiceTests
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = team.Id };
         var ownerId = Guid.NewGuid();
 
-        _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+        _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
         var result = await _projectService.AddProjectAsync(projectDto, ownerId);

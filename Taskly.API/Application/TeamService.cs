@@ -5,15 +5,15 @@ using Taskly.Application.DTOs;
 
 namespace Taskly.Application
 {
-    public class TeamService
+    public class TeamService : ITeamService
     {
         private readonly ITeamRepository _teamRepository;
-        private readonly IUserRepository _userRepository;
+        private readonly IUserService _userService;
 
-        public TeamService(ITeamRepository teamRepository, IUserRepository userRepository)
+        public TeamService(ITeamRepository teamRepository, IUserService userService)
         {
             _teamRepository = teamRepository;
-            _userRepository = userRepository;
+            _userService = userService;
         }
 
         public async Task<StructuredOperationResult<Team>> AddTeamAsync(CreateTeamDto teamDto)
@@ -34,7 +34,7 @@ namespace Taskly.Application
             if (!team.IsActive)
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.TeamInactive));
            
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _userService.GetByIdAsync(userId);
 
             if (user == null)
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.UserNotFound));
@@ -52,6 +52,10 @@ namespace Taskly.Application
                 TeamId = team.Id,
                 AddedAt = DateTime.UtcNow
             });
+        }
+        public async Task<Team?> GetByIdAsync(Guid teamId)
+        {
+            return await _teamRepository.GetByIdAsync(teamId);
         }
         
     }

@@ -7,20 +7,21 @@ namespace Taskly.Application;
 
 public class LoginService
 {
-    private readonly IUserRepository _userRepository;
+    private readonly IUserService _userService;
     private readonly ITokenService _tokenService;
 
-    public LoginService(IUserRepository repository, ITokenService tokenService)
+    public LoginService(IUserService userService, ITokenService tokenService)
     {
-        _userRepository = repository;
+        _userService = userService;
         _tokenService = tokenService;
     }
+   
     public async Task<StructuredOperationResult<(User user, string token, DateTime expiresAt)>> LoginAsync(
         string email, 
         string password)
     {
         var normalizedEmail = email.ToLowerInvariant();
-        var user = await _userRepository.GetByEmailAsync(normalizedEmail);
+        var user = await _userService.GetByEmailAsync(normalizedEmail);
         if (user == null)
             return StructuredOperationResult<(User, string, DateTime)>.Fail(UserErrors.NotFound);
         if (!PasswordHasher.VerifyPassword(password, user.PasswordHash))

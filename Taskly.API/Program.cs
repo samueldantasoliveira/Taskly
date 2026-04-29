@@ -91,11 +91,11 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<MongoDbContext>();
 builder.Services.AddScoped<TodoTaskService>();
 builder.Services.AddScoped<ITodoTaskRepository, TodoTaskRepository>();
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<TeamService>();
+builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
-builder.Services.AddScoped<ProjectService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<LoginService>();
 
