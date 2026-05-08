@@ -1,6 +1,5 @@
 ﻿using Taskly.Domain.Entities;
 using Taskly.Application.Results;
-using Taskly.Infrastructure;
 using Taskly.Application.DTOs;
 
 namespace Taskly.Application
@@ -20,7 +19,7 @@ namespace Taskly.Application
         {
             var team = new Team(teamDto.Name);
             if (String.IsNullOrWhiteSpace(team.Name))
-                return StructuredOperationResult<Team>.Fail(Error.FromEnum(AddTeamFailureReason.InvalidName));
+                return StructuredOperationResult<Team>.Fail(TeamErrors.InvalidName);
 
             await _teamRepository.AddAsync(team);
             return StructuredOperationResult<Team>.Ok(team);
@@ -30,17 +29,17 @@ namespace Taskly.Application
         {
             var team = await _teamRepository.GetByIdAsync(teamId);
             if (team == null)
-                return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.TeamNotFound));
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.NotFound);
             if (!team.IsActive)
-                return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.TeamInactive));
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.Inactive);
            
             var user = await _userService.GetByIdAsync(userId);
 
             if (user == null)
-                return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.UserNotFound));
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(UserErrors.NotFound);
 
             if (team.UserIds.Contains(userId))
-                return StructuredOperationResult<AddMemberResponseDto>.Fail(Error.FromEnum(AddMemberFailureReason.UserAlreadyMember));
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.UserAlreadyMember);
 
             team.UserIds.Add(userId);
 

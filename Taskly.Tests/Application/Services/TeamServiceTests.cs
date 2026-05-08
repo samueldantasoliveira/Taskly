@@ -31,7 +31,7 @@ public class TeamServiceTests
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("InvalidName", result.Error.Code);
+        Assert.Equal("Team.InvalidName", result.Error.Code);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class TeamServiceTests
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("TeamNotFound", result.Error.Code);
+        Assert.Equal("Team.NotFound", result.Error.Code);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class TeamServiceTests
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("TeamInactive", result.Error.Code);
+        Assert.Equal("Team.Inactive", result.Error.Code);
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class TeamServiceTests
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("UserNotFound", result.Error.Code);
+        Assert.Equal("User.NotFound", result.Error.Code);
 
     }
 
