@@ -32,9 +32,23 @@ namespace Taskly.Infrastructure
             return await _context.Projects.Find(p => p.Id == id).FirstOrDefaultAsync();
         }
 
-        public Task UpdateAsync(Project project)
-        {
-            throw new NotImplementedException();
+        public async Task<bool> UpdateAsync(Project project)
+         {
+            var update = Builders<Project>.Update
+                .Set(p => p.Name, project.Name)
+                .Set(p => p.Description, project.Description)
+                .Set(p => p.OwnerId, project.OwnerId)
+                .Set(p => p.Status, project.Status)
+                .Set(p => p.TeamId, project.TeamId)
+                .Set(p => p.UpdatedAt, DateTime.UtcNow);
+
+            var result = await _context.Projects.UpdateOneAsync(
+                p => p.Id == project.Id
+                && project.DeletedAt == null
+                && p.UpdatedAt == project.UpdatedAt,
+                update
+            );
+            return result.MatchedCount == 1;
         }
     }
 }

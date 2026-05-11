@@ -3,6 +3,7 @@ using Taskly.Domain.Entities;
 using Taskly.Application;
 using Taskly.Application.DTOs;
 using Taskly.Domain;
+using DnsClient.Protocol;
 
 namespace Taskly.Tests;
 
@@ -10,12 +11,14 @@ public class ProjectServiceTests
 {
     public readonly Mock<IProjectRepository> _projectRepositoryMock;
     public readonly Mock<ITeamService> _teamServiceMock;
+    public readonly Mock<IUserService> _userServiceMock;
     public readonly ProjectService _projectService;
     public ProjectServiceTests()
     {
         _projectRepositoryMock = new Mock<IProjectRepository>();
         _teamServiceMock = new Mock<ITeamService>();
-        _projectService = new ProjectService(_projectRepositoryMock.Object, _teamServiceMock.Object);
+        _userServiceMock = new Mock<IUserService>();
+        _projectService = new ProjectService(_projectRepositoryMock.Object, _teamServiceMock.Object, _userServiceMock.Object);
     }
 
     [Fact]
@@ -31,7 +34,7 @@ public class ProjectServiceTests
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("TeamNotFound", result.Error.Code);
+        Assert.Equal("Project.TeamNotFound", result.Error.Code);
     }
 
     [Fact]
@@ -51,7 +54,7 @@ public class ProjectServiceTests
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("TeamInactive", result.Error.Code);
+        Assert.Equal("Project.TeamInactive", result.Error.Code);
     }
 
     [Fact]
@@ -70,7 +73,7 @@ public class ProjectServiceTests
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("InvalidName", result.Error.Code);
+        Assert.Equal("Project.InvalidName", result.Error.Code);
     }
 
     [Fact]
@@ -102,5 +105,150 @@ public class ProjectServiceTests
             )),
         Times.Once
         );
+    }
+    [Fact]
+    public async Task UpdateProject_ProjectNotFound_ReturnsFail()
+    {
+        // Arrange
+        var dto = new UpdateProjectDto();
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync((Project?)null);
+
+        // Act
+        var result = await _projectService.UpdateProjectAsync(Guid.NewGuid(), dto);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal("Project.NotFound", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateProject_OwnerNotFound_ReturnsFail()
+    {
+        // Arrange
+        var dto = new UpdateProjectDto(){Name = "Test", OwnerId = Guid.NewGuid()};
+        var project = new Project(
+            "Project", 
+            "Description", 
+            Guid.NewGuid(), 
+            ProjectStatus.Active, 
+            Guid.NewGuid());
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(project);
+        _userServiceMock
+            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync((User?)null);
+
+        // Act
+        var result = await _projectService.UpdateProjectAsync(Guid.NewGuid(), dto);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal("Project.OwnerNotFound", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateProject_TeamNotFound_ReturnsFail()
+    {
+        // Arrange
+        var dto = new UpdateProjectDto(){Name = "Test", TeamId = Guid.NewGuid()};
+        var project = new Project(
+            "Project", 
+            "Description", 
+            Guid.NewGuid(), 
+            ProjectStatus.Active, 
+            Guid.NewGuid());
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(project);
+        
+        _teamServiceMock
+            .Setup(t => t.GetByIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync((Team?)null);
+
+        // Act
+        var result = await _projectService.UpdateProjectAsync(Guid.NewGuid(), dto);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal("Project.TeamNotFound", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task UpdateProject_UpdateFails_ReturnsFail()
+    {
+        // Arrange
+        var dto = new UpdateProjectDto
+        {
+            Name = "Test Name"
+        };
+
+        var project = new Project(
+            "Project",
+            "Description",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(project);
+
+        _projectRepositoryMock
+            .Setup(p => p.UpdateAsync(It.IsAny<Project>()))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _projectService.UpdateProjectAsync(Guid.NewGuid(), dto);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal("Project.NotFound", result.Error!.Code);
+    }
+
+    [Fact]
+    public async Task UpdateProject_ValidInput_ReturnsSuccess()
+    {
+        // Arrange
+        var dto = new UpdateProjectDto
+        {
+            Name = "Test Name"
+        };
+
+        var project = new Project(
+            "Project",
+            "Description",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(project);
+
+        _projectRepositoryMock
+            .Setup(p => p.UpdateAsync(It.IsAny<Project>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _projectService.UpdateProjectAsync(Guid.NewGuid(), dto);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+
+        Assert.Equal(dto.Name, result.Value.Name);
+        
+        _projectRepositoryMock.Verify(
+            p => p.UpdateAsync(It.IsAny<Project>()),
+            Times.Once);
     }
 }
