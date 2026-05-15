@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Taskly.Application;
 using Taskly.Application.DTOs;
 using Taskly.Application.Results;
-using Taskly.Domain.Entities;
 
 namespace Taskly.Controllers
 {
@@ -37,13 +36,25 @@ namespace Taskly.Controllers
             return Ok(result.Value);
         }
 
+        [Authorize]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, UpdateProjectDto projectDto)
+        {
+            var result = await _projectService.UpdateProjectAsync(id, projectDto);
+            if(!result.Success)
+                return MapErrorToResponse(result.Error!);
+            
+            return Ok(result.Value);
+        }
         private IActionResult MapErrorToResponse(Error error)
         {
             return error.Code switch
             {
-                "TeamNotFound" => NotFound(error.Message),
-                "TeamInactive" => BadRequest(error.Message),
-                "InvalidName" => BadRequest(error.Message),
+                "Project.InvalidName" => BadRequest(error.Message),
+                "Project.TeamInactive" => BadRequest(error.Message),
+                "Project.NotFound" => NotFound(error.Message),
+                "Project.TeamNotFound" => NotFound(error.Message),
+                "Project.OwnerNotFound" => NotFound(error.Message),
                 _ => StatusCode(500, "Unexpected error")
             };
         }
