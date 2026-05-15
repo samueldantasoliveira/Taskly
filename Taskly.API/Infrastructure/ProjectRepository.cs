@@ -44,8 +44,8 @@ namespace Taskly.Infrastructure
 
             var result = await _context.Projects.UpdateOneAsync(
                 p => p.Id == project.Id
-                && project.DeletedAt == null
-                && p.UpdatedAt == project.UpdatedAt,
+                && p.DeletedAt == null,
+                //&& p.UpdatedAt == project.UpdatedAt,
                 update
             );
             return result.MatchedCount == 1;
