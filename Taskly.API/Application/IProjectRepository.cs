@@ -8,5 +8,6 @@ namespace Taskly.Application
         Task<Project?> GetByIdAsync(Guid id);
         Task AddAsync(Project project);
         Task<bool> UpdateAsync(Project project);
+        Task<bool> DeleteAsync(Guid id);
     }
 }

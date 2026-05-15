@@ -46,6 +46,16 @@ namespace Taskly.Controllers
             
             return Ok(result.Value);
         }
+
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var deleted = await _projectService.DeleteProjectAsync(id);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
+        }
         private IActionResult MapErrorToResponse(Error error)
         {
             return error.Code switch

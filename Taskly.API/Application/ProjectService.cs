@@ -74,5 +74,10 @@ namespace Taskly.Application
 
             return StructuredOperationResult<Project>.Ok(project);
         }
+
+        public async Task<bool> DeleteProjectAsync(Guid id)
+        {
+           return await _projectRepository.DeleteAsync(id); 
+        }
     }
 }

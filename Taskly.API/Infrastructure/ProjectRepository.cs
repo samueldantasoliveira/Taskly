@@ -17,9 +17,18 @@ namespace Taskly.Infrastructure
             await _context.Projects.InsertOneAsync(project);
         }
 
-        public Task DeleteAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var update = Builders<Project>.Update
+                .Set(p => p.DeletedAt, DateTime.UtcNow);
+
+            var result = await _context.Projects.UpdateOneAsync(
+                p => p.Id == id && p.DeletedAt == null,
+                update
+            );
+
+            return result.ModifiedCount == 1;
+
         }
 
         public Task<List<Project>> GetAllAsync()
