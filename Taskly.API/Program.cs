@@ -81,7 +81,10 @@ builder.Services.AddSwaggerGen(c =>
 BsonSerializer.RegisterSerializer(
     new GuidSerializer(GuidRepresentation.Standard)
 );
-var mongoClient = new MongoClient("mongodb://localhost:27017");
+var connectionString = builder.Configuration["MongoDb:ConnectionString"];
+
+var mongoClient = new MongoClient(connectionString);
+
 builder.Services.AddSingleton(mongoClient);
 
 // Token Service

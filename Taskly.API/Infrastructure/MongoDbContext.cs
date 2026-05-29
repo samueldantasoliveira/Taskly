@@ -10,10 +10,11 @@ namespace Taskly.Infrastructure
     {
         private readonly IMongoDatabase _database;
 
-        public MongoDbContext(MongoClient client)
+        public MongoDbContext(MongoClient client, IConfiguration configuration)
         {
-            _database = client.GetDatabase("Taskly");
+            var databaseName = configuration["MongoDb:DatabaseName"];
 
+            _database = client.GetDatabase(databaseName);
         }
 
         // Coleção de tarefas
