@@ -6,20 +6,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-using System.Text;
-using System.IdentityModel.Tokens.Jwt;
-
-
 
 var builder = WebApplication.CreateBuilder(args);
-
-foreach (var kv in builder.Configuration.AsEnumerable())
-{
-    if (kv.Key.Contains("Jwt"))
-    {
-        Console.WriteLine($"{kv.Key} = {kv.Value}");
-    }
-}
 
 // JWT CONFIG
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -77,7 +65,6 @@ builder.Services.AddSwaggerGen(c =>
 
 
 // MongoClient
-
 BsonSerializer.RegisterSerializer(
     new GuidSerializer(GuidRepresentation.Standard)
 );
