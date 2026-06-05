@@ -17,11 +17,26 @@ namespace Taskly.Application
 
         public async Task<StructuredOperationResult<Team>> AddTeamAsync(CreateTeamDto teamDto)
         {
-            var team = new Team(teamDto.Name);
-            if (String.IsNullOrWhiteSpace(team.Name))
+            if (string.IsNullOrWhiteSpace(teamDto.Name))
                 return StructuredOperationResult<Team>.Fail(TeamErrors.InvalidName);
+                
+            var team = new Team(teamDto.Name);
 
             await _teamRepository.AddAsync(team);
+            return StructuredOperationResult<Team>.Ok(team);
+        }
+
+        public async Task<StructuredOperationResult<Team>> UpdateTeamAsync(Guid id, UpdateTeamDto updateTeamDto)
+        {
+            var team = await _teamRepository.GetByIdAsync(id);
+            if (team == null)
+                return StructuredOperationResult<Team>.Fail(TeamErrors.NotFound);
+
+            team.Update(updateTeamDto.Name, updateTeamDto.IsActive);
+
+            var updated = await _teamRepository.UpdateAsync(team);
+            if (!updated)
+                return StructuredOperationResult<Team>.Fail(TeamErrors.NotFound);
             return StructuredOperationResult<Team>.Ok(team);
         }
 
@@ -41,9 +56,12 @@ namespace Taskly.Application
             if (team.UserIds.Contains(userId))
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.UserAlreadyMember);
 
-            team.UserIds.Add(userId);
 
-            await _teamRepository.UpdateAsync(team);
+            var added = await _teamRepository.AddMemberAsync(team.Id, user.Id);
+            
+            if (!added)
+                return StructuredOperationResult<AddMemberResponseDto>
+                    .Fail(TeamErrors.NotFound);
 
             return StructuredOperationResult<AddMemberResponseDto>.Ok(new AddMemberResponseDto
             {
@@ -52,10 +70,48 @@ namespace Taskly.Application
                 AddedAt = DateTime.UtcNow
             });
         }
+
+        public async Task<StructuredOperationResult<RemoveMemberResponseDto>> RemoveMemberAsync(Guid teamId, Guid userId)
+        {
+            var team = await _teamRepository.GetByIdAsync(teamId);
+
+            if (team == null)
+                return StructuredOperationResult<RemoveMemberResponseDto>
+                    .Fail(TeamErrors.NotFound);
+
+            if (!team.IsActive)
+                return StructuredOperationResult<RemoveMemberResponseDto>
+                    .Fail(TeamErrors.Inactive);
+
+            if (!team.UserIds.Contains(userId))
+                return StructuredOperationResult<RemoveMemberResponseDto>
+                    .Fail(TeamErrors.UserNotMember);
+
+            var removed = await _teamRepository.RemoveMemberAsync(teamId, userId);
+
+            if (!removed)
+                return StructuredOperationResult<RemoveMemberResponseDto>
+                    .Fail(TeamErrors.NotFound);
+
+            return StructuredOperationResult<RemoveMemberResponseDto>.Ok(
+                new RemoveMemberResponseDto
+                {
+                    TeamId = teamId,
+                    UserId = userId,
+                    RemovedAt = DateTime.UtcNow
+                });
+
+        }
+
         public async Task<Team?> GetByIdAsync(Guid teamId)
         {
             return await _teamRepository.GetByIdAsync(teamId);
         }
-        
+
+        public async Task<bool> DeleteTeam(Guid teamId)
+        {
+            return await _teamRepository.DeleteAsync(teamId);
+        }
+
     }
 }

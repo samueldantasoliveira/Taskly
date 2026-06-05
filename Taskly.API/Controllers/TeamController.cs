@@ -35,6 +35,16 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, UpdateTeamDto dto){
+            var result = await _teamService.UpdateTeamAsync(id, dto);
+            if(!result.Success)
+                return MapErrorToResponse(result.Error!);
+            
+            return Ok(result.Value);
+        }
+
+        [Authorize]
         [HttpPost("{teamId}/add-member")]
         public async Task<IActionResult> AddMember(Guid teamId, Guid userId)
         {
@@ -45,6 +55,29 @@ namespace Taskly.Controllers
 
             }
             return Ok(result.Value);
+        }
+
+        [Authorize]
+        [HttpPost("{teamId}/remove-member")]
+        public async Task<IActionResult> RemoveMember(Guid teamId, Guid userId)
+        {
+            var result = await _teamService.RemoveMemberAsync(teamId, userId);
+            if (!result.Success)
+            {
+                return MapErrorToResponse(result.Error!);
+
+            }
+            return Ok(result.Value);
+        }
+
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var deleted = await _teamService.DeleteTeam(id);
+            if (!deleted)
+                return NotFound();
+            return NoContent();
         }
 
         private IActionResult MapErrorToResponse(Error error)

@@ -7,7 +7,9 @@ namespace Taskly.Application
         Task<List<Team>> GetAllAsync();
         Task<Team?> GetByIdAsync(Guid id);
         Task AddAsync(Team team);
-        Task UpdateAsync(Team team);
-        Task DeleteAsync(Guid id);
+        Task<bool> UpdateAsync(Team team);
+        Task<bool> AddMemberAsync(Guid teamId, Guid userId);
+        Task<bool> RemoveMemberAsync(Guid teamId, Guid userId);
+        Task<bool> DeleteAsync(Guid id);
     }
 }

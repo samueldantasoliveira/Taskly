@@ -16,9 +16,16 @@ namespace Taskly.Infrastructure
             await _context.Teams.InsertOneAsync(team);
         }
 
-        public Task DeleteAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var update = Builders<Team>.Update
+                .Set(t => t.DeletedAt, DateTime.UtcNow);
+
+            var result = await _context.Teams.UpdateOneAsync(
+                t => t.Id == id && t.DeletedAt == null,
+                update
+            );
+            return result.ModifiedCount == 1;
         }
 
         public Task<List<Team>> GetAllAsync()
@@ -32,9 +39,47 @@ namespace Taskly.Infrastructure
             
         }
 
-        public async Task UpdateAsync(Team updatedTeam)
+        public async Task<bool> UpdateAsync(Team updatedTeam)
         {
-            await _context.Teams.ReplaceOneAsync(t => t.Id == updatedTeam.Id, updatedTeam);
+            var update = Builders<Team>.Update
+                .Set(t => t.Name, updatedTeam.Name)
+                .Set(t => t.IsActive, updatedTeam.IsActive)
+                .Set(t => t.UpdatedAt, DateTime.UtcNow);
+
+            var result = await _context.Teams.UpdateOneAsync(
+                t => t.Id == updatedTeam.Id
+                && t.DeletedAt == null,
+                update
+            );
+            return result.MatchedCount == 1;
+        }
+
+        public async Task<bool> AddMemberAsync(Guid teamId, Guid userId)
+        {
+            var update = Builders<Team>.Update
+                .Push(t => t.UserIds, userId)
+                .Set(t => t.UpdatedAt, DateTime.UtcNow);
+
+            var result = await _context.Teams.UpdateOneAsync(
+                t => t.Id == teamId && t.DeletedAt == null,
+                update
+            );
+
+            return result.ModifiedCount == 1;
+        }
+
+        public async Task<bool> RemoveMemberAsync(Guid teamId, Guid userId)
+        {
+            var update = Builders<Team>.Update
+                .Pull(t => t.UserIds, userId)
+                .Set(t => t.UpdatedAt, DateTime.UtcNow);
+
+            var result = await _context.Teams.UpdateOneAsync(
+                t => t.Id == teamId && t.DeletedAt == null,
+                update
+            );
+
+            return result.ModifiedCount == 1;
         }
     }
 }
