@@ -1,6 +1,7 @@
 ﻿using MongoDB.Driver;
 using Taskly.Application;
 using Taskly.Domain.Entities;
+using System.Linq.Expressions;
 
 namespace Taskly.Infrastructure
 {
@@ -35,7 +36,7 @@ namespace Taskly.Infrastructure
 
         public async Task<Team?> GetByIdAsync(Guid id)
         {
-            return await _context.Teams.Find(t => t.Id == id).FirstOrDefaultAsync();
+            return await _context.Teams.Find(BaseFilter(t => t.Id == id)).FirstOrDefaultAsync();
             
         }
 
@@ -80,6 +81,14 @@ namespace Taskly.Infrastructure
             );
 
             return result.ModifiedCount == 1;
+        }
+
+        private FilterDefinition<Team> BaseFilter(Expression<Func<Team, bool>> filter)
+{
+            return Builders<Team>.Filter.And(
+                filter,
+                Builders<Team>.Filter.Eq(t => t.DeletedAt, null)
+            );
         }
     }
 }
