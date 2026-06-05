@@ -58,7 +58,7 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
-        [HttpPost("{teamId}/remove-member")]
+        [HttpDelete("{teamId}/remove-member")]
         public async Task<IActionResult> RemoveMember(Guid teamId, Guid userId)
         {
             var result = await _teamService.RemoveMemberAsync(teamId, userId);
