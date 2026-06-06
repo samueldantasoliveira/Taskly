@@ -82,16 +82,22 @@ namespace Taskly.Controllers
 
         private IActionResult MapErrorToResponse(Error error)
         {
-            return error.Code switch
-            {
-                "TeamNotFound" => NotFound(error.Message),
-                "TeamInactive" => BadRequest(error.Message),
-                "UserNotFound" => NotFound(error.Message),
-                "UserInactive" => BadRequest(error.Message),
-                "UserAlreadyMember" => Conflict(error.Message),
-                "InvalidName" => BadRequest(error.Message),
-                _ => StatusCode(500, error.Message)
-            };
+            if (error == TeamErrors.NotFound)
+                return NotFound(error.Message);
+
+            if (error == TeamErrors.InvalidName)
+                return BadRequest(error.Message);
+
+            if (error == TeamErrors.Inactive)
+                return BadRequest(error.Message);
+
+            if (error == TeamErrors.UserAlreadyMember)
+                return Conflict(error.Message);
+
+            if (error == TeamErrors.UserNotMember)
+                return Conflict(error.Message);
+
+            return StatusCode(500, error.Message);
         }
 
     }

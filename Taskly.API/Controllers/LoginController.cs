@@ -37,14 +37,12 @@ public class LoginController : ControllerBase
     }   
     private IActionResult MapErrorToResponse(Error error)
     {
-        return error.Code switch
-        {
-            "User.NotFound" => NotFound(error.Message),
-            "User.InvalidPassword" => Unauthorized(error.Message),
-            _ => StatusCode(500, "Unexpected error")
+        if (error == UserErrors.NotFound)
+            return NotFound(error.Message);
+        if (error == UserErrors.InvalidPassword)
+            return Unauthorized(error.Message);
 
-        };
-
+        return StatusCode(500, error.Message);
     }
 
 }

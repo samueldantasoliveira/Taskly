@@ -58,15 +58,18 @@ namespace Taskly.Controllers
         }
         private IActionResult MapErrorToResponse(Error error)
         {
-            return error.Code switch
-            {
-                "Project.InvalidName" => BadRequest(error.Message),
-                "Project.TeamInactive" => BadRequest(error.Message),
-                "Project.NotFound" => NotFound(error.Message),
-                "Project.TeamNotFound" => NotFound(error.Message),
-                "Project.OwnerNotFound" => NotFound(error.Message),
-                _ => StatusCode(500, "Unexpected error")
-            };
+            if (error == ProjectErrors.InvalidName)
+                return BadRequest(error.Message);
+            if (error == ProjectErrors.TeamInactive)
+                return BadRequest(error.Message);
+            if (error == ProjectErrors.NotFound)
+                return NotFound(error.Message);
+            if (error == ProjectErrors.TeamNotFound)
+                return NotFound(error.Message);
+            if (error == ProjectErrors.OwnerNotFound)
+                return NotFound(error.Message);
+
+            return StatusCode(500, error.Message);
         }
     }
 }

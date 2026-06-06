@@ -67,16 +67,18 @@ namespace Taskly.Controllers
         
         private IActionResult MapErrorToResponse(Error error)
         {
-            return error.Code switch
-                {
-                    "Project.NotFound" => NotFound(error.Message),
-                    "Project.Inactive" => BadRequest(error.Message),
-                    "User.NotFound" => NotFound(error.Message),
-                    "User.Inactive" => BadRequest(error.Message),
-                    "TodoTask.InvalidTitle" => BadRequest(error.Message),
-                    "TodoTask.NoChangesDetected" => Ok(error.Message),
-                    _ => StatusCode(500, error.Message)
-                };
+            if (error == TodoTaskErrors.ProjectNotFound)
+                return NotFound(error.Message);
+            if (error == TodoTaskErrors.ProjectInactive)
+                return BadRequest(error.Message);
+            if (error == TodoTaskErrors.UserNotFound)
+                return NotFound(error.Message);
+            if (error == TodoTaskErrors.InvalidTitle)
+                return BadRequest(error.Message);
+            if (error == TodoTaskErrors.NoChangesDetected)
+                return Ok(error.Message);
+
+            return StatusCode(500, error.Message);
         }
     }
 }

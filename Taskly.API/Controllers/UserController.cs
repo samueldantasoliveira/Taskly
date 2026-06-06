@@ -50,11 +50,16 @@ namespace Taskly.Controllers
 
         private IActionResult MapErrorToResponse(Error error)
         {
-            return error.Code switch
-                {
-                    "InvalidName" => BadRequest(error.Message),
-                    _ => StatusCode(500, error.Message)
-                };
+            if (error == UserErrors.EmailAlreadyExists)
+                return Conflict(error.Message);
+            if (error == UserErrors.InvalidName)
+                return BadRequest(error.Message);
+            if (error == UserErrors.InvalidPassword)
+                return BadRequest(error.Message);
+            if (error == UserErrors.NotFound)
+                return NotFound(error.Message);
+                
+            return StatusCode(500, error.Message);
         }
     }
 }
