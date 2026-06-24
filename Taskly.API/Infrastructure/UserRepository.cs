@@ -61,8 +61,8 @@ namespace Taskly.Infrastructure
 
             var result = await _context.Users.UpdateOneAsync(
                 u => u.Id == user.Id 
-                && u.DeletedAt == null
-                && u.UpdatedAt == user.UpdatedAt,
+                && u.DeletedAt == null,
+                //&& u.UpdatedAt == user.UpdatedAt,
                 update
             );
             
