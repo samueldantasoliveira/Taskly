@@ -12,5 +12,7 @@ public static class UserErrors
         Error.Create("User.InvalidPassword", "Password is invalid");
     public readonly static Error EmailAlreadyExists =
         Error.Create("User.EmailAlreadyExists", "Email already exists");
+    public readonly static Error InvalidCredentials =
+        Error.Create("User.InvalidCredentials","User Credentials are Invalid");
 
 }

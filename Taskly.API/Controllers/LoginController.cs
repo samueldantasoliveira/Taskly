@@ -22,26 +22,13 @@ public class LoginController : ControllerBase
         {
             return MapErrorToResponse(result.Error!);
         }
-            return Ok(new
-        {
-            message = "Login successful.",
-            token = result.Value.token,
-            expiresAt = result.Value.expiresAt,
-            user = new
-            {
-                result.Value.user.Id,
-                result.Value.user.Name,
-                result.Value.user.Email
-            }
-        });
+        return Ok(result.Value);
     }   
     private IActionResult MapErrorToResponse(Error error)
     {
-        if (error == UserErrors.NotFound)
-            return NotFound(error.Message);
-        if (error == UserErrors.InvalidPassword)
+        if (error == UserErrors.InvalidCredentials)
             return Unauthorized(error.Message);
-
+        
         return StatusCode(500, error.Message);
     }
 

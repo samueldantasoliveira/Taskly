@@ -16,19 +16,30 @@ public class LoginService
         _tokenService = tokenService;
     }
    
-    public async Task<StructuredOperationResult<(User user, string token, DateTime expiresAt)>> LoginAsync(
+    public async Task<StructuredOperationResult<LoginResponseDto>> LoginAsync(
         string email, 
         string password)
     {
         var normalizedEmail = email.ToLowerInvariant();
         var user = await _userService.GetByEmailAsync(normalizedEmail);
         if (user == null)
-            return StructuredOperationResult<(User, string, DateTime)>.Fail(UserErrors.NotFound);
+            return StructuredOperationResult<LoginResponseDto>.Fail(UserErrors.InvalidCredentials);
         if (!PasswordHasher.VerifyPassword(password, user.PasswordHash))
-            return StructuredOperationResult<(User, string, DateTime)>.Fail(UserErrors.InvalidPassword);
+            return StructuredOperationResult<LoginResponseDto>.Fail(UserErrors.InvalidCredentials);
 
         var token = _tokenService.GenerateToken(user, out var expiresAt);
-
-        return StructuredOperationResult<(User, string, DateTime)>.Ok((user, token, expiresAt));
+        return StructuredOperationResult<LoginResponseDto>.Ok(
+            new LoginResponseDto
+            {
+                Token = token,
+                ExpiresAt = expiresAt,
+                User = new UserResponseDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Email = user.Email
+                }
+            }
+        );
     }
 }

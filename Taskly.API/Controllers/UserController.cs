@@ -25,8 +25,8 @@ namespace Taskly.Controllers
             {
                 return MapErrorToResponse(result.Error!);
             }
-            var user = result.Value;
-            return Ok(user);
+            var userResponseDto = result.Value;
+            return Ok(userResponseDto);
         }
 
         [Authorize]
@@ -38,6 +38,7 @@ namespace Taskly.Controllers
                 return NotFound();
             return NoContent();
         }
+
         [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, UpdateUserDto dto){

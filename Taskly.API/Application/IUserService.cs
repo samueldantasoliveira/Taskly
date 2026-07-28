@@ -6,7 +6,7 @@ namespace Taskly.Application
 {
     public interface IUserService
     {
-        public Task<StructuredOperationResult<User>> AddUserAsync(CreateUserDto userDto);
+        public Task<StructuredOperationResult<UserResponseDto>> AddUserAsync(CreateUserDto userDto);
 
         public Task<bool> DeleteUserAsync(Guid id);
 
@@ -14,6 +14,6 @@ namespace Taskly.Application
 
         public Task<User?> GetByIdAsync(Guid id);
 
-        public Task<StructuredOperationResult<User>> UpdateUserAsync(Guid id, UpdateUserDto userDto);
+        public Task<StructuredOperationResult<UserResponseDto>> UpdateUserAsync(Guid id, UpdateUserDto userDto);
     }
 }
