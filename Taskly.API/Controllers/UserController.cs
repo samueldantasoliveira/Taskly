@@ -3,6 +3,8 @@ using Taskly.Application;
 using Taskly.Application.Results;
 using Taskly.Application.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Taskly.Controllers
 {
@@ -33,6 +35,12 @@ namespace Taskly.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            return Unauthorized();
+
+            if (authenticatedUserId != id)
+                return Forbid();
+
             var deleted = await _userService.DeleteUserAsync(id);
             if (!deleted)
                 return NotFound();
@@ -41,12 +49,25 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, UpdateUserDto dto){
+        public async Task<IActionResult> Update(Guid id, UpdateUserDto dto)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+            return Unauthorized();
+
+            if (authenticatedUserId != id)
+                return Forbid();
+
             var result = await _userService.UpdateUserAsync(id, dto);
             if(!result.Success)
                 return MapErrorToResponse(result.Error!);
             
             return Ok(result.Value);
+        }
+
+        private bool TryGetAuthenticatedUserId(out Guid userId)
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; 
+            return Guid.TryParse(claim, out userId);
         }
 
         private IActionResult MapErrorToResponse(Error error)
