@@ -42,9 +42,9 @@ public class ProjectServiceTests
     {
         // Arrange
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = Guid.NewGuid() };
-        var team = new Team("Team Test");
+        var team = new Team("Team Test", Guid.NewGuid());
         var ownerId = Guid.NewGuid();
-        team.IsActive = false;
+        team.Update(null, false);
 
         _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
@@ -62,7 +62,7 @@ public class ProjectServiceTests
     {
         // Arrange
         var projectDto = new CreateProjectDto { Name = "", Description = "Project Test", TeamId = Guid.NewGuid() };
-        var team = new Team("Team Test");
+        var team = new Team("Team Test", Guid.NewGuid());
         var ownerId = Guid.NewGuid();
 
         _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
@@ -80,7 +80,7 @@ public class ProjectServiceTests
     public async Task AddProject_ValidInput_CallsRepositoryAddAsync()
     {
         // Arrange
-        var team = new Team("Team Test");
+        var team = new Team("Team Test", Guid.NewGuid());
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = team.Id };
         var ownerId = Guid.NewGuid();
 

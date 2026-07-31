@@ -26,7 +26,7 @@ public class TeamServiceTests
         var teamDto = new CreateTeamDto { Name = "" };
 
         // Act
-        var result = await _teamService.AddTeamAsync(teamDto);
+        var result = await _teamService.AddTeamAsync(teamDto, Guid.NewGuid());
 
         // Assert
         Assert.False(result.Success);
@@ -39,14 +39,36 @@ public class TeamServiceTests
     {
         // Arrange
         var teamDto = new CreateTeamDto { Name = "Team Test" };
+        var ownerId = Guid.NewGuid();
 
         // Act
-        await _teamService.AddTeamAsync(teamDto);
+        await _teamService.AddTeamAsync(teamDto, ownerId);
+        
         // Assert
         _teamRepositoryMock.Verify(
-            r => r.AddAsync(It.Is<Team>(t => t.Name == teamDto.Name)),
-            Times.Once
-        );
+        r => r.AddAsync(It.Is<Team>(t =>
+            t.Name == teamDto.Name &&
+            t.OwnerId == ownerId &&
+            t.UserIds.Contains(ownerId))),
+        Times.Once);
+    }
+
+    [Fact]
+    public async Task AddTeam_ValidInput_AssignsOwnerAndAddsOwnerToMembers()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var dto = new CreateTeamDto { Name = "Team Test" };
+
+        // Act
+        var result = await _teamService.AddTeamAsync(dto, ownerId);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+
+        Assert.Equal(ownerId, result.Value.OwnerId);
+        Assert.Contains(ownerId, result.Value.UserIds);
     }
 
     [Fact]
@@ -69,8 +91,8 @@ public class TeamServiceTests
     public async Task AddMember_TeamInactive_ReturnsFail()
     {
         // Arrange
-        var team = new Team("Team Test");
-        team.IsActive = false;
+        var team = new Team("Team Test", Guid.NewGuid());
+        team.Update(null, false);
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
                             .ReturnsAsync(team);
@@ -88,7 +110,7 @@ public class TeamServiceTests
     public async Task AddMember_UserNotFound_ReturnsFail()
     {
         // Arrange
-        var team = new Team("Team Test");
+        var team = new Team("Team Test", Guid.NewGuid());
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
         _userServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User?)null);
@@ -108,7 +130,7 @@ public class TeamServiceTests
     {
         // Arrange
         var user = new User("User Test", "test@test.com", "Hash");
-        var team = new Team("Team Test");
+        var team = new Team("Team Test", Guid.NewGuid());
 
         team.UserIds.Add(user.Id);
 
@@ -133,7 +155,7 @@ public class TeamServiceTests
     public async Task AddMember_ValidInput_CallsUpdateAndReturnsOk()
     {
         // Arrange
-        var team = new Team("Team Test");
+        var team = new Team("Team Test", Guid.NewGuid());
         var user = new User("User Test", "Test@Test.com", "Test");
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(team.Id)).ReturnsAsync(team);
@@ -177,8 +199,8 @@ public class TeamServiceTests
     public async Task RemoveMember_TeamInactive_ReturnsFail()
     {
         // Arrange
-        var team = new Team("Team Test");
-        team.IsActive = false;
+        var team = new Team("Team Test", Guid.NewGuid());
+        team.Update(null, false);
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
                             .ReturnsAsync(team);
@@ -199,7 +221,7 @@ public class TeamServiceTests
         var teamId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        var team = new Team("Team Test");
+        var team = new Team("Team Test", Guid.NewGuid());
 
         _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(teamId))
@@ -221,7 +243,7 @@ public class TeamServiceTests
         var teamId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        var team = new Team("Team Test");
+        var team = new Team("Team Test", Guid.NewGuid());
         team.UserIds.Add(userId);
 
         _teamRepositoryMock
@@ -246,4 +268,5 @@ public class TeamServiceTests
             t => t.RemoveMemberAsync(teamId, userId),
             Times.Once);
     }
+
 }

@@ -15,12 +15,12 @@ namespace Taskly.Application
             _userService = userService;
         }
 
-        public async Task<StructuredOperationResult<Team>> AddTeamAsync(CreateTeamDto teamDto)
+        public async Task<StructuredOperationResult<Team>> AddTeamAsync(CreateTeamDto teamDto, Guid userId)
         {
             if (string.IsNullOrWhiteSpace(teamDto.Name))
                 return StructuredOperationResult<Team>.Fail(TeamErrors.InvalidName);
                 
-            var team = new Team(teamDto.Name);
+            var team = new Team(teamDto.Name, userId);
 
             await _teamRepository.AddAsync(team);
             return StructuredOperationResult<Team>.Ok(team);

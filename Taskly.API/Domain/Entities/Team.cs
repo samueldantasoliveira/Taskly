@@ -8,17 +8,20 @@ namespace Taskly.Domain.Entities
     {
         [BsonRepresentation(BsonType.String)]
         public Guid Id { get; private set; }
-        public string Name { get; set; }
-        public bool IsActive { get; set; }
+        public string Name { get; private set; }
+        public bool IsActive { get; private set; }
+        public Guid OwnerId {get; private set; }
         [BsonRepresentation(BsonType.String)]
         public List<Guid> UserIds { get; set; } = new();
 
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
         public DateTime? DeletedAt { get; private set; }
-        public Team(string name)
+        public Team(string name, Guid ownerId)
         {
             Id = Guid.NewGuid();
+            OwnerId = ownerId;
+            UserIds.Add(ownerId);
             Name = name;
             IsActive = true;
             var now = DateTime.UtcNow;

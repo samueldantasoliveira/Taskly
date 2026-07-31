@@ -24,7 +24,10 @@ namespace Taskly.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTeamDto dto)
         {
-            var result = await _teamService.AddTeamAsync(dto);
+            if (!TryGetAuthenticatedUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _teamService.AddTeamAsync(dto, userId);
 
             if (!result.Success)
             {
@@ -78,6 +81,12 @@ namespace Taskly.Controllers
             if (!deleted)
                 return NotFound();
             return NoContent();
+        }
+
+        private bool TryGetAuthenticatedUserId(out Guid userId)
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; 
+            return Guid.TryParse(claim, out userId);
         }
 
         private IActionResult MapErrorToResponse(Error error)

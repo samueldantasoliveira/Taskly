@@ -6,7 +6,7 @@ namespace Taskly.Application
     public interface ITeamService
     {
 
-        public Task<StructuredOperationResult<Team>> AddTeamAsync(CreateTeamDto teamDto);
+        public Task<StructuredOperationResult<Team>> AddTeamAsync(CreateTeamDto teamDto, Guid userId);
         public Task<StructuredOperationResult<Team>> UpdateTeamAsync(Guid id, UpdateTeamDto updateTeamDto);
         public Task<StructuredOperationResult<AddMemberResponseDto>> AddMemberAsync(Guid teamId, Guid userId);
         public Task<StructuredOperationResult<RemoveMemberResponseDto>> RemoveMemberAsync(Guid teamId, Guid userId);
