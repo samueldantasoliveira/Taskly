@@ -14,4 +14,6 @@ public static class TeamErrors
         Error.Create("Team.UserAlreadyMember", "User is already a member");
     public readonly static Error UserNotMember =
         Error.Create("Team.UserNotMember", "User is not a member");
+    public readonly static Error NotOwner =
+        Error.Create("Team.NotOwner", "Only the team owner can perform this action");
 }

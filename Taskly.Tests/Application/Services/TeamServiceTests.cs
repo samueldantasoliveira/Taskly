@@ -2,6 +2,7 @@
 using Taskly.Application;
 using Taskly.Application.DTOs;
 using Moq;
+using Taskly.Application.Results;
 
 
 namespace Taskly.Tests;
@@ -69,6 +70,118 @@ public class TeamServiceTests
 
         Assert.Equal(ownerId, result.Value.OwnerId);
         Assert.Contains(ownerId, result.Value.UserIds);
+    }
+
+    [Fact]
+    public async Task UpdateTeam_TeamNotFound_ReturnsFail()
+    {
+        // Arrange
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync((Team?)null);
+
+        // Act
+        var result = await _teamService.UpdateTeamAsync(
+            Guid.NewGuid(),
+            new UpdateTeamDto(),
+            Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateTeam_UserIsNotOwner_ReturnsFail()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+
+        var team = new Team("Team Test", ownerId);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _teamService.UpdateTeamAsync(
+            team.Id,
+            new UpdateTeamDto(),
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.NotOwner, result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateTeam_UpdateFails_ReturnsNotFound()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var team = new Team("Team Test", ownerId);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        _teamRepositoryMock
+            .Setup(r => r.UpdateAsync(team))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _teamService.UpdateTeamAsync(
+            team.Id,
+            new UpdateTeamDto { Name = "New Name" },
+            ownerId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateTeam_ValidInput_UpdatesTeam()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+
+        var team = new Team("Old Name", ownerId);
+
+        var dto = new UpdateTeamDto
+        {
+            Name = "New Name",
+            IsActive = false
+        };
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        _teamRepositoryMock
+            .Setup(r => r.UpdateAsync(team))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _teamService.UpdateTeamAsync(
+            team.Id,
+            dto,
+            ownerId);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal("New Name", result.Value!.Name);
+        Assert.False(result.Value.IsActive);
+
+        _teamRepositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<Team>(t =>
+                t.Name == "New Name" &&
+                t.IsActive == false)),
+            Times.Once);
     }
 
     [Fact]
@@ -266,6 +379,104 @@ public class TeamServiceTests
 
         _teamRepositoryMock.Verify(
             t => t.RemoveMemberAsync(teamId, userId),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteTeam_TeamNotFound_ReturnsFail()
+    {
+        // Arrange
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync((Team?)null);
+
+        // Act
+        var result = await _teamService.DeleteTeamAsync(
+            Guid.NewGuid(),
+            Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTeam_UserIsNotOwner_ReturnsFail()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+
+        var team = new Team("Team Test", ownerId);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _teamService.DeleteTeamAsync(
+            team.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.NotOwner, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTeam_DeleteFails_ReturnsNotFound()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var team = new Team("Team Test", ownerId);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        _teamRepositoryMock
+            .Setup(r => r.DeleteAsync(team.Id))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _teamService.DeleteTeamAsync(
+            team.Id,
+            ownerId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTeam_ValidInput_ReturnsSuccess()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var team = new Team("Team Test", ownerId);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        _teamRepositoryMock
+            .Setup(r => r.DeleteAsync(team.Id))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _teamService.DeleteTeamAsync(
+            team.Id,
+            ownerId);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Null(result.Error);
+
+        _teamRepositoryMock.Verify(
+            r => r.DeleteAsync(team.Id),
             Times.Once);
     }
 

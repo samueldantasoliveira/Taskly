@@ -26,11 +26,13 @@ namespace Taskly.Application
             return StructuredOperationResult<Team>.Ok(team);
         }
 
-        public async Task<StructuredOperationResult<Team>> UpdateTeamAsync(Guid id, UpdateTeamDto updateTeamDto)
+        public async Task<StructuredOperationResult<Team>> UpdateTeamAsync(Guid id, UpdateTeamDto updateTeamDto, Guid authenticatedUserId)
         {
             var team = await _teamRepository.GetByIdAsync(id);
             if (team == null)
                 return StructuredOperationResult<Team>.Fail(TeamErrors.NotFound);
+            if (team.OwnerId != authenticatedUserId)
+                return StructuredOperationResult<Team>.Fail(TeamErrors.NotOwner);
 
             team.Update(updateTeamDto.Name, updateTeamDto.IsActive);
 
@@ -108,9 +110,19 @@ namespace Taskly.Application
             return await _teamRepository.GetByIdAsync(teamId);
         }
 
-        public async Task<bool> DeleteTeam(Guid teamId)
+        public async Task<StructuredOperationResult> DeleteTeamAsync(Guid teamId, Guid authenticatedUserId)
         {
-            return await _teamRepository.DeleteAsync(teamId);
+            var team = await _teamRepository.GetByIdAsync(teamId);
+            if (team == null)
+                return StructuredOperationResult.Fail(TeamErrors.NotFound);
+            if (team.OwnerId != authenticatedUserId)
+                return StructuredOperationResult.Fail(TeamErrors.NotOwner);
+
+            var deleted = await _teamRepository.DeleteAsync(teamId);
+            if (!deleted)
+                return StructuredOperationResult.Fail(TeamErrors.NotFound);
+            
+            return StructuredOperationResult.Ok();
         }
 
     }

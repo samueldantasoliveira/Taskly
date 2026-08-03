@@ -39,8 +39,13 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, UpdateTeamDto dto){
-            var result = await _teamService.UpdateTeamAsync(id, dto);
+        public async Task<IActionResult> Update(Guid id, UpdateTeamDto dto)
+        {
+            if (!TryGetAuthenticatedUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _teamService.UpdateTeamAsync(id, dto, userId);
+
             if(!result.Success)
                 return MapErrorToResponse(result.Error!);
             
@@ -77,9 +82,16 @@ namespace Taskly.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var deleted = await _teamService.DeleteTeam(id);
-            if (!deleted)
-                return NotFound();
+            if (!TryGetAuthenticatedUserId(out var userId))
+                return Unauthorized();
+
+            var result = await _teamService.DeleteTeamAsync(id, userId);
+            
+            if (!result.Success)
+            {
+                return MapErrorToResponse(result.Error!);
+
+            }
             return NoContent();
         }
 
@@ -105,6 +117,9 @@ namespace Taskly.Controllers
 
             if (error == TeamErrors.UserNotMember)
                 return Conflict(error.Message);
+
+            if (error == TeamErrors.NotOwner)
+                return StatusCode(StatusCodes.Status403Forbidden, error.Message);
 
             return StatusCode(500, error.Message);
         }
