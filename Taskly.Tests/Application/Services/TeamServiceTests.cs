@@ -192,7 +192,7 @@ public class TeamServiceTests
                             .ReturnsAsync((Team?)null);
 
         // Act
-        var result = await _teamService.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid());
+        var result = await _teamService.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         Assert.False(result.Success);
@@ -211,7 +211,7 @@ public class TeamServiceTests
                             .ReturnsAsync(team);
 
         // Act
-        var result = await _teamService.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid());
+        var result = await _teamService.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         Assert.False(result.Success);
@@ -223,18 +223,19 @@ public class TeamServiceTests
     public async Task AddMember_UserNotFound_ReturnsFail()
     {
         // Arrange
-        var team = new Team("Team Test", Guid.NewGuid());
+        var authenticatedUserId = Guid.NewGuid();
+        var team = new Team("Team Test", authenticatedUserId);
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
         _userServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User?)null);
 
         // Act
-        var result = await _teamService.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid());
+        var result = await _teamService.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid(), authenticatedUserId);
 
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("User.NotFound", result.Error.Code);
+        Assert.Equal("Team.UserNotFound", result.Error.Code);
 
     }
 
@@ -242,8 +243,9 @@ public class TeamServiceTests
     public async Task AddMember_UserAlreadyMember_ReturnsFail()
     {
         // Arrange
+        var authenticatedUserId = Guid.NewGuid();
         var user = new User("User Test", "test@test.com", "Hash");
-        var team = new Team("Team Test", Guid.NewGuid());
+        var team = new Team("Team Test", authenticatedUserId);
 
         team.UserIds.Add(user.Id);
 
@@ -256,7 +258,7 @@ public class TeamServiceTests
             .ReturnsAsync(user);
 
         // Act
-        var result = await _teamService.AddMemberAsync(team.Id, user.Id);
+        var result = await _teamService.AddMemberAsync(team.Id, user.Id, authenticatedUserId);
 
         // Assert
         Assert.False(result.Success);
@@ -265,10 +267,36 @@ public class TeamServiceTests
     }
 
     [Fact]
+    public async Task AddMember_UserIsNotOwner_ReturnsFail()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+
+        var team = new Team("Team Test", ownerId);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _teamService.AddMemberAsync(
+            team.Id,
+            Guid.NewGuid(),
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.NotOwner, result.Error);
+    }
+
+    [Fact]
     public async Task AddMember_ValidInput_CallsUpdateAndReturnsOk()
     {
         // Arrange
-        var team = new Team("Team Test", Guid.NewGuid());
+        var authenticatedUserId = Guid.NewGuid();
+        var team = new Team("Team Test", authenticatedUserId);
         var user = new User("User Test", "Test@Test.com", "Test");
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(team.Id)).ReturnsAsync(team);
@@ -276,7 +304,7 @@ public class TeamServiceTests
         _userServiceMock.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
 
         // Act
-        var result = await _teamService.AddMemberAsync(team.Id, user.Id);
+        var result = await _teamService.AddMemberAsync(team.Id, user.Id, authenticatedUserId);
 
         // Assert
         Assert.True(result.Success);
@@ -300,7 +328,7 @@ public class TeamServiceTests
             .ReturnsAsync((Team?)null);
 
         // Act
-        var result = await _teamService.RemoveMemberAsync(teamId, userId);
+        var result = await _teamService.RemoveMemberAsync(teamId, userId, Guid.NewGuid());
 
         // Assert
         Assert.False(result.Success);
@@ -319,7 +347,7 @@ public class TeamServiceTests
                             .ReturnsAsync(team);
 
         // Act
-        var result = await _teamService.RemoveMemberAsync(Guid.NewGuid(), Guid.NewGuid());
+        var result = await _teamService.RemoveMemberAsync(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         Assert.False(result.Success);
@@ -333,15 +361,16 @@ public class TeamServiceTests
         // Arrange
         var teamId = Guid.NewGuid();
         var userId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
 
-        var team = new Team("Team Test", Guid.NewGuid());
+        var team = new Team("Team Test", authenticatedUserId);
 
         _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(teamId))
             .ReturnsAsync(team);
 
         // Act
-        var result = await _teamService.RemoveMemberAsync(teamId, userId);
+        var result = await _teamService.RemoveMemberAsync(teamId, userId, authenticatedUserId);
 
         // Assert
         Assert.False(result.Success);
@@ -350,13 +379,63 @@ public class TeamServiceTests
     }
 
     [Fact]
+    public async Task RemoveMember_UserIsNotOwner_ReturnsFail()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+
+        var team = new Team("Team Test", ownerId);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _teamService.RemoveMemberAsync(
+            team.Id,
+            Guid.NewGuid(),
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.NotOwner, result.Error);
+    }
+
+    [Fact]
+    public async Task RemoveMember_RemoveOwner_ReturnsFail()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+
+        var team = new Team("Team Test", ownerId);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _teamService.RemoveMemberAsync(
+            team.Id,
+            ownerId,
+            ownerId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.OwnerCannotBeRemoved, result.Error);
+    }
+
+    [Fact]
     public async Task RemoveMember_ValidInput_ReturnsSuccess()
     {
         // Arrange
+        var authenticatedUserId = Guid.NewGuid();
         var teamId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        var team = new Team("Team Test", Guid.NewGuid());
+        var team = new Team("Team Test", authenticatedUserId);
         team.UserIds.Add(userId);
 
         _teamRepositoryMock
@@ -368,7 +447,7 @@ public class TeamServiceTests
             .ReturnsAsync(true);
 
         // Act
-        var result = await _teamService.RemoveMemberAsync(teamId, userId);
+        var result = await _teamService.RemoveMemberAsync(teamId, userId, authenticatedUserId);
 
         // Assert
         Assert.True(result.Success);

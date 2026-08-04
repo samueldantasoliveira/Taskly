@@ -42,18 +42,20 @@ namespace Taskly.Application
             return StructuredOperationResult<Team>.Ok(team);
         }
 
-        public async Task<StructuredOperationResult<AddMemberResponseDto>> AddMemberAsync(Guid teamId, Guid userId)
+        public async Task<StructuredOperationResult<AddMemberResponseDto>> AddMemberAsync(Guid teamId, Guid userId, Guid authenticatedUserId)
         {
             var team = await _teamRepository.GetByIdAsync(teamId);
             if (team == null)
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.NotFound);
             if (!team.IsActive)
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.Inactive);
-           
+            if (team.OwnerId != authenticatedUserId)
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.NotOwner);
+
             var user = await _userService.GetByIdAsync(userId);
 
             if (user == null)
-                return StructuredOperationResult<AddMemberResponseDto>.Fail(UserErrors.NotFound);
+                return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.UserNotFound);
 
             if (team.UserIds.Contains(userId))
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.UserAlreadyMember);
@@ -73,27 +75,29 @@ namespace Taskly.Application
             });
         }
 
-        public async Task<StructuredOperationResult<RemoveMemberResponseDto>> RemoveMemberAsync(Guid teamId, Guid userId)
+        public async Task<StructuredOperationResult<RemoveMemberResponseDto>> RemoveMemberAsync(Guid teamId, Guid userId, Guid authenticatedUserId)
         {
             var team = await _teamRepository.GetByIdAsync(teamId);
 
             if (team == null)
-                return StructuredOperationResult<RemoveMemberResponseDto>
-                    .Fail(TeamErrors.NotFound);
+                return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.NotFound);
 
             if (!team.IsActive)
-                return StructuredOperationResult<RemoveMemberResponseDto>
-                    .Fail(TeamErrors.Inactive);
+                return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.Inactive);
 
+            if (team.OwnerId != authenticatedUserId)
+                return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.NotOwner);
+
+            if (team.OwnerId == userId)
+                return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.OwnerCannotBeRemoved);
+                    
             if (!team.UserIds.Contains(userId))
-                return StructuredOperationResult<RemoveMemberResponseDto>
-                    .Fail(TeamErrors.UserNotMember);
+                return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.UserNotMember);
 
             var removed = await _teamRepository.RemoveMemberAsync(teamId, userId);
 
             if (!removed)
-                return StructuredOperationResult<RemoveMemberResponseDto>
-                    .Fail(TeamErrors.NotFound);
+                return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.NotFound);
 
             return StructuredOperationResult<RemoveMemberResponseDto>.Ok(
                 new RemoveMemberResponseDto

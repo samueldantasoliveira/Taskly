@@ -24,10 +24,10 @@ namespace Taskly.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTeamDto dto)
         {
-            if (!TryGetAuthenticatedUserId(out var userId))
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _teamService.AddTeamAsync(dto, userId);
+            var result = await _teamService.AddTeamAsync(dto, authenticatedUserId);
 
             if (!result.Success)
             {
@@ -41,10 +41,10 @@ namespace Taskly.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, UpdateTeamDto dto)
         {
-            if (!TryGetAuthenticatedUserId(out var userId))
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _teamService.UpdateTeamAsync(id, dto, userId);
+            var result = await _teamService.UpdateTeamAsync(id, dto, authenticatedUserId);
 
             if(!result.Success)
                 return MapErrorToResponse(result.Error!);
@@ -56,7 +56,10 @@ namespace Taskly.Controllers
         [HttpPost("{teamId}/add-member")]
         public async Task<IActionResult> AddMember(Guid teamId, Guid userId)
         {
-            var result = await _teamService.AddMemberAsync(teamId, userId);
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _teamService.AddMemberAsync(teamId, userId, authenticatedUserId);
             if (!result.Success)
             {
                 return MapErrorToResponse(result.Error!);
@@ -69,7 +72,10 @@ namespace Taskly.Controllers
         [HttpDelete("{teamId}/remove-member")]
         public async Task<IActionResult> RemoveMember(Guid teamId, Guid userId)
         {
-            var result = await _teamService.RemoveMemberAsync(teamId, userId);
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _teamService.RemoveMemberAsync(teamId, userId, authenticatedUserId);
             if (!result.Success)
             {
                 return MapErrorToResponse(result.Error!);
@@ -82,10 +88,10 @@ namespace Taskly.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            if (!TryGetAuthenticatedUserId(out var userId))
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _teamService.DeleteTeamAsync(id, userId);
+            var result = await _teamService.DeleteTeamAsync(id, authenticatedUserId);
             
             if (!result.Success)
             {
@@ -118,8 +124,14 @@ namespace Taskly.Controllers
             if (error == TeamErrors.UserNotMember)
                 return Conflict(error.Message);
 
+            if (error == TeamErrors.UserNotFound)
+                return NotFound(error.Message);
+
             if (error == TeamErrors.NotOwner)
                 return StatusCode(StatusCodes.Status403Forbidden, error.Message);
+            
+            if (error == TeamErrors.OwnerCannotBeRemoved)
+                return Conflict(error.Message);
 
             return StatusCode(500, error.Message);
         }
