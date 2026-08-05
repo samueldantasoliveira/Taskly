@@ -16,4 +16,6 @@ public static class ProjectErrors
         Error.Create("Project.TeamInactive", "Team is inactive");
     public static readonly Error UserNotTeamMember =
         Error.Create("Project.UserNotTeamMember", "User is not a member of the team.");
+    public static readonly Error NotAuthorized =
+        Error.Create("Project.NotAuthorized", "User is not authorized to manage this project.");
 }

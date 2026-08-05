@@ -34,14 +34,12 @@ namespace Taskly.Domain.Entities
             UpdatedAt = now;
         }
 
-        public void Update(string? name, string? description, Guid? ownerId, ProjectStatus? status, Guid? teamId)
+        public void Update(string? name, string? description, ProjectStatus? status, Guid? teamId)
         {
             if (name != null)
                 Name = name;
             if (description != null)
                 Description = description;
-            if (ownerId != null)
-                OwnerId = ownerId.Value;
             if (status != null)
                 Status = status.Value;
             if (teamId != null)

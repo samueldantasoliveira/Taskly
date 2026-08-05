@@ -49,27 +49,28 @@ namespace Taskly.Application
             return await _projectRepository.GetByIdAsync(id);
         }
 
-        public async Task<StructuredOperationResult<Project>> UpdateProjectAsync(Guid id, UpdateProjectDto updateProjectDto)
+        public async Task<StructuredOperationResult<Project>> UpdateProjectAsync(Guid id, UpdateProjectDto updateProjectDto, Guid authenticatedUserId)
         {
             var project = await _projectRepository.GetByIdAsync(id);
-            if(project == null)
-                return StructuredOperationResult<Project>.Fail(ProjectErrors.NotFound);
-            
-            if(updateProjectDto.OwnerId!= null)
-            {
-                var user = await _userService.GetByIdAsync(updateProjectDto.OwnerId.Value);
-                if(user == null)
-                    return StructuredOperationResult<Project>.Fail(ProjectErrors.OwnerNotFound);
-            }
+            var permission = await CanManageProject(project, authenticatedUserId);
+
+            if (permission != null)
+                return permission;
+
             if(updateProjectDto.TeamId!= null)
             {
-                var team = await _teamService.GetByIdAsync(updateProjectDto.TeamId.Value);
-                if(team == null)
+                var newTeam = await _teamService.GetByIdAsync(updateProjectDto.TeamId.Value);
+                if(newTeam == null)
                     return StructuredOperationResult<Project>.Fail(ProjectErrors.TeamNotFound);
+                if (!newTeam.IsActive)
+                    return StructuredOperationResult<Project>.Fail(ProjectErrors.TeamInactive);
+
+                if(!newTeam.UserIds.Contains(authenticatedUserId))
+                    return StructuredOperationResult<Project>.Fail(ProjectErrors.NotAuthorized);
             }
             
 
-            project.Update(updateProjectDto.Name, updateProjectDto.Description, updateProjectDto.OwnerId, updateProjectDto.Status, updateProjectDto.TeamId);
+            project!.Update(updateProjectDto.Name, updateProjectDto.Description, updateProjectDto.Status, updateProjectDto.TeamId);
 
             var updated = await _projectRepository.UpdateAsync(project);
             if (!updated)
@@ -78,9 +79,39 @@ namespace Taskly.Application
             return StructuredOperationResult<Project>.Ok(project);
         }
 
-        public async Task<bool> DeleteProjectAsync(Guid id)
+        public async Task<StructuredOperationResult> DeleteProjectAsync(Guid id, Guid authenticatedUserId)
         {
-           return await _projectRepository.DeleteAsync(id); 
+            var project = await _projectRepository.GetByIdAsync(id);
+            var permission = await CanManageProject(project, authenticatedUserId);
+
+            if(permission != null)
+                return permission;
+            
+            var deleted = await _projectRepository.DeleteAsync(id);
+
+            if(!deleted)
+                return StructuredOperationResult.Fail(ProjectErrors.NotFound);
+            return StructuredOperationResult.Ok();
+        }
+
+        private async Task<StructuredOperationResult<Project>?> CanManageProject(Project? project, Guid authenticatedUserId)
+        {
+            if(project == null)
+                return StructuredOperationResult<Project>.Fail(ProjectErrors.NotFound);
+
+            if (project.OwnerId == authenticatedUserId)
+                return null;
+                
+            var team = await _teamService.GetByIdAsync(project.TeamId);
+
+            if (team == null)
+                return StructuredOperationResult<Project>.Fail(ProjectErrors.TeamNotFound);
+
+
+            if(team.OwnerId != authenticatedUserId)
+                return StructuredOperationResult<Project>.Fail(ProjectErrors.NotAuthorized);
+
+            return null;
         }
     }
 }
