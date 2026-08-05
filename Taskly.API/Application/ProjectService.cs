@@ -18,23 +18,26 @@ namespace Taskly.Application
             _userService = userService;
         }
 
-        public async Task<StructuredOperationResult<Project>> AddProjectAsync(CreateProjectDto projectDto, Guid ownerId)
+        public async Task<StructuredOperationResult<Project>> AddProjectAsync(CreateProjectDto projectDto, Guid authenticatedUserId)
         {
+            if (String.IsNullOrWhiteSpace(projectDto.Name))
+                return StructuredOperationResult<Project>.Fail(ProjectErrors.InvalidName);
+
             var team = await _teamService.GetByIdAsync(projectDto.TeamId);
+
             if (team == null)
                 return StructuredOperationResult<Project>.Fail(ProjectErrors.TeamNotFound);
             if (!team.IsActive)
                 return StructuredOperationResult<Project>.Fail(ProjectErrors.TeamInactive);
-            if (String.IsNullOrWhiteSpace(projectDto.Name))
-                return StructuredOperationResult<Project>.Fail(ProjectErrors.InvalidName);
-
+            if (!team.UserIds.Contains(authenticatedUserId))
+                return StructuredOperationResult<Project>.Fail(ProjectErrors.UserNotTeamMember);
             var project = new Project
             (
                 projectDto.Name,
                 projectDto.Description,
                 projectDto.TeamId,
                 ProjectStatus.Active,
-                ownerId
+                authenticatedUserId
             );
             
             await _projectRepository.AddAsync(project);

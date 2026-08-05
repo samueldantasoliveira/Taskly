@@ -22,13 +22,10 @@ namespace Taskly.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateProjectDto project)
         {
-            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdString is null)
-            return Unauthorized("Invalid token.");
-            var userId = Guid.Parse(userIdString);
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
 
-
-            var result = await _projectService.AddProjectAsync(project, userId);
+            var result = await _projectService.AddProjectAsync(project, authenticatedUserId);
             if (!result.Success)
             {
                 return MapErrorToResponse(result.Error!);
@@ -56,6 +53,12 @@ namespace Taskly.Controllers
                 return NotFound();
             return NoContent();
         }
+
+        private bool TryGetAuthenticatedUserId(out Guid userId)
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; 
+            return Guid.TryParse(claim, out userId);
+        }
         private IActionResult MapErrorToResponse(Error error)
         {
             if (error == ProjectErrors.InvalidName)
@@ -68,6 +71,8 @@ namespace Taskly.Controllers
                 return NotFound(error.Message);
             if (error == ProjectErrors.OwnerNotFound)
                 return NotFound(error.Message);
+            if (error == ProjectErrors.UserNotTeamMember)
+                return StatusCode(StatusCodes.Status403Forbidden, error.Message);
 
             return StatusCode(500, error.Message);
         }

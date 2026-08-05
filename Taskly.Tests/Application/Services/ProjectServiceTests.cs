@@ -4,6 +4,7 @@ using Taskly.Application;
 using Taskly.Application.DTOs;
 using Taskly.Domain;
 using DnsClient.Protocol;
+using Taskly.Application.Results;
 
 namespace Taskly.Tests;
 
@@ -26,10 +27,10 @@ public class ProjectServiceTests
     {
         // Arrange
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test" };
-        var ownerId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
 
         // Act
-        var result = await _projectService.AddProjectAsync(projectDto, ownerId);
+        var result = await _projectService.AddProjectAsync(projectDto, authenticatedUserId);
 
         // Assert
         Assert.False(result.Success);
@@ -43,13 +44,13 @@ public class ProjectServiceTests
         // Arrange
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = Guid.NewGuid() };
         var team = new Team("Team Test", Guid.NewGuid());
-        var ownerId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
         team.Update(null, false);
 
         _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
-        var result = await _projectService.AddProjectAsync(projectDto, ownerId);
+        var result = await _projectService.AddProjectAsync(projectDto, authenticatedUserId);
 
         // Assert
         Assert.False(result.Success);
@@ -63,12 +64,12 @@ public class ProjectServiceTests
         // Arrange
         var projectDto = new CreateProjectDto { Name = "", Description = "Project Test", TeamId = Guid.NewGuid() };
         var team = new Team("Team Test", Guid.NewGuid());
-        var ownerId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
 
         _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
-        var result = await _projectService.AddProjectAsync(projectDto, ownerId);
+        var result = await _projectService.AddProjectAsync(projectDto, authenticatedUserId);
 
         // Assert
         Assert.False(result.Success);
@@ -77,17 +78,37 @@ public class ProjectServiceTests
     }
 
     [Fact]
+    public async Task AddProject_UserNotMember_ReturnsFail()
+    {
+        // Arrange
+        var team = new Team("Team Test", Guid.NewGuid());
+        var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = team.Id };
+        var authenticatedUserId = Guid.NewGuid();
+
+        _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+
+        // Act
+        var result = await _projectService.AddProjectAsync(projectDto, authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(ProjectErrors.UserNotTeamMember, result.Error);
+    }
+
+    [Fact]
     public async Task AddProject_ValidInput_CallsRepositoryAddAsync()
     {
         // Arrange
         var team = new Team("Team Test", Guid.NewGuid());
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = team.Id };
-        var ownerId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
 
+        team.UserIds.Add(authenticatedUserId);
         _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
-        var result = await _projectService.AddProjectAsync(projectDto, ownerId);
+        var result = await _projectService.AddProjectAsync(projectDto, authenticatedUserId);
 
         // Assert
         Assert.True(result.Success);

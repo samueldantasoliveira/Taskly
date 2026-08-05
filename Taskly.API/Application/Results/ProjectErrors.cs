@@ -14,5 +14,6 @@ public static class ProjectErrors
         Error.Create("Project.TeamNotFound", "Team not found");
     public static readonly Error TeamInactive =
         Error.Create("Project.TeamInactive", "Team is inactive");
-        
+    public static readonly Error UserNotTeamMember =
+        Error.Create("Project.UserNotTeamMember", "User is not a member of the team.");
 }
