@@ -170,7 +170,6 @@ https://localhost:<porta>/swagger
 * Expandir cobertura de testes unitários
 * Implementar endpoints de consulta e listagem para projetos e equipes
 * Adicionar paginação e filtros nas consultas
-* Corrigir problemas de configuração do Swagger
 * Realizar deploy da aplicação
 
 ---
