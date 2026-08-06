@@ -3,6 +3,7 @@ using Taskly.Domain.Entities;
 using Moq;
 using Taskly.Application.DTOs;
 using Taskly.Domain;
+using Taskly.Application.Results;
 
 namespace Taskly.Tests;
 
@@ -12,12 +13,18 @@ public class TodoTaskServiceTests
     public readonly TodoTaskService _todoTaskService;
     public readonly Mock<ITodoTaskRepository> _todoTaskRepositoryMock;
     public readonly Mock<IUserService> _userServiceMock;
+    public readonly Mock<ITeamService> _teamServiceMock;
     public TodoTaskServiceTests()
     {
         _projectServiceMock = new Mock<IProjectService>();
         _todoTaskRepositoryMock = new Mock<ITodoTaskRepository>();
         _userServiceMock = new Mock<IUserService>();
-        _todoTaskService = new TodoTaskService(_todoTaskRepositoryMock.Object, _projectServiceMock.Object, _userServiceMock.Object);
+        _teamServiceMock = new Mock<ITeamService>();
+        _todoTaskService = new TodoTaskService(
+            _todoTaskRepositoryMock.Object,
+            _projectServiceMock.Object,
+            _userServiceMock.Object,
+            _teamServiceMock.Object);
     }
 
     [Fact]
@@ -29,12 +36,12 @@ public class TodoTaskServiceTests
                                 .ReturnsAsync((Project?)null);
 
         // Act
-        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto);
+        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto, Guid.NewGuid());
 
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("Project.NotFound", result.Error.Code);
+        Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
     }
 
     [Fact]
@@ -47,32 +54,38 @@ public class TodoTaskServiceTests
                                 .ReturnsAsync(project);
 
         // Act 
-        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto);
+        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto, Guid.NewGuid());
 
         //Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("Project.Inactive", result.Error.Code);
+        Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
     }
 
     [Fact]
     public async Task AddTodoTask_UserNotFound_ReturnsFail()
     {
         // Arrange
+        var authenticatedUserId = Guid.NewGuid();
         CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto { Title = "Title Test", Description = "Description Test", ProjectId = Guid.NewGuid(), AssignedUserId = Guid.NewGuid() };
         Project project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Active, Guid.NewGuid());
+        Team team = new Team("Team Test", authenticatedUserId);
+        team.UserIds.Add(createTodoTaskDto.AssignedUserId.Value);
+
         _projectServiceMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync(project);
+        _teamServiceMock.Setup(t => t.GetByIdAsync(project.TeamId))
+                                .ReturnsAsync(team);
         _userServiceMock.Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync((User?)null);
 
         // Act 
-        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto);
+        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto, authenticatedUserId);
 
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal("User.NotFound", result.Error.Code);
+        Assert.Equal(TodoTaskErrors.UserNotFound, result.Error);
 
     }
 
@@ -81,16 +94,9 @@ public class TodoTaskServiceTests
     {
         // Arrange
         CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto { Title = "", Description = "Description Test", ProjectId = Guid.NewGuid(), AssignedUserId = Guid.NewGuid() };
-        Project project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Active, Guid.NewGuid());
-        User user = new User("User Test", "Test@Test.com", "Test");
-
-        _projectServiceMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
-                                .ReturnsAsync(project);
-        _userServiceMock.Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
-                                .ReturnsAsync(user);
 
         // Act
-        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto);
+        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto, Guid.NewGuid());
 
         // Assert
         Assert.False(result.Success);
@@ -102,18 +108,23 @@ public class TodoTaskServiceTests
     public async Task AddTodoTask_ValidInput_CallsRepositoryAddAsync()
     {
         // Arrange
+        var authenticatedUserId = Guid.NewGuid();
         User user = new User("User Test", "Test@Test.com", "Test");
-        Project project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Active, Guid.NewGuid());
+        Team team = new Team("Team Test", authenticatedUserId);
+        team.UserIds.Add(user.Id);
+        Project project = new Project("Project Test", "Description Test", team.Id, ProjectStatus.Active, Guid.NewGuid());
         CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto { Title = "TodoTask Test", Description = "Description Test", ProjectId = project.Id, AssignedUserId = user.Id };
 
 
         _projectServiceMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync(project);
+        _teamServiceMock.Setup(t => t.GetByIdAsync(project.TeamId))
+                                .ReturnsAsync(team);
         _userServiceMock.Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync(user);
 
         // Act
-        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto);
+        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto, authenticatedUserId);
 
         // Assert
         Assert.True(result.Success);
@@ -132,6 +143,133 @@ public class TodoTaskServiceTests
             )),
         Times.Once
         );
+    }
+
+    [Fact]
+    public async Task AddTodoTask_TeamNotFound_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Active, Guid.NewGuid());
+        var createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "TodoTask Test",
+            Description = "Description Test",
+            ProjectId = project.Id
+        };
+
+        _projectServiceMock
+            .Setup(p => p.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        _teamServiceMock
+            .Setup(t => t.GetByIdAsync(project.TeamId))
+            .ReturnsAsync((Team?)null);
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto, authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_TeamInactive_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var team = new Team("Team Test", authenticatedUserId);
+        team.Update(null, false);
+
+        var project = new Project("Project Test", "Description Test", team.Id, ProjectStatus.Active, Guid.NewGuid());
+        var createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "TodoTask Test",
+            Description = "Description Test",
+            ProjectId = project.Id
+        };
+
+        _projectServiceMock
+            .Setup(p => p.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        _teamServiceMock
+            .Setup(t => t.GetByIdAsync(project.TeamId))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto, authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_AuthenticatedUserNotTeamMember_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var team = new Team("Team Test", Guid.NewGuid());
+        var project = new Project("Project Test", "Description Test", team.Id, ProjectStatus.Active, Guid.NewGuid());
+        var createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "TodoTask Test",
+            Description = "Description Test",
+            ProjectId = project.Id
+        };
+
+        _projectServiceMock
+            .Setup(p => p.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        _teamServiceMock
+            .Setup(t => t.GetByIdAsync(project.TeamId))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto, authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_AssignedUserNotTeamMember_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var assignedUserId = Guid.NewGuid();
+        var team = new Team("Team Test", authenticatedUserId);
+        var project = new Project("Project Test", "Description Test", team.Id, ProjectStatus.Active, Guid.NewGuid());
+        var createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "TodoTask Test",
+            Description = "Description Test",
+            ProjectId = project.Id,
+            AssignedUserId = assignedUserId
+        };
+
+        _projectServiceMock
+            .Setup(p => p.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        _teamServiceMock
+            .Setup(t => t.GetByIdAsync(project.TeamId))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(createTodoTaskDto, authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.AssignedUserNotTeamMember, result.Error);
     }
 
     [Fact]

@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel;
 using Taskly.Application;
 using Taskly.Application.DTOs;
 using Taskly.Application.Results;
-using Taskly.Domain.Entities;
+using System.Security.Claims;
 
 namespace Taskly.Controllers
 {
@@ -23,7 +22,10 @@ namespace Taskly.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateTodoTaskDto todoTask)
         {
-            var result = await _todoTaskService.AddTodoTaskAsync(todoTask);
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _todoTaskService.AddTodoTaskAsync(todoTask, authenticatedUserId);
 
             if (!result.Success)
                 return MapErrorToResponse(result.Error!);
@@ -65,6 +67,11 @@ namespace Taskly.Controllers
 
         }
         
+        private bool TryGetAuthenticatedUserId(out Guid userId)
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; 
+            return Guid.TryParse(claim, out userId);
+        }
         private IActionResult MapErrorToResponse(Error error)
         {
             if (error == TodoTaskErrors.ProjectNotFound)
@@ -77,6 +84,14 @@ namespace Taskly.Controllers
                 return BadRequest(error.Message);
             if (error == TodoTaskErrors.NoChangesDetected)
                 return Ok(error.Message);
+            if (error == TodoTaskErrors.TeamNotFound)
+                return NotFound(error.Message);
+            if (error == TodoTaskErrors.TeamInactive)
+                return BadRequest(error.Message);
+            if (error == TodoTaskErrors.UserNotTeamMember)
+                return StatusCode(StatusCodes.Status403Forbidden, error.Message);
+            if (error == TodoTaskErrors.AssignedUserNotTeamMember)
+                return StatusCode(StatusCodes.Status403Forbidden, error.Message);
 
             return StatusCode(500, error.Message);
         }
