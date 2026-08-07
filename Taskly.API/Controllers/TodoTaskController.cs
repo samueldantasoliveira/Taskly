@@ -56,7 +56,11 @@ namespace Taskly.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var result = await _todoTaskService.UpdateAsync(id, todoTaskDto);
+
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _todoTaskService.UpdateAsync(id, todoTaskDto, authenticatedUserId);
 
             if (!result.Success)
             {

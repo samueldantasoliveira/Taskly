@@ -12,8 +12,6 @@ namespace Taskly.Application.DTOs
         public required string Description { get; set; }
         [Required]
         public TodoStatus Status { get; set; }
-        [Required]
-        public Guid ProjectId { get; set; }
         public Guid? AssignedUserId { get; set; }
     }
 }

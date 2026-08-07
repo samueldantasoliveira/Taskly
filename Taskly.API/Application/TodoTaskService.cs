@@ -70,32 +70,41 @@ namespace Taskly.Application
             return await _todoTaskRepository.GetAllByProjectAsync(projectId);
         }
 
-        public async Task<StructuredOperationResult<TodoTask>> UpdateAsync(Guid id, UpdateTodoTaskDto dto)
+        public async Task<StructuredOperationResult<TodoTask>> UpdateAsync(Guid id, UpdateTodoTaskDto dto, Guid authenticatedUserId)
         {
             var existingTask = await _todoTaskRepository.GetByIdAsync(id);
 
             if (existingTask is null)
                 return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.NotFound);
 
-            var project = await _projectService.GetByIdAsync(dto.ProjectId);
-
+            var project = await _projectService.GetByIdAsync(existingTask.ProjectId);
             if (project == null)
-                return StructuredOperationResult<TodoTask>.Fail(ProjectErrors.NotFound);
+                return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.ProjectNotFound);
 
             if (project.Status == ProjectStatus.Inactive)
-                return StructuredOperationResult<TodoTask>.Fail(ProjectErrors.Inactive);
-                
+                return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.ProjectInactive);
+            
+            var team = await _teamService.GetByIdAsync(project.TeamId);
+            if (team == null)
+                return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.TeamNotFound);
+            if (!team.IsActive)
+                return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.TeamInactive);
+            
+            if (!team.UserIds.Contains(authenticatedUserId))
+                return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.UserNotTeamMember);
+
             if (dto.AssignedUserId.HasValue && dto.AssignedUserId != Guid.Empty)
             {
                 var user = await _userService.GetByIdAsync(dto.AssignedUserId.Value);
                 if (user == null)
-                    return StructuredOperationResult<TodoTask>.Fail(UserErrors.NotFound);
+                    return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.UserNotFound);
+                if (!team.UserIds.Contains(user.Id))
+                    return StructuredOperationResult<TodoTask>.Fail(TodoTaskErrors.AssignedUserNotTeamMember);
             }
 
             existingTask.Title = dto.Title;
             existingTask.Description = dto.Description;
             existingTask.Status = dto.Status;
-            existingTask.ProjectId = dto.ProjectId;
             existingTask.AssignedUserId = dto.AssignedUserId;
             
 
