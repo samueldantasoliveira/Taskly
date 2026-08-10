@@ -19,6 +19,7 @@ O projeto foi criado com foco em organização de código, separação de respon
 * Dependency Injection
 * JWT Authentication
 * MongoDB.Driver
+* Microsoft.AspNetCore.Mvc.Testing
 
 ---
 
@@ -33,48 +34,54 @@ Taskly/
  │   ├── Controllers/
  │   ├── Domain/
  │   └── Infrastructure/
- └── Taskly.Tests/
+ │
+ ├── Taskly.UnitTests/
+ │   ├── Application/
+ │   └── Domain/
+ │
+ └── Taskly.IntegrationTests/
 ```
 
 ### Camadas
 
-| Camada | Responsabilidade |
-|---------|------------------|
-| Controllers | Endpoints da API |
-| Application | Serviços e regras de aplicação |
-| Domain | Entidades e regras de negócio |
+| Camada         | Responsabilidade                    |
+| -------------- | ----------------------------------- |
+| Controllers    | Endpoints da API                    |
+| Application    | Serviços e regras de aplicação      |
+| Domain         | Entidades e regras de negócio       |
 | Infrastructure | Persistência e integrações externas |
 
 ---
 
 # 📌 Funcionalidades
 
-| Funcionalidade | Descrição | Status |
-|---------------|-----------|--------|
-| Gerenciamento de Usuários (User) | Cadastro, atualização e remoção de usuários | ✅ |
-| Autenticação JWT | Login com geração de token JWT | ✅ |
-| Autorização | Proteção de rotas com `[Authorize]` | ✅ |
-| Gerenciamento de Equipes (Team) | Criação de equipes e adição de membros | ✅ |
-| Gerenciamento de Projetos (Project) | Criação, atualização e remoção de projetos | ✅ |
-| Gerenciamento de Tarefas (TodoTask) | Criação, atualização e atribuição de tarefas | ✅ |
-| Relacionamento entre Entidades | Usuários, equipes, projetos e tarefas integrados | ✅ |
-| Hash de Senha | Armazenamento seguro de credenciais | ✅ |
-| Soft Delete | Exclusão lógica utilizando `DeletedAt` | ✅ |
-| Tratamento de Erros | Retornos padronizados com `StructuredOperationResult` | ✅ |
+| Funcionalidade                      | Descrição                                             | Status |
+| ----------------------------------- | ----------------------------------------------------- | ------ |
+| Gerenciamento de Usuários (User)    | Cadastro, atualização e remoção de usuários           | ✅      |
+| Autenticação JWT                    | Login com geração de token JWT                        | ✅      |
+| Autorização                         | Proteção de rotas com `[Authorize]`                   | ✅      |
+| Gerenciamento de Equipes (Team)     | Criação de equipes e adição de membros                | ✅      |
+| Gerenciamento de Projetos (Project) | Criação, atualização e remoção de projetos            | ✅      |
+| Gerenciamento de Tarefas (TodoTask) | Criação, atualização e atribuição de tarefas          | ✅      |
+| Relacionamento entre Entidades      | Usuários, equipes, projetos e tarefas integrados      | ✅      |
+| Hash de Senha                       | Armazenamento seguro de credenciais                   | ✅      |
+| Soft Delete                         | Exclusão lógica utilizando `DeletedAt`                | ✅      |
+| Tratamento de Erros                 | Retornos padronizados com `StructuredOperationResult` | ✅      |
 
 ---
 
 # 🏗️ Arquitetura e Boas Práticas
 
-| Implementação | Descrição | Status |
-|--------------|-----------|--------|
-| Arquitetura em Camadas | Separação entre Controllers, Application, Domain e Infrastructure | ✅ |
-| DTOs | Separação entre contratos da API e entidades de domínio | ✅ |
-| Repository Pattern | Persistência desacoplada através de interfaces | ✅ |
-| Injeção de Dependência | Serviços e repositórios registrados via DI | ✅ |
-| Validação de Dados | Regras de validação para entidades e operações | ✅ |
-| Testes Unitários | Cobertura de regras de negócio com xUnit e Moq | ✅ |
-| Result Pattern | Retornos padronizados utilizando `StructuredOperationResult` | ✅ |
+| Implementação          | Descrição                                                         | Status |
+| ---------------------- | ----------------------------------------------------------------- | ------ |
+| Arquitetura em Camadas | Separação entre Controllers, Application, Domain e Infrastructure | ✅      |
+| DTOs                   | Separação entre contratos da API e entidades de domínio           | ✅      |
+| Repository Pattern     | Persistência desacoplada através de interfaces                    | ✅      |
+| Injeção de Dependência | Serviços e repositórios registrados via DI                        | ✅      |
+| Validação de Dados     | Regras de validação para entidades e operações                    | ✅      |
+| Testes Unitários       | Cobertura de regras de negócio com xUnit e Moq                    | ✅      |
+| Testes de Integração   | Testes HTTP utilizando `WebApplicationFactory`                    | ✅      |
+| Result Pattern         | Retornos padronizados utilizando `StructuredOperationResult`      | ✅      |
 
 ---
 
@@ -116,6 +123,8 @@ TodoTask
 * Autorização com `[Authorize]`
 * Soft Delete
 * Testes Unitários com xUnit e Moq
+* Testes de Integração com `WebApplicationFactory`
+* Testes de endpoints HTTP
 
 ---
 
@@ -123,8 +132,8 @@ TodoTask
 
 ### Pré-requisitos
 
-- .NET 8 SDK
-- MongoDB
+* .NET 8 SDK
+* MongoDB
 
 ### 1. Clonar o repositório
 
@@ -154,10 +163,18 @@ dotnet restore
 ### 4. Executar a aplicação
 
 ```bash
-dotnet run
+dotnet run --project Taskly.API/Taskly.API.csproj
 ```
 
-### 5. Acessar a documentação da API
+### 5. Executar os testes
+
+```bash
+dotnet test
+```
+
+Os testes unitários e de integração são executados a partir da solução principal.
+
+### 6. Acessar a documentação da API
 
 ```text
 https://localhost:<porta>/swagger
@@ -168,6 +185,7 @@ https://localhost:<porta>/swagger
 # 📚 Próximos Passos
 
 * Expandir cobertura de testes unitários
+* Expandir cobertura dos testes de integração
 * Implementar endpoints de consulta e listagem para projetos e equipes
 * Adicionar paginação e filtros nas consultas
 * Realizar deploy da aplicação

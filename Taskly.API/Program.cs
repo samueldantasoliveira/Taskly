@@ -91,11 +91,15 @@ builder.Services.AddScoped<LoginService>();
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var context = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
-    await context.EnsureIndexesAsync();
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+        await context.EnsureIndexesAsync();
+    }  
 }
+
 
 //Swagger
 app.UseSwagger();
@@ -107,4 +111,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.MapGet("/health", () => Results.Ok());
+
 app.Run();
+
+public partial class Program
+{
+}
