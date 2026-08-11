@@ -65,9 +65,12 @@ builder.Services.AddSwaggerGen(c =>
 
 
 // MongoClient
-BsonSerializer.RegisterSerializer(
-    new GuidSerializer(GuidRepresentation.Standard)
-);
+if (BsonSerializer.LookupSerializer<Guid>() is not GuidSerializer)
+{
+    BsonSerializer.RegisterSerializer(
+        new GuidSerializer(GuidRepresentation.Standard)
+    );
+}
 var connectionString = builder.Configuration["MongoDb:ConnectionString"];
 
 var mongoClient = new MongoClient(connectionString);

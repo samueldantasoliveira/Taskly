@@ -16,4 +16,5 @@ obj/
 
 # Secrets
 appsettings.*.json
+!Taskly.API/appsettings.Testing.json
 
