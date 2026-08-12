@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Taskly.Application;
+using Taskly.Application.DTOs;
 using Taskly.Application.Results;
 
 namespace Taskly.Controllers;
@@ -15,9 +16,9 @@ public class LoginController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Login(string email, string password)
+    public async Task<IActionResult> Login(LoginDto loginDto)
     {
-        var result = await _loginService.LoginAsync(email, password);
+        var result = await _loginService.LoginAsync(loginDto.Email, loginDto.Password);
         if (!result.Success)
         {
             return MapErrorToResponse(result.Error!);
