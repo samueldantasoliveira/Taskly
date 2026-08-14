@@ -18,30 +18,40 @@ namespace Taskly.Application
             _userService = userService;
         }
 
-        public async Task<StructuredOperationResult<Project>> AddProjectAsync(CreateProjectDto projectDto, Guid authenticatedUserId)
+        public async Task<StructuredOperationResult<ProjectResponseDto>> AddProjectAsync(CreateProjectDto createProjectDto, Guid authenticatedUserId)
         {
-            if (String.IsNullOrWhiteSpace(projectDto.Name))
-                return StructuredOperationResult<Project>.Fail(ProjectErrors.InvalidName);
+            if (String.IsNullOrWhiteSpace(createProjectDto.Name))
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.InvalidName);
 
-            var team = await _teamService.GetByIdAsync(projectDto.TeamId);
+            var team = await _teamService.GetByIdAsync(createProjectDto.TeamId);
 
             if (team == null)
-                return StructuredOperationResult<Project>.Fail(ProjectErrors.TeamNotFound);
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamNotFound);
             if (!team.IsActive)
-                return StructuredOperationResult<Project>.Fail(ProjectErrors.TeamInactive);
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamInactive);
             if (!team.UserIds.Contains(authenticatedUserId))
-                return StructuredOperationResult<Project>.Fail(ProjectErrors.UserNotTeamMember);
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.UserNotTeamMember);
             var project = new Project
             (
-                projectDto.Name,
-                projectDto.Description,
-                projectDto.TeamId,
+                createProjectDto.Name,
+                createProjectDto.Description,
+                createProjectDto.TeamId,
                 ProjectStatus.Active,
                 authenticatedUserId
             );
+
+            var projectResponseDto = new ProjectResponseDto
+            {
+                Id = project.Id,
+                Name = project.Name,
+                Description = project.Description,
+                OwnerId = project.OwnerId,
+                Status = project.Status,
+                TeamId = project.TeamId
+            };
             
             await _projectRepository.AddAsync(project);
-            return StructuredOperationResult<Project>.Ok(project);
+            return StructuredOperationResult<ProjectResponseDto>.Ok(projectResponseDto);
         }
 
         public async Task<Project?> GetByIdAsync(Guid id)
