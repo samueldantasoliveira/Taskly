@@ -43,14 +43,6 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
-        [HttpGet("project/{projectId}")]
-        public async Task<IActionResult> GetAllByProjectAsync(Guid projectId)
-        {
-            var todoTasks = await _todoTaskService.GetAllByProjectIdAsync(projectId);
-            return todoTasks is null ? NotFound() : Ok(todoTasks);
-        }
-
-        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTodoTaskDto todoTaskDto)
         {

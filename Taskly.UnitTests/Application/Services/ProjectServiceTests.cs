@@ -11,15 +11,13 @@ namespace Taskly.Tests;
 public class ProjectServiceTests
 {
     public readonly Mock<IProjectRepository> _projectRepositoryMock;
-    public readonly Mock<ITeamService> _teamServiceMock;
-    public readonly Mock<IUserService> _userServiceMock;
+    public readonly Mock<ITeamRepository> _teamRepositoryMock;
     public readonly ProjectService _projectService;
     public ProjectServiceTests()
     {
         _projectRepositoryMock = new Mock<IProjectRepository>();
-        _teamServiceMock = new Mock<ITeamService>();
-        _userServiceMock = new Mock<IUserService>();
-        _projectService = new ProjectService(_projectRepositoryMock.Object, _teamServiceMock.Object, _userServiceMock.Object);
+        _teamRepositoryMock = new Mock<ITeamRepository>();
+        _projectService = new ProjectService(_projectRepositoryMock.Object, _teamRepositoryMock.Object);
     }
 
     [Fact]
@@ -44,10 +42,10 @@ public class ProjectServiceTests
         // Arrange
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = Guid.NewGuid() };
         var team = new Team("Team Test", Guid.NewGuid());
-        var authenticatedUserId = Guid.NewGuid();
         team.Update(null, false);
+        var authenticatedUserId = Guid.NewGuid();
 
-        _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+        _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
         var result = await _projectService.AddProjectAsync(projectDto, authenticatedUserId);
@@ -64,9 +62,10 @@ public class ProjectServiceTests
         // Arrange
         var projectDto = new CreateProjectDto { Name = "", Description = "Project Test", TeamId = Guid.NewGuid() };
         var team = new Team("Team Test", Guid.NewGuid());
+        team.Update(null, true);
         var authenticatedUserId = Guid.NewGuid();
 
-        _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+        _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
         var result = await _projectService.AddProjectAsync(projectDto, authenticatedUserId);
@@ -82,10 +81,11 @@ public class ProjectServiceTests
     {
         // Arrange
         var team = new Team("Team Test", Guid.NewGuid());
+        team.Update(null, true);
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = team.Id };
         var authenticatedUserId = Guid.NewGuid();
 
-        _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+        _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
         var result = await _projectService.AddProjectAsync(projectDto, authenticatedUserId);
@@ -101,11 +101,12 @@ public class ProjectServiceTests
     {
         // Arrange
         var team = new Team("Team Test", Guid.NewGuid());
+        team.Update(null, true);
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = team.Id };
         var authenticatedUserId = Guid.NewGuid();
 
         team.UserIds.Add(authenticatedUserId);
-        _teamServiceMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+        _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
         var result = await _projectService.AddProjectAsync(projectDto, authenticatedUserId);
@@ -164,7 +165,7 @@ public class ProjectServiceTests
             .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
             .ReturnsAsync(project);
         
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(It.IsAny<Guid>()))
             .ReturnsAsync((Team?)null);
 
@@ -187,7 +188,8 @@ public class ProjectServiceTests
             Name = "Test Name"
         };
 
-        var team = new Team("Team", authenticatedUserId);
+        var team = new Team("Team Test", authenticatedUserId);
+        team.Update(null, true);
 
 
         var project = new Project(
@@ -205,7 +207,7 @@ public class ProjectServiceTests
             .Setup(p => p.UpdateAsync(It.IsAny<Project>()))
             .ReturnsAsync(false);
         
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(s => s.GetByIdAsync(It.IsAny<Guid>()))
             .ReturnsAsync(team);
 
@@ -238,7 +240,7 @@ public class ProjectServiceTests
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(newTeamId))
             .ReturnsAsync((Team?)null);
 
@@ -265,7 +267,7 @@ public class ProjectServiceTests
 
         var oldTeam = new Team("Old Team", ownerId);
 
-        var newTeam = new Team("New Team", ownerId);
+        var newTeam = new Team("Team Test", Guid.NewGuid());
         newTeam.Update(null, false);
 
         var project = new Project(
@@ -279,7 +281,7 @@ public class ProjectServiceTests
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(newTeam.Id))
             .ReturnsAsync(newTeam);
 
@@ -304,9 +306,11 @@ public class ProjectServiceTests
         // Arrange
         var ownerId = Guid.NewGuid();
 
-        var oldTeam = new Team("Old Team", ownerId);
+        var oldTeam = new Team("Team Test", ownerId);
+        oldTeam.Update(null, true);
 
-        var newTeam = new Team("New Team", Guid.NewGuid());
+        var newTeam = new Team("Team Test", Guid.NewGuid());
+        newTeam.Update(null, true);
 
         var project = new Project(
             "Project",
@@ -319,7 +323,11 @@ public class ProjectServiceTests
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(oldTeam.Id))
+            .ReturnsAsync(oldTeam);
+
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(newTeam.Id))
             .ReturnsAsync(newTeam);
 
@@ -358,7 +366,7 @@ public class ProjectServiceTests
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
@@ -396,7 +404,7 @@ public class ProjectServiceTests
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
@@ -436,7 +444,7 @@ public class ProjectServiceTests
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
@@ -502,7 +510,7 @@ public class ProjectServiceTests
             r => r.UpdateAsync(project),
             Times.Once);
 
-        _teamServiceMock.Verify(
+        _teamRepositoryMock.Verify(
             t => t.GetByIdAsync(It.IsAny<Guid>()),
             Times.Never);
     }
@@ -527,7 +535,7 @@ public class ProjectServiceTests
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
@@ -580,7 +588,7 @@ public class ProjectServiceTests
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
@@ -640,7 +648,7 @@ public class ProjectServiceTests
             r => r.DeleteAsync(project.Id),
             Times.Once);
 
-        _teamServiceMock.Verify(
+        _teamRepositoryMock.Verify(
             t => t.GetByIdAsync(It.IsAny<Guid>()),
             Times.Never);
     }

@@ -9,22 +9,22 @@ namespace Taskly.Tests;
 
 public class TodoTaskServiceTests
 {
-    public readonly Mock<IProjectService> _projectServiceMock;
+    public readonly Mock<IProjectRepository> _projectRepositoryMock;
     public readonly TodoTaskService _todoTaskService;
     public readonly Mock<ITodoTaskRepository> _todoTaskRepositoryMock;
-    public readonly Mock<IUserService> _userServiceMock;
-    public readonly Mock<ITeamService> _teamServiceMock;
+    public readonly Mock<IUserRepository> _userRepositoryMock;
+    public readonly Mock<ITeamRepository> _teamRepositoryMock;
     public TodoTaskServiceTests()
     {
-        _projectServiceMock = new Mock<IProjectService>();
+        _projectRepositoryMock = new Mock<IProjectRepository>();
         _todoTaskRepositoryMock = new Mock<ITodoTaskRepository>();
-        _userServiceMock = new Mock<IUserService>();
-        _teamServiceMock = new Mock<ITeamService>();
+        _userRepositoryMock = new Mock<IUserRepository>();
+        _teamRepositoryMock = new Mock<ITeamRepository>();
         _todoTaskService = new TodoTaskService(
             _todoTaskRepositoryMock.Object,
-            _projectServiceMock.Object,
-            _userServiceMock.Object,
-            _teamServiceMock.Object);
+            _projectRepositoryMock.Object,
+            _userRepositoryMock.Object,
+            _teamRepositoryMock.Object);
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public class TodoTaskServiceTests
     {
         // Arrange
         CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto { Title = "Title Test", Description = "Description Test", ProjectId = Guid.NewGuid() };
-        _projectServiceMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+        _projectRepositoryMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync((Project?)null);
 
         // Act
@@ -50,7 +50,7 @@ public class TodoTaskServiceTests
         // Arrange
         CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto { Title = "Title Test", Description = "Description Test", ProjectId = Guid.NewGuid() };
         Project project = new Project("Project Test", "Description Test", Guid.NewGuid(), ProjectStatus.Inactive, Guid.NewGuid());
-        _projectServiceMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+        _projectRepositoryMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync(project);
 
         // Act 
@@ -72,11 +72,11 @@ public class TodoTaskServiceTests
         Team team = new Team("Team Test", authenticatedUserId);
         team.UserIds.Add(createTodoTaskDto.AssignedUserId.Value);
 
-        _projectServiceMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+        _projectRepositoryMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync(project);
-        _teamServiceMock.Setup(t => t.GetByIdAsync(project.TeamId))
+        _teamRepositoryMock.Setup(t => t.GetByIdAsync(project.TeamId))
                                 .ReturnsAsync(team);
-        _userServiceMock.Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
+        _userRepositoryMock.Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync((User?)null);
 
         // Act 
@@ -116,11 +116,11 @@ public class TodoTaskServiceTests
         CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto { Title = "TodoTask Test", Description = "Description Test", ProjectId = project.Id, AssignedUserId = user.Id };
 
 
-        _projectServiceMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+        _projectRepositoryMock.Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync(project);
-        _teamServiceMock.Setup(t => t.GetByIdAsync(project.TeamId))
+        _teamRepositoryMock.Setup(t => t.GetByIdAsync(project.TeamId))
                                 .ReturnsAsync(team);
-        _userServiceMock.Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
+        _userRepositoryMock.Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
                                 .ReturnsAsync(user);
 
         // Act
@@ -158,11 +158,11 @@ public class TodoTaskServiceTests
             ProjectId = project.Id
         };
 
-        _projectServiceMock
+        _projectRepositoryMock
             .Setup(p => p.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(project.TeamId))
             .ReturnsAsync((Team?)null);
 
@@ -191,11 +191,11 @@ public class TodoTaskServiceTests
             ProjectId = project.Id
         };
 
-        _projectServiceMock
+        _projectRepositoryMock
             .Setup(p => p.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(project.TeamId))
             .ReturnsAsync(team);
 
@@ -222,11 +222,11 @@ public class TodoTaskServiceTests
             ProjectId = project.Id
         };
 
-        _projectServiceMock
+        _projectRepositoryMock
             .Setup(p => p.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(project.TeamId))
             .ReturnsAsync(team);
 
@@ -255,11 +255,11 @@ public class TodoTaskServiceTests
             AssignedUserId = assignedUserId
         };
 
-        _projectServiceMock
+        _projectRepositoryMock
             .Setup(p => p.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(t => t.GetByIdAsync(project.TeamId))
             .ReturnsAsync(team);
 
@@ -297,7 +297,7 @@ public class TodoTaskServiceTests
         var todoTask = new TodoTask("TodoTask Test", "Description Test", Guid.NewGuid(), Guid.NewGuid());
 
         _todoTaskRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(todoTask);
-        _projectServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((Project?)null);
+        _projectRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((Project?)null);
 
         // Act
         var result = await _todoTaskService.UpdateAsync(Guid.NewGuid(), updateDto, authenticatedUserId);
@@ -318,7 +318,7 @@ public class TodoTaskServiceTests
         var todoTask = new TodoTask("TodoTask Title", "Description Test", project.Id, Guid.NewGuid());
 
         _todoTaskRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(todoTask);
-        _projectServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(project);
+        _projectRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(project);
 
         // Act
         var result = await _todoTaskService.UpdateAsync(Guid.NewGuid(), updateDto, authenticatedUserId);
@@ -340,9 +340,9 @@ public class TodoTaskServiceTests
         var todoTask = new TodoTask("TodoTask Title", "Description Test", project.Id, Guid.NewGuid());
 
         _todoTaskRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(todoTask);
-        _projectServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(project);
-        _userServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User?)null);
-        _teamServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+        _projectRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(project);
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User?)null);
+        _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
         var result = await _todoTaskService.UpdateAsync(Guid.NewGuid(), updateDto, authenticatedUserId);
@@ -380,11 +380,11 @@ public class TodoTaskServiceTests
             .Setup(r => r.GetByIdAsync(todoTask.Id))
             .ReturnsAsync(todoTask);
 
-        _projectServiceMock
+        _projectRepositoryMock
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(r => r.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
@@ -430,15 +430,15 @@ public class TodoTaskServiceTests
             .Setup(r => r.GetByIdAsync(todoTask.Id))
             .ReturnsAsync(todoTask);
 
-        _projectServiceMock
+        _projectRepositoryMock
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(r => r.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
-        _userServiceMock
+        _userRepositoryMock
             .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
             .ReturnsAsync(user);
 
@@ -479,11 +479,11 @@ public class TodoTaskServiceTests
             .Setup(r => r.GetByIdAsync(todoTask.Id))
             .ReturnsAsync(todoTask);
 
-        _projectServiceMock
+        _projectRepositoryMock
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(r => r.GetByIdAsync(project.TeamId))
             .ReturnsAsync((Team?)null);
 
@@ -527,11 +527,11 @@ public class TodoTaskServiceTests
             .Setup(r => r.GetByIdAsync(todoTask.Id))
             .ReturnsAsync(todoTask);
 
-        _projectServiceMock
+        _projectRepositoryMock
             .Setup(r => r.GetByIdAsync(project.Id))
             .ReturnsAsync(project);
 
-        _teamServiceMock
+        _teamRepositoryMock
             .Setup(r => r.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
@@ -561,9 +561,9 @@ public class TodoTaskServiceTests
 
         _todoTaskRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(todoTask);
         _todoTaskRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<TodoTask>())).ReturnsAsync(false);
-        _projectServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(project);
-        _teamServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
-        _userServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(user);
+        _projectRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(project);
+        _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(user);
 
         // Act
         var result = await _todoTaskService.UpdateAsync(todoTask.Id, updateDto, authenticatedUserId);
@@ -602,9 +602,9 @@ public class TodoTaskServiceTests
 
         _todoTaskRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(todoTask);
         _todoTaskRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<TodoTask>())).ReturnsAsync(true);
-        _projectServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(project);
-        _userServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(user);
-        _teamServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
+        _projectRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(project);
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(user);
+        _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
         var result = await _todoTaskService.UpdateAsync(todoTask.Id, updateDto, authenticatedUserId);

@@ -7,9 +7,9 @@ namespace Taskly.Application
     {
         public Task<StructuredOperationResult<ProjectResponseDto>> AddProjectAsync(CreateProjectDto projectDto, Guid ownerId);
 
-        public Task<Project?> GetByIdAsync(Guid id);
+        public Task<ProjectResponseDto?> GetByIdAsync(Guid id);
 
-        public Task<StructuredOperationResult<Project>> UpdateProjectAsync(Guid id, UpdateProjectDto updateProjectDto, Guid authenticatedUserId);
+        public Task<StructuredOperationResult<ProjectResponseDto>> UpdateProjectAsync(Guid id, UpdateProjectDto updateProjectDto, Guid authenticatedUserId);
         public Task<StructuredOperationResult> DeleteProjectAsync(Guid id, Guid authenticatedUserId);    
     }
 }

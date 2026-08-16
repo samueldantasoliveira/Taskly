@@ -10,9 +10,9 @@ namespace Taskly.Application
 
         public Task<bool> DeleteUserAsync(Guid id);
 
-        public Task<User?> GetByEmailAsync(string email);
+        public Task<UserResponseDto?> GetByEmailAsync(string email);
 
-        public Task<User?> GetByIdAsync(Guid id);
+        public Task<UserResponseDto?> GetByIdAsync(Guid id);
 
         public Task<StructuredOperationResult<UserResponseDto>> UpdateUserAsync(Guid id, UpdateUserDto userDto);
     }

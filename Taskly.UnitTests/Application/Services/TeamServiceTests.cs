@@ -11,13 +11,13 @@ public class TeamServiceTests
 {
     private readonly Mock<ITeamRepository> _teamRepositoryMock;
     private readonly TeamService _teamService;
-    private readonly Mock<IUserService> _userServiceMock;
+    private readonly Mock<IUserRepository> _userRepository;
 
     public TeamServiceTests()
     {
         _teamRepositoryMock = new Mock<ITeamRepository>();
-        _userServiceMock = new Mock<IUserService>();
-        _teamService = new TeamService(_teamRepositoryMock.Object, _userServiceMock.Object);
+        _userRepository = new Mock<IUserRepository>();
+        _teamService = new TeamService(_teamRepositoryMock.Object, _userRepository.Object);
     }
 
     [Fact]
@@ -227,7 +227,7 @@ public class TeamServiceTests
         var team = new Team("Team Test", authenticatedUserId);
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
-        _userServiceMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User?)null);
+        _userRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User?)null);
 
         // Act
         var result = await _teamService.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid(), authenticatedUserId);
@@ -253,7 +253,7 @@ public class TeamServiceTests
             .Setup(r => r.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
-        _userServiceMock
+        _userRepository
             .Setup(r => r.GetByIdAsync(user.Id))
             .ReturnsAsync(user);
 
@@ -301,7 +301,7 @@ public class TeamServiceTests
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(team.Id)).ReturnsAsync(team);
         _teamRepositoryMock.Setup(r => r.AddMemberAsync(team.Id, user.Id)).ReturnsAsync(true);
-        _userServiceMock.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
+        _userRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
 
         // Act
         var result = await _teamService.AddMemberAsync(team.Id, user.Id, authenticatedUserId);

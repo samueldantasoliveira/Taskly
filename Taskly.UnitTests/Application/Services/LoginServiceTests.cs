@@ -7,17 +7,17 @@ namespace Taskly.Tests;
 
 public class LoginServiceTests
 {
-    private readonly Mock<IUserService> _userServiceMock;
+    private readonly Mock<IUserRepository> _userRepository;
     private readonly Mock<ITokenService> _tokenServiceMock;
     private readonly LoginService _loginService;
 
     public LoginServiceTests()
     {
-        _userServiceMock = new Mock<IUserService>();
+        _userRepository = new Mock<IUserRepository>();
         _tokenServiceMock = new Mock<ITokenService>();
 
         _loginService = new LoginService(
-            _userServiceMock.Object,
+            _userRepository.Object,
             _tokenServiceMock.Object
         );
     }
@@ -26,7 +26,7 @@ public class LoginServiceTests
     public async Task Login_UserNotFound_ReturnsInvalidCredentials()
     {
         // Arrange
-        _userServiceMock
+        _userRepository
             .Setup(u => u.GetByEmailAsync(It.IsAny<string>()))
             .ReturnsAsync((User?)null);
 
@@ -53,7 +53,7 @@ public class LoginServiceTests
             PasswordHasher.HashPassword("correctPassword")
         );
 
-        _userServiceMock
+        _userRepository
             .Setup(u => u.GetByEmailAsync(It.IsAny<string>()))
             .ReturnsAsync(user);
 
@@ -82,7 +82,7 @@ public class LoginServiceTests
 
         var expiresAt = DateTime.UtcNow.AddHours(1);
 
-        _userServiceMock
+        _userRepository
             .Setup(u => u.GetByEmailAsync(It.IsAny<string>()))
             .ReturnsAsync(user);
 
@@ -124,7 +124,7 @@ public class LoginServiceTests
             PasswordHasher.HashPassword("123456")
         );
 
-        _userServiceMock
+        _userRepository
             .Setup(u => u.GetByEmailAsync("test@email.com"))
             .ReturnsAsync(user);
 
@@ -139,7 +139,7 @@ public class LoginServiceTests
         );
 
         // Assert
-        _userServiceMock.Verify(
+        _userRepository.Verify(
             u => u.GetByEmailAsync("test@email.com"),
             Times.Once
         );

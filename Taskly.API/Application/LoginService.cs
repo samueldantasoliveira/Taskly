@@ -7,12 +7,12 @@ namespace Taskly.Application;
 
 public class LoginService
 {
-    private readonly IUserService _userService;
+    private readonly IUserRepository _userRespository;
     private readonly ITokenService _tokenService;
 
-    public LoginService(IUserService userService, ITokenService tokenService)
+    public LoginService(IUserRepository userService, ITokenService tokenService)
     {
-        _userService = userService;
+        _userRespository = userService;
         _tokenService = tokenService;
     }
    
@@ -21,7 +21,7 @@ public class LoginService
         string password)
     {
         var normalizedEmail = email.ToLowerInvariant();
-        var user = await _userService.GetByEmailAsync(normalizedEmail);
+        var user = await _userRespository.GetByEmailAsync(normalizedEmail);
         if (user == null)
             return StructuredOperationResult<LoginResponseDto>.Fail(UserErrors.InvalidCredentials);
         if (!PasswordHasher.VerifyPassword(password, user.PasswordHash))

@@ -24,9 +24,10 @@ namespace Taskly.Application
             await _userRepository.AddAsync(user);
             
             var userResponse = new UserResponseDto{
-                                    Id = user.Id,
-                                    Name = user.Name,
-                                    Email = user.Email};
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email
+            };
             return StructuredOperationResult<UserResponseDto>.Ok(userResponse);
         }
 
@@ -35,14 +36,34 @@ namespace Taskly.Application
             return await _userRepository.DeleteAsync(id);
         }
 
-        public async Task<User?> GetByEmailAsync(string email)
+        public async Task<UserResponseDto?> GetByEmailAsync(string email)
         {
-            return await _userRepository.GetByEmailAsync(email);
+            var user = await _userRepository.GetByEmailAsync(email);
+            if( user == null )
+                return null;
+
+            var userResponseDto = new UserResponseDto{
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email
+            };
+
+            return userResponseDto;
         }
 
-        public async Task<User?> GetByIdAsync(Guid id)
+        public async Task<UserResponseDto?> GetByIdAsync(Guid id)
         {
-            return await _userRepository.GetByIdAsync(id);
+            var user = await _userRepository.GetByIdAsync(id);
+            if( user == null )
+                return null;
+
+            var userResponseDto = new UserResponseDto{
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email
+            };
+
+            return userResponseDto;
         }
 
         public async Task<StructuredOperationResult<UserResponseDto>> UpdateUserAsync(Guid id, UpdateUserDto userDto)
@@ -68,9 +89,10 @@ namespace Taskly.Application
                 return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.NotFound);
             
             var userResponse = new UserResponseDto{
-                                    Id = user.Id,
-                                    Name = user.Name,
-                                    Email = user.Email};
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email
+            };
             return StructuredOperationResult<UserResponseDto>.Ok(userResponse);
         }
     }

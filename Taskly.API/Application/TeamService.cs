@@ -7,39 +7,58 @@ namespace Taskly.Application
     public class TeamService : ITeamService
     {
         private readonly ITeamRepository _teamRepository;
-        private readonly IUserService _userService;
+        private readonly IUserRepository _userRepository;
 
-        public TeamService(ITeamRepository teamRepository, IUserService userService)
+        public TeamService(ITeamRepository teamRepository, IUserRepository userService)
         {
             _teamRepository = teamRepository;
-            _userService = userService;
+            _userRepository = userService;
         }
 
-        public async Task<StructuredOperationResult<Team>> AddTeamAsync(CreateTeamDto teamDto, Guid userId)
+        public async Task<StructuredOperationResult<TeamResponseDto>> AddTeamAsync(CreateTeamDto teamDto, Guid userId)
         {
             if (string.IsNullOrWhiteSpace(teamDto.Name))
-                return StructuredOperationResult<Team>.Fail(TeamErrors.InvalidName);
+                return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.InvalidName);
                 
             var team = new Team(teamDto.Name, userId);
 
             await _teamRepository.AddAsync(team);
-            return StructuredOperationResult<Team>.Ok(team);
+
+            var teamResponseDto = new TeamResponseDto
+            {
+                Id = team.Id,
+                Name = team.Name,
+                IsActive = team.IsActive,
+                OwnerId = team.OwnerId,
+                UserIds = team.UserIds
+            };
+            return StructuredOperationResult<TeamResponseDto>.Ok(teamResponseDto);
         }
 
-        public async Task<StructuredOperationResult<Team>> UpdateTeamAsync(Guid id, UpdateTeamDto updateTeamDto, Guid authenticatedUserId)
+        public async Task<StructuredOperationResult<TeamResponseDto>> UpdateTeamAsync(Guid id, UpdateTeamDto updateTeamDto, Guid authenticatedUserId)
         {
             var team = await _teamRepository.GetByIdAsync(id);
             if (team == null)
-                return StructuredOperationResult<Team>.Fail(TeamErrors.NotFound);
+                return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.NotFound);
             if (team.OwnerId != authenticatedUserId)
-                return StructuredOperationResult<Team>.Fail(TeamErrors.NotOwner);
+                return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.NotOwner);
 
             team.Update(updateTeamDto.Name, updateTeamDto.IsActive);
 
             var updated = await _teamRepository.UpdateAsync(team);
             if (!updated)
-                return StructuredOperationResult<Team>.Fail(TeamErrors.NotFound);
-            return StructuredOperationResult<Team>.Ok(team);
+                return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.NotFound);
+
+            var teamResponseDto = new TeamResponseDto
+            {
+                Id = team.Id,
+                Name = team.Name,
+                IsActive = team.IsActive,
+                OwnerId = team.OwnerId,
+                UserIds = team.UserIds
+            };
+
+            return StructuredOperationResult<TeamResponseDto>.Ok(teamResponseDto);
         }
 
         public async Task<StructuredOperationResult<AddMemberResponseDto>> AddMemberAsync(Guid teamId, Guid userId, Guid authenticatedUserId)
@@ -52,7 +71,7 @@ namespace Taskly.Application
             if (team.OwnerId != authenticatedUserId)
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.NotOwner);
 
-            var user = await _userService.GetByIdAsync(userId);
+            var user = await _userRepository.GetByIdAsync(userId);
 
             if (user == null)
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.UserNotFound);
@@ -109,9 +128,22 @@ namespace Taskly.Application
 
         }
 
-        public async Task<Team?> GetByIdAsync(Guid teamId)
+        public async Task<TeamResponseDto?> GetByIdAsync(Guid teamId)
         {
-            return await _teamRepository.GetByIdAsync(teamId);
+            var team = await _teamRepository.GetByIdAsync(teamId);
+            if(team == null)
+                return null;
+                
+            var teamResponseDto = new TeamResponseDto
+            {
+                Id = team.Id,
+                Name = team.Name,
+                IsActive = team.IsActive,
+                OwnerId = team.OwnerId,
+                UserIds = team.UserIds
+            };
+
+            return teamResponseDto;
         }
 
         public async Task<StructuredOperationResult> DeleteTeamAsync(Guid teamId, Guid authenticatedUserId)
