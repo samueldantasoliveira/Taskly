@@ -20,6 +20,7 @@ public class UserTests
     [InlineData("Teste")]
     public void CreateUser_InvalidEmail_ThrowsException(string invalidEmail)
     {
+        // Act & Assert
         Assert.Throws<ArgumentException>(() => new User("NameTest", invalidEmail, "PasswordTest"));
     }
 

@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
+using Taskly.Domain.Exceptions;
 
 namespace Taskly.Domain.Entities
 {
@@ -9,7 +10,7 @@ namespace Taskly.Domain.Entities
         public Guid Id { get; private set; } = Guid.NewGuid();
         public string Title { get; set; }
         public string? Description { get; set; }
-        public TodoStatus Status { get; set; }
+        public TodoStatus Status { get; private set; }
 
         [BsonRepresentation(BsonType.String)]
         public Guid ProjectId { get; set; }
@@ -21,9 +22,46 @@ namespace Taskly.Domain.Entities
         {
             Title = title;
             Description = description;
-            Status = TodoStatus.Pending;
+            Status = TodoStatus.Todo;
             ProjectId = projectId;
             AssignedUserId = assignedUserId;
+        }
+
+        public void Start()
+        {
+            if(Status != TodoStatus.Todo)
+            {
+                throw new InvalidTaskTransitionException(
+                    $"Cannot transition task from '{Status}' to 'InProgress'."
+                );
+            }
+            
+            Status = TodoStatus.InProgress;
+            
+        }
+
+        public void Complete()
+        {
+            if(Status != TodoStatus.InProgress)
+            {
+                throw new InvalidTaskTransitionException(
+                    $"Cannot transition task from '{Status}' to 'Done'."
+                );
+            }
+
+            Status = TodoStatus.Done;
+        }
+
+        public void Cancel()
+        {
+            if(Status != TodoStatus.Todo && Status != TodoStatus.InProgress)
+            {
+                throw new InvalidTaskTransitionException(
+                    $"Cannot transition task from '{Status}' to 'Cancelled'."
+                );
+            }
+
+            Status = TodoStatus.Cancelled;
         }
     }
 }
