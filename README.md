@@ -3,7 +3,7 @@
 ![xUnit](https://img.shields.io/badge/Tests-xUnit-success)
 # 🗂️ Taskly API
 
-API REST para gerenciamento de usuários, equipes, projetos e tarefas, desenvolvida com .NET 8 e MongoDB.
+API para gerenciamento de usuários, equipes, projetos e tarefas, desenvolvida com .NET 8 e MongoDB.
 
 O projeto foi criado com foco em organização de código, separação de responsabilidades e aplicação prática de conceitos utilizados no desenvolvimento back-end.
 
@@ -111,7 +111,7 @@ TodoTask
 
 # 🧪 Conceitos Aplicados
 
-* APIs REST
+* API
 * DTOs
 * Repository Pattern
 * Injeção de Dependência
