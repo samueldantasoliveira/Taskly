@@ -112,18 +112,9 @@ namespace Taskly.Application
             if (!team.UserIds.Contains(authenticatedUserId))
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.UserNotTeamMember);
 
-            if (dto.AssignedUserId.HasValue && dto.AssignedUserId != Guid.Empty)
-            {
-                var user = await _userRepository.GetByIdAsync(dto.AssignedUserId.Value);
-                if (user == null)
-                    return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.UserNotFound);
-                if (!team.UserIds.Contains(user.Id))
-                    return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.AssignedUserNotTeamMember);
-            }
 
             existingTask.Title = dto.Title;
             existingTask.Description = dto.Description;
-            existingTask.AssignedUserId = dto.AssignedUserId;
             
 
             var modified = await _todoTaskRepository.UpdateAsync(existingTask);

@@ -16,7 +16,7 @@ namespace Taskly.Domain.Entities
         public Guid ProjectId { get; set; }
 
         [BsonRepresentation(BsonType.String)]
-        public Guid? AssignedUserId {get; set; }
+        public Guid? AssignedUserId {get; private set; }
 
         public TodoTask(string title, string description, Guid projectId, Guid? assignedUserId)
         {
@@ -25,6 +25,18 @@ namespace Taskly.Domain.Entities
             Status = TodoStatus.Todo;
             ProjectId = projectId;
             AssignedUserId = assignedUserId;
+        }
+
+        public void AssignUser(Guid? userId)
+        {
+            if(Status == TodoStatus.Cancelled || Status == TodoStatus.Done)
+            {
+                throw new InvalidTaskAssignmentException(
+                    "Cannot change the assigned user of a completed or canceled task."
+                );
+            }
+
+            AssignedUserId = userId;
         }
 
         public void Start()

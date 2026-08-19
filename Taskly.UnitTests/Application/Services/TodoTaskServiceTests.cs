@@ -505,63 +505,6 @@ public class TodoTaskServiceTests
         Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
     }
 
-    [Fact]
-    public async Task UpdateAsync_AssignedUserNotFound_ReturnsFail()
-    {
-        // Arrange
-        var authenticatedUserId = Guid.NewGuid();
-
-        var team = new Team(
-            "Team Test",
-            authenticatedUserId);
-
-        var project = new Project(
-            "Project Test",
-            "Description Test",
-            Guid.NewGuid(),
-            ProjectStatus.Active,
-            Guid.NewGuid());
-
-        var updateDto = new UpdateTodoTaskDto
-        {
-            Title = "Title Test",
-            Description = "Description Test",
-            AssignedUserId = Guid.NewGuid()
-        };
-
-        var todoTask = new TodoTask(
-            "TodoTask Title",
-            "Description Test",
-            project.Id,
-            Guid.NewGuid());
-
-        _todoTaskRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(todoTask);
-
-        _projectRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(project);
-
-        _userRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync((User?)null);
-
-        _teamRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(team);
-
-        // Act
-        var result = await _todoTaskService.UpdateAsync(
-            Guid.NewGuid(),
-            updateDto,
-            authenticatedUserId);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.NotNull(result.Error);
-        Assert.Equal(TodoTaskErrors.UserNotFound, result.Error);
-    }
 
     [Fact]
     public async Task UpdateAsync_AuthenticatedUserNotTeamMember_ReturnsFail()
@@ -589,8 +532,7 @@ public class TodoTaskServiceTests
         var updateDto = new UpdateTodoTaskDto
         {
             Title = "Title Test",
-            Description = "Desctiption Test",
-            AssignedUserId = Guid.NewGuid()
+            Description = "Desctiption Test"
         };
 
         _todoTaskRepositoryMock
@@ -618,71 +560,6 @@ public class TodoTaskServiceTests
     }
 
     [Fact]
-    public async Task UpdateAsync_AssignedUserNotTeamMember_ReturnsFail()
-    {
-        // Arrange
-        var authenticatedUserId = Guid.NewGuid();
-
-        var user = new User(
-            "User Test",
-            "Test@Test.com",
-            "Test");
-
-        var team = new Team(
-            "Team Test",
-            authenticatedUserId);
-
-        var project = new Project(
-            "Project Test",
-            "Description Test",
-            team.Id,
-            ProjectStatus.Active,
-            Guid.NewGuid());
-
-        var todoTask = new TodoTask(
-            "Task",
-            "Description",
-            project.Id,
-            null);
-
-        var assignedUserId = Guid.NewGuid();
-
-        var updateDto = new UpdateTodoTaskDto
-        {
-            Title = "Title Test",
-            Description = "Desctiption Test",
-            AssignedUserId = assignedUserId
-        };
-
-        _todoTaskRepositoryMock
-            .Setup(r => r.GetByIdAsync(todoTask.Id))
-            .ReturnsAsync(todoTask);
-
-        _projectRepositoryMock
-            .Setup(r => r.GetByIdAsync(project.Id))
-            .ReturnsAsync(project);
-
-        _teamRepositoryMock
-            .Setup(r => r.GetByIdAsync(team.Id))
-            .ReturnsAsync(team);
-
-        _userRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(user);
-
-        // Act
-        var result = await _todoTaskService.UpdateAsync(
-            todoTask.Id,
-            updateDto,
-            authenticatedUserId);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.NotNull(result.Error);
-        Assert.Equal(TodoTaskErrors.AssignedUserNotTeamMember, result.Error);
-    }
-
-    [Fact]
     public async Task UpdateAsync_TeamNotFound_ReturnsFail()
     {
         // Arrange
@@ -704,8 +581,7 @@ public class TodoTaskServiceTests
         var updateDto = new UpdateTodoTaskDto
         {
             Title = "Title Test",
-            Description = "Description Test",
-            AssignedUserId = Guid.NewGuid()
+            Description = "Description Test"
         };
 
         _todoTaskRepositoryMock
@@ -760,8 +636,7 @@ public class TodoTaskServiceTests
         var updateDto = new UpdateTodoTaskDto
         {
             Title = "Title Test",
-            Description = "Desctiption Test",
-            AssignedUserId = Guid.NewGuid()
+            Description = "Desctiption Test"
         };
 
         _todoTaskRepositoryMock
@@ -815,8 +690,7 @@ public class TodoTaskServiceTests
         var updateDto = new UpdateTodoTaskDto
         {
             Title = "Title Test",
-            Description = "Description Test",
-            AssignedUserId = user.Id
+            Description = "Description Test"
         };
 
         var todoTask = new TodoTask(
@@ -893,8 +767,7 @@ public class TodoTaskServiceTests
         var updateDto = new UpdateTodoTaskDto
         {
             Title = "Title Test",
-            Description = "Description Test",
-            AssignedUserId = userId
+            Description = "Description Test"
         };
 
         var todoTask = new TodoTask(
@@ -934,13 +807,11 @@ public class TodoTaskServiceTests
         Assert.NotNull(result.Value);
         Assert.Equal(updateDto.Title, result.Value.Title);
         Assert.Equal(updateDto.Description, result.Value.Description);
-        Assert.Equal(updateDto.AssignedUserId, result.Value.AssignedUserId);
-
+        
         _todoTaskRepositoryMock.Verify(
             r => r.UpdateAsync(It.Is<TodoTask>(t =>
                 t.Title == updateDto.Title &&
-                t.Description == updateDto.Description &&
-                t.AssignedUserId == updateDto.AssignedUserId
+                t.Description == updateDto.Description
             )),
             Times.Once);
     }
@@ -1359,4 +1230,5 @@ public class TodoTaskServiceTests
         Assert.NotNull(result.Error);
         Assert.Equal(TodoTaskErrors.NoChangesDetected, result.Error);
     }
+
 }

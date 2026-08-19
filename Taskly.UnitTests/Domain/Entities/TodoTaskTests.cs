@@ -230,4 +230,108 @@ public class TodoTaskTests
          // Assert
         Assert.Equal(TodoStatus.Cancelled, task.Status);
     }
+
+    [Fact]
+    public void AssignUser_ShouldAssignUser_WhenTaskHasNoAssignedUser()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            Guid.NewGuid(),
+            null
+        );
+
+        // Act
+        task.AssignUser(userId);
+
+        // Assert
+        Assert.Equal(userId, task.AssignedUserId);
+    }
+
+    [Fact]
+    public void AssignUser_ShouldChangeUser_WhenTaskAlreadyHasAssignedUser()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+
+        // Act
+        task.AssignUser(userId);
+
+        // Assert
+        Assert.Equal(userId, task.AssignedUserId);
+    }
+
+    [Fact]
+    public void AssignUser_ShouldRemoveUser_WhenUserIdIsNull()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+
+        // Act
+        task.AssignUser(null);
+
+        // Assert
+        Assert.Null(task.AssignedUserId);
+    }
+
+    [Fact]
+    public void AssignUser_ShouldThrowInvalidTaskAssignmentException_WhenTaskIsDone()
+    {
+        // Arrange
+        var assignedUserId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            Guid.NewGuid(),
+            assignedUserId
+        );
+
+        task.Start();
+        task.Complete();
+
+        // Act & Assert
+        Assert.Throws<InvalidTaskAssignmentException>(() => task.AssignUser(assignedUserId));
+
+        // Assert
+        Assert.Equal(assignedUserId, task.AssignedUserId);
+    }
+
+    [Fact]
+    public void AssignUser_ShouldThrowInvalidTaskAssignmentException_WhenTaskIsCancelled()
+    {
+        // Arrange
+        var assignedUserId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            Guid.NewGuid(),
+            assignedUserId
+        );
+
+        task.Cancel();
+
+        // Act & Assert
+        Assert.Throws<InvalidTaskAssignmentException>(() => task.AssignUser(assignedUserId));
+
+        // Assert
+        Assert.Equal(assignedUserId, task.AssignedUserId);
+    }
 }
+
