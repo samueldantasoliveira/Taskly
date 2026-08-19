@@ -63,6 +63,57 @@ namespace Taskly.Controllers
 
         }
         
+        [Authorize]
+        [HttpPost("{taskId}/start")]
+        public async Task<IActionResult> Start(Guid taskId)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _todoTaskService.StartTaskAsync(taskId, authenticatedUserId);
+
+            if (!result.Success)
+            {
+                return MapErrorToResponse(result.Error!);
+            }
+
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpPost("{taskId}/complete")]
+        public async Task<IActionResult> Complete(Guid taskId)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _todoTaskService.CompleteTaskAsync(taskId, authenticatedUserId);
+
+            if (!result.Success)
+            {
+                return MapErrorToResponse(result.Error!);
+            }
+
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpPost("{taskId}/cancel")]
+        public async Task<IActionResult> Cancel(Guid taskId)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _todoTaskService.CancelTaskAsync(taskId, authenticatedUserId);
+
+            if (!result.Success)
+            {
+                return MapErrorToResponse(result.Error!);
+            }
+
+            return Ok();
+        }
+
         private bool TryGetAuthenticatedUserId(out Guid userId)
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; 
@@ -88,6 +139,8 @@ namespace Taskly.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden, error.Message);
             if (error == TodoTaskErrors.AssignedUserNotTeamMember)
                 return StatusCode(StatusCodes.Status403Forbidden, error.Message);
+            if (error == TodoTaskErrors.NotAssignedUser)
+                return Unauthorized(error.Message);
 
             return StatusCode(500, error.Message);
         }

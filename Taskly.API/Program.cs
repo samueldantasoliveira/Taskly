@@ -108,6 +108,7 @@ if (!app.Environment.IsEnvironment("Testing"))
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

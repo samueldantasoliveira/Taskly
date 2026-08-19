@@ -32,4 +32,6 @@ public static class TodoTaskErrors
     public static readonly Error AssignedUserNotTeamMember =
         Error.Create("TodoTask.AssignedUserNotTeamMember", "Assigned user is not a member of the project team.");
 
+    public static readonly Error NotAssignedUser = 
+        Error.Create("TodoTask.NotAssignedUser", "You are not the user assigned to this task.");
 }

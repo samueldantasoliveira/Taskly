@@ -10,6 +10,7 @@ namespace Taskly.Domain.Entities
         public Guid Id { get; private set; }
         public string Name { get; private set; }
         public bool IsActive { get; private set; }
+        [BsonRepresentation(BsonType.String)]
         public Guid OwnerId {get; private set; }
         [BsonRepresentation(BsonType.String)]
         public List<Guid> UserIds { get; set; } = new();

@@ -7,7 +7,7 @@ namespace Taskly.Domain.Entities
     public class TodoTask
     {
         [BsonRepresentation(BsonType.String)]
-        public Guid Id { get; private set; } = Guid.NewGuid();
+        public Guid Id { get; private set; }
         public string Title { get; set; }
         public string? Description { get; set; }
         public TodoStatus Status { get; private set; }

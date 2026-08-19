@@ -123,7 +123,6 @@ namespace Taskly.Application
 
             existingTask.Title = dto.Title;
             existingTask.Description = dto.Description;
-            existingTask.Status = dto.Status;
             existingTask.AssignedUserId = dto.AssignedUserId;
             
 
@@ -142,6 +141,51 @@ namespace Taskly.Application
             };
 
             return StructuredOperationResult<TodoTaskResponseDto>.Ok(todoTaskResponseDto);
+        }
+        public async Task<StructuredOperationResult> StartTaskAsync(Guid taskId, Guid authenticatedUserId)
+        {
+            var task = await _todoTaskRepository.GetByIdAsync(taskId);
+            if(task == null)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
+            if(task.AssignedUserId == null || task.AssignedUserId != authenticatedUserId)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NotAssignedUser);
+            task.Start();
+
+            var result = await _todoTaskRepository.UpdateAsync(task);
+            if(!result)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
+
+            return StructuredOperationResult.Ok();
+        }
+        public async Task<StructuredOperationResult> CompleteTaskAsync(Guid taskId, Guid authenticatedUserId)
+        {
+            var task = await _todoTaskRepository.GetByIdAsync(taskId);
+            if(task == null)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
+            if(task.AssignedUserId == null || task.AssignedUserId != authenticatedUserId)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NotAssignedUser);
+            task.Complete();
+
+            var result = await _todoTaskRepository.UpdateAsync(task);
+            if(!result)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
+
+            return StructuredOperationResult.Ok();
+        }
+        public async Task<StructuredOperationResult> CancelTaskAsync(Guid taskId, Guid authenticatedUserId)
+        {
+            var task = await _todoTaskRepository.GetByIdAsync(taskId);
+            if(task == null)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
+            if(task.AssignedUserId == null || task.AssignedUserId != authenticatedUserId)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NotAssignedUser);
+            task.Cancel();
+
+            var result = await _todoTaskRepository.UpdateAsync(task);
+            if(!result)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
+
+            return StructuredOperationResult.Ok();
         }
     }
 }
