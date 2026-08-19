@@ -20,12 +20,10 @@ public class ExceptionHandlingMiddleware
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsync(exception.Message);
         }
-        catch (Exception exception)
-{
-    Console.WriteLine(exception);
-
-    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-    await context.Response.WriteAsync("An unexpected error occurred.");
-}
+        catch (Exception)
+        {
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            await context.Response.WriteAsync("An unexpected error occurred.");
+        }
     }
 }
