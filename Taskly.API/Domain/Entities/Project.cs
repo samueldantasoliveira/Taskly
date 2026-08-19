@@ -5,14 +5,17 @@ namespace Taskly.Domain.Entities
 {
     public class Project
     {
+        [BsonRepresentation(BsonType.String)]
         public Guid Id { get; private set; }
         public string Name { get; private set; } = null!;
         public string Description { get; private set; } = null!;
-        
+
+        [BsonRepresentation(BsonType.String)]
         public Guid OwnerId { get; private set; } 
 
         public ProjectStatus Status { get; private set; } 
 
+        [BsonRepresentation(BsonType.String)]
         public Guid TeamId { get; private set; }
 
         public DateTime CreatedAt { get; private set;}
