@@ -22,7 +22,7 @@ namespace Taskly.Infrastructure
             return await _context.TodoTasks.Find(t => t.ProjectId == projectId).ToListAsync();
         }
 
-        public async Task<TodoTask> GetByIdAsync(Guid id)
+        public async Task<TodoTask?> GetByIdAsync(Guid id)
         {
             return await _context.TodoTasks.Find(t => t.Id == id).FirstOrDefaultAsync();
         }

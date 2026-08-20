@@ -114,6 +114,24 @@ namespace Taskly.Controllers
             return Ok();
         }
 
+        [Authorize]
+        [HttpPost("{taskId}/assign")]
+        public async Task<IActionResult> AssignUser(Guid taskId, [FromBody] AssignTodoTaskUserDto dto)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _todoTaskService.AssignUserAsync(
+                taskId,
+                dto.UserId,
+                authenticatedUserId);
+
+            if (!result.Success)
+                return MapErrorToResponse(result.Error!);
+
+            return Ok();
+        }
+
         private bool TryGetAuthenticatedUserId(out Guid userId)
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value; 

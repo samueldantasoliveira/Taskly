@@ -178,5 +178,43 @@ namespace Taskly.Application
 
             return StructuredOperationResult.Ok();
         }
+
+        public async Task<StructuredOperationResult> AssignUserAsync(Guid todoTaskId, Guid? userId, Guid authenticatedUserId)
+        {
+            var todoTask = await _todoTaskRepository.GetByIdAsync(todoTaskId);
+            if (todoTask == null)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
+            
+            var project = await _projectRepository.GetByIdAsync(todoTask.ProjectId);
+            if (project == null)
+                return StructuredOperationResult.Fail(TodoTaskErrors.ProjectNotFound);
+            if (project.Status == ProjectStatus.Inactive)
+                return StructuredOperationResult.Fail(TodoTaskErrors.ProjectInactive);
+
+            var team = await _teamRepository.GetByIdAsync(project.TeamId);
+            if (team == null)
+                return StructuredOperationResult.Fail(TodoTaskErrors.TeamNotFound);
+            if (!team.IsActive)
+                return StructuredOperationResult.Fail(TodoTaskErrors.TeamInactive);
+            if (!team.UserIds.Contains(authenticatedUserId))
+                return StructuredOperationResult.Fail(TodoTaskErrors.UserNotTeamMember);
+
+            if(userId != null)
+            {
+                var user = await _userRepository.GetByIdAsync(userId.Value);
+                if(user == null)
+                    return StructuredOperationResult.Fail(TodoTaskErrors.UserNotFound);
+                if(!team.UserIds.Contains(user.Id))
+                    return StructuredOperationResult.Fail(TodoTaskErrors.AssignedUserNotTeamMember);
+            }
+
+            todoTask.AssignUser(userId);
+            var result = await _todoTaskRepository.UpdateAsync(todoTask);
+
+            if(!result)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
+
+            return StructuredOperationResult.Ok();
+        }
     }
 }
