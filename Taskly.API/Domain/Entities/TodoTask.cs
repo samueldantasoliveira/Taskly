@@ -8,8 +8,8 @@ namespace Taskly.Domain.Entities
     {
         [BsonRepresentation(BsonType.String)]
         public Guid Id { get; private set; }
-        public string Title { get; set; }
-        public string? Description { get; set; }
+        public string Title { get; private set; }
+        public string? Description { get; private set; }
         public TodoStatus Status { get; private set; }
 
         [BsonRepresentation(BsonType.String)]
@@ -25,6 +25,21 @@ namespace Taskly.Domain.Entities
             Status = TodoStatus.Todo;
             ProjectId = projectId;
             AssignedUserId = assignedUserId;
+        }
+
+        public void Update(string? title, string? description)
+        {
+            if(Status == TodoStatus.Cancelled || Status == TodoStatus.Done)
+            {
+                throw new InvalidTaskUpdateException(
+                    $"Cannot update a {Status} task."
+                );
+            }
+            if(title != null)
+                Title = title;
+            if(description != null)
+                Description = description;
+            
         }
 
         public void AssignUser(Guid? userId)

@@ -10,7 +10,5 @@ namespace Taskly.Application.DTOs
         public required string Title { get; set; }
         [StringLength(500)]
         public required string Description { get; set; }
-        [Required]
-        public TodoStatus Status { get; set; }
     }
 }

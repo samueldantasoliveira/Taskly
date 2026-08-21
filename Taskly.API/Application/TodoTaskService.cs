@@ -112,9 +112,7 @@ namespace Taskly.Application
             if (!team.UserIds.Contains(authenticatedUserId))
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.UserNotTeamMember);
 
-
-            existingTask.Title = dto.Title;
-            existingTask.Description = dto.Description;
+            existingTask.Update(dto.Title, dto.Description);
             
 
             var modified = await _todoTaskRepository.UpdateAsync(existingTask);
@@ -128,7 +126,8 @@ namespace Taskly.Application
                 Title = existingTask.Title,
                 Description = existingTask.Description,
                 ProjectId = existingTask.ProjectId,
-                AssignedUserId = existingTask.AssignedUserId
+                AssignedUserId = existingTask.AssignedUserId,
+                Status = existingTask.Status
             };
 
             return StructuredOperationResult<TodoTaskResponseDto>.Ok(todoTaskResponseDto);

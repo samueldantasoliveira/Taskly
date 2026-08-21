@@ -354,6 +354,63 @@ public class TodoTaskTests
         Assert.Equal(assignedUserId, task.AssignedUserId);
     }
 
+    [Fact]
+    public void Update_ShouldChangeTitleAndDescription_WhenTaskIsTodo()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Old title",
+            "Old description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+
+        // Act
+        task.Update("New title", "New description");
+
+        // Assert
+        Assert.Equal("New title", task.Title);
+        Assert.Equal("New description", task.Description);
+    }
+
+    [Fact]
+    public void Update_ShouldThrowInvalidTaskUpdateException_WhenTaskIsDone()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Old title",
+            "Old description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+        task.Start();
+        task.Complete();
+
+        // Act & Assert
+        Assert.Throws<InvalidTaskUpdateException>(() => task.Update("New title", "New description"));
+        Assert.Equal("Old title", task.Title);
+        Assert.Equal("Old description", task.Description);
+    }
+
+    [Fact]
+    public void Update_ShouldThrowInvalidTaskUpdateException_WhenTaskIsCancelled()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Old title",
+            "Old description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+        task.Start();
+        task.Complete();
+
+        // Act & Assert
+        Assert.Throws<InvalidTaskUpdateException>(() => task.Update("New title", "New description"));
+        Assert.Equal("Old title", task.Title);
+        Assert.Equal("Old description", task.Description);
+    }
+
     
 }
 
