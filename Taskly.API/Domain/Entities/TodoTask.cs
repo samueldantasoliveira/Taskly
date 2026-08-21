@@ -61,6 +61,13 @@ namespace Taskly.Domain.Entities
                 );
             }
 
+            if(AssignedUserId == null)
+            {
+                throw new InvalidTaskCompletionException(
+                    "Cannot complete a task without an assigned user."
+                );
+            }
+
             Status = TodoStatus.Done;
         }
 

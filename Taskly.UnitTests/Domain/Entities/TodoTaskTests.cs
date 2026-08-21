@@ -50,7 +50,7 @@ public class TodoTaskTests
     public void Start_ShouldThrowInvalidTaskTransitionException_WhenTaskIsDone()
     {
         // Arrange
-        var task = new TodoTask("Title Test", "Description Test", Guid.NewGuid(), null);
+        var task = new TodoTask("Title Test", "Description Test", Guid.NewGuid(), Guid.NewGuid());
         task.Start();
         task.Complete();
 
@@ -83,7 +83,7 @@ public class TodoTaskTests
             "Test task",
             "Test description",
             Guid.NewGuid(),
-            null
+            Guid.NewGuid()
         );
         task.Start();
 
@@ -120,7 +120,7 @@ public class TodoTaskTests
             "Test task",
             "Test description",
             Guid.NewGuid(),
-            null
+            Guid.NewGuid()
         );
         task.Start();
         task.Complete();
@@ -147,8 +147,28 @@ public class TodoTaskTests
         // Act & Assert
         Assert.Throws<InvalidTaskTransitionException>(() => task.Complete());
 
-         // Assert
+        // Assert
         Assert.Equal(TodoStatus.Cancelled, task.Status);
+    }
+
+    [Fact]
+    public void Complete_ShouldThrowInvalidTaskCompletionException_WhenTaskHasNoAssignedUser()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            Guid.NewGuid(),
+            null
+        );
+
+        task.Start();
+
+        // Act & Assert
+        Assert.Throws<InvalidTaskCompletionException>(() => task.Complete());
+
+        // Assert
+        Assert.Equal(TodoStatus.InProgress, task.Status);
     }
 
     [Fact]
@@ -197,7 +217,7 @@ public class TodoTaskTests
             "Test task",
             "Test description",
             Guid.NewGuid(),
-            null
+            Guid.NewGuid()
         );
 
         task.Start();
@@ -333,5 +353,7 @@ public class TodoTaskTests
         // Assert
         Assert.Equal(assignedUserId, task.AssignedUserId);
     }
+
+    
 }
 
