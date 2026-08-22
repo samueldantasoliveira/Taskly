@@ -57,6 +57,13 @@ namespace Taskly.Domain.Entities
 
         public void Delete()
         {
+            if (DeletedAt != null)
+            {
+                throw new InvalidTaskDeletionException(
+                    "Cannot delete a task that has already been deleted."
+                );
+            }
+
             var now = DateTime.UtcNow;
             DeletedAt = now;
             UpdatedAt = now;

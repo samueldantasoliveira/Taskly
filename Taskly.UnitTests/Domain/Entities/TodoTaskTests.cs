@@ -639,6 +639,23 @@ public class TodoTaskTests
         Assert.NotNull(task.DeletedAt);
     }
 
+    [Fact]
+    public void Delete_ShouldThrowInvalidTaskDeletionException_WhenTaskIsAlreadyDeleted()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+
+        task.Delete();
+
+        // Act & Assert
+        Assert.Throws<InvalidTaskDeletionException>(() => task.Delete());
+    }
+
     
 }
 
