@@ -11,13 +11,13 @@ public class TeamServiceTests
 {
     private readonly Mock<ITeamRepository> _teamRepositoryMock;
     private readonly TeamService _teamService;
-    private readonly Mock<IUserRepository> _userRepository;
+    private readonly Mock<IUserRepository> _userRepositoryMock;
 
     public TeamServiceTests()
     {
         _teamRepositoryMock = new Mock<ITeamRepository>();
-        _userRepository = new Mock<IUserRepository>();
-        _teamService = new TeamService(_teamRepositoryMock.Object, _userRepository.Object);
+        _userRepositoryMock = new Mock<IUserRepository>();
+        _teamService = new TeamService(_teamRepositoryMock.Object, _userRepositoryMock.Object);
     }
 
     [Fact]
@@ -227,7 +227,7 @@ public class TeamServiceTests
         var team = new Team("Team Test", authenticatedUserId);
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
-        _userRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((User?)null);
 
         // Act
         var result = await _teamService.AddMemberAsync(Guid.NewGuid(), Guid.NewGuid(), authenticatedUserId);
@@ -237,33 +237,6 @@ public class TeamServiceTests
         Assert.NotNull(result.Error);
         Assert.Equal("Team.UserNotFound", result.Error.Code);
 
-    }
-
-    [Fact]
-    public async Task AddMember_UserAlreadyMember_ReturnsFail()
-    {
-        // Arrange
-        var authenticatedUserId = Guid.NewGuid();
-        var user = new User("User Test", "test@test.com", "Hash");
-        var team = new Team("Team Test", authenticatedUserId);
-
-        team.UserIds.Add(user.Id);
-
-        _teamRepositoryMock
-            .Setup(r => r.GetByIdAsync(team.Id))
-            .ReturnsAsync(team);
-
-        _userRepository
-            .Setup(r => r.GetByIdAsync(user.Id))
-            .ReturnsAsync(user);
-
-        // Act
-        var result = await _teamService.AddMemberAsync(team.Id, user.Id, authenticatedUserId);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Team.UserAlreadyMember", result.Error.Code);
     }
 
     [Fact]
@@ -292,6 +265,38 @@ public class TeamServiceTests
     }
 
     [Fact]
+    public async Task AddMember_UpdateFails_ReturnsNotFound()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var team = new Team("Team Test", authenticatedUserId);
+        var user = new User("User Test", "test@test.com", "Test");
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        _userRepositoryMock
+            .Setup(r => r.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+
+        _teamRepositoryMock
+            .Setup(r => r.UpdateAsync(team))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _teamService.AddMemberAsync(
+            team.Id,
+            user.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.NotFound, result.Error);
+    }
+
+    [Fact]
     public async Task AddMember_ValidInput_CallsUpdateAndReturnsOk()
     {
         // Arrange
@@ -300,8 +305,8 @@ public class TeamServiceTests
         var user = new User("User Test", "Test@Test.com", "Test");
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(team.Id)).ReturnsAsync(team);
-        _teamRepositoryMock.Setup(r => r.AddMemberAsync(team.Id, user.Id)).ReturnsAsync(true);
-        _userRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
+        _teamRepositoryMock.Setup(r => r.UpdateAsync(team)).ReturnsAsync(true);
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
 
         // Act
         var result = await _teamService.AddMemberAsync(team.Id, user.Id, authenticatedUserId);
@@ -312,7 +317,7 @@ public class TeamServiceTests
         Assert.Equal(user.Id, result.Value.UserId);
         Assert.Equal(team.Id, result.Value.TeamId);
 
-        _teamRepositoryMock.Verify(r => r.AddMemberAsync(team.Id, user.Id), Times.Once);
+        _teamRepositoryMock.Verify(r => r.UpdateAsync(team), Times.Once);
 
     }
 
@@ -356,29 +361,6 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task RemoveMember_UserNotMember_ReturnsFail()
-    {
-        // Arrange
-        var teamId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var authenticatedUserId = Guid.NewGuid();
-
-        var team = new Team("Team Test", authenticatedUserId);
-
-        _teamRepositoryMock
-            .Setup(t => t.GetByIdAsync(teamId))
-            .ReturnsAsync(team);
-
-        // Act
-        var result = await _teamService.RemoveMemberAsync(teamId, userId, authenticatedUserId);
-
-        // Assert
-        Assert.False(result.Success);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Team.UserNotMember", result.Error.Code);
-    }
-
-    [Fact]
     public async Task RemoveMember_UserIsNotOwner_ReturnsFail()
     {
         // Arrange
@@ -404,27 +386,33 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task RemoveMember_RemoveOwner_ReturnsFail()
+    public async Task RemoveMember_UpdateFails_ReturnsNotFound()
     {
         // Arrange
-        var ownerId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
 
-        var team = new Team("Team Test", ownerId);
+        var team = new Team("Team Test", authenticatedUserId);
+        team.AddMember(userId);
 
         _teamRepositoryMock
             .Setup(r => r.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
+        _teamRepositoryMock
+            .Setup(r => r.UpdateAsync(team))
+            .ReturnsAsync(false);
+
         // Act
         var result = await _teamService.RemoveMemberAsync(
             team.Id,
-            ownerId,
-            ownerId);
+            userId,
+            authenticatedUserId);
 
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal(TeamErrors.OwnerCannotBeRemoved, result.Error);
+        Assert.Equal(TeamErrors.NotFound, result.Error);
     }
 
     [Fact]
@@ -432,32 +420,37 @@ public class TeamServiceTests
     {
         // Arrange
         var authenticatedUserId = Guid.NewGuid();
-        var teamId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
         var team = new Team("Team Test", authenticatedUserId);
-        team.UserIds.Add(userId);
+        team.AddMember(userId);
 
         _teamRepositoryMock
-            .Setup(t => t.GetByIdAsync(teamId))
+            .Setup(r => r.GetByIdAsync(team.Id))
             .ReturnsAsync(team);
 
         _teamRepositoryMock
-            .Setup(t => t.RemoveMemberAsync(teamId, userId))
+            .Setup(r => r.UpdateAsync(team))
             .ReturnsAsync(true);
 
         // Act
-        var result = await _teamService.RemoveMemberAsync(teamId, userId, authenticatedUserId);
+        var result = await _teamService.RemoveMemberAsync(
+            team.Id,
+            userId,
+            authenticatedUserId);
 
         // Assert
         Assert.True(result.Success);
         Assert.NotNull(result.Value);
-
-        Assert.Equal(teamId, result.Value.TeamId);
+        Assert.Equal(team.Id, result.Value.TeamId);
         Assert.Equal(userId, result.Value.UserId);
 
         _teamRepositoryMock.Verify(
-            t => t.RemoveMemberAsync(teamId, userId),
+            r => r.GetByIdAsync(team.Id),
+            Times.Once);
+
+        _teamRepositoryMock.Verify(
+            r => r.UpdateAsync(team),
             Times.Once);
     }
 

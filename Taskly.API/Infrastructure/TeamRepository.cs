@@ -45,6 +45,7 @@ namespace Taskly.Infrastructure
             var update = Builders<Team>.Update
                 .Set(t => t.Name, updatedTeam.Name)
                 .Set(t => t.IsActive, updatedTeam.IsActive)
+                .Set(t => t.UserIds, updatedTeam.UserIds)
                 .Set(t => t.UpdatedAt, DateTime.UtcNow);
 
             var result = await _context.Teams.UpdateOneAsync(
@@ -53,34 +54,6 @@ namespace Taskly.Infrastructure
                 update
             );
             return result.MatchedCount == 1;
-        }
-
-        public async Task<bool> AddMemberAsync(Guid teamId, Guid userId)
-        {
-            var update = Builders<Team>.Update
-                .Push(t => t.UserIds, userId)
-                .Set(t => t.UpdatedAt, DateTime.UtcNow);
-
-            var result = await _context.Teams.UpdateOneAsync(
-                t => t.Id == teamId && t.DeletedAt == null,
-                update
-            );
-
-            return result.ModifiedCount == 1;
-        }
-
-        public async Task<bool> RemoveMemberAsync(Guid teamId, Guid userId)
-        {
-            var update = Builders<Team>.Update
-                .Pull(t => t.UserIds, userId)
-                .Set(t => t.UpdatedAt, DateTime.UtcNow);
-
-            var result = await _context.Teams.UpdateOneAsync(
-                t => t.Id == teamId && t.DeletedAt == null,
-                update
-            );
-
-            return result.ModifiedCount == 1;
         }
 
         private FilterDefinition<Team> BaseFilter(Expression<Func<Team, bool>> filter)

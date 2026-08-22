@@ -76,11 +76,9 @@ namespace Taskly.Application
             if (user == null)
                 return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.UserNotFound);
 
-            if (team.UserIds.Contains(userId))
-                return StructuredOperationResult<AddMemberResponseDto>.Fail(TeamErrors.UserAlreadyMember);
 
-
-            var added = await _teamRepository.AddMemberAsync(team.Id, user.Id);
+            team.AddMember(user.Id);
+            var added = await _teamRepository.UpdateAsync(team);
             
             if (!added)
                 return StructuredOperationResult<AddMemberResponseDto>
@@ -106,14 +104,9 @@ namespace Taskly.Application
 
             if (team.OwnerId != authenticatedUserId)
                 return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.NotOwner);
-
-            if (team.OwnerId == userId)
-                return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.OwnerCannotBeRemoved);
                     
-            if (!team.UserIds.Contains(userId))
-                return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.UserNotMember);
-
-            var removed = await _teamRepository.RemoveMemberAsync(teamId, userId);
+            team.RemoveMember(userId);
+            var removed = await _teamRepository.UpdateAsync(team);
 
             if (!removed)
                 return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.NotFound);

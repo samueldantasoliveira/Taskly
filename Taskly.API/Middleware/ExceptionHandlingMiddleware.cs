@@ -35,6 +35,21 @@ public class ExceptionHandlingMiddleware
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsync(exception.Message);
         }
+        catch (UserAlreadyMemberException exception)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsync(exception.Message);
+        }
+        catch (UserNotMemberException exception)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsync(exception.Message);
+        }
+        catch (OwnerCannotBeRemovedException exception)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsync(exception.Message);
+        }
         catch (Exception)
         {
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;

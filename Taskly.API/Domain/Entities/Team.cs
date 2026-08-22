@@ -1,6 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
-using System.Text.Json.Serialization;
+using Taskly.Domain.Exceptions;
 
 namespace Taskly.Domain.Entities
 {
@@ -13,7 +13,7 @@ namespace Taskly.Domain.Entities
         [BsonRepresentation(BsonType.String)]
         public Guid OwnerId {get; private set; }
         [BsonRepresentation(BsonType.String)]
-        public List<Guid> UserIds { get; set; } = new();
+        public List<Guid> UserIds { get; private set; } = new();
 
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
@@ -38,6 +38,37 @@ namespace Taskly.Domain.Entities
                 IsActive = isActive.Value;
 
             UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void RemoveMember(Guid userId)
+        {
+            if (userId == OwnerId)
+            {
+                throw new OwnerCannotBeRemovedException(
+                    "The team owner cannot be removed."
+                );
+            }
+            if (!UserIds.Contains(userId))
+            {
+                throw new UserNotMemberException(
+                    "Cannot remove a user who is not a member of the team."
+                );
+            }
+                
+            UserIds.Remove(userId);
+        }
+
+        public void AddMember(Guid userId)
+        {
+
+            if (UserIds.Contains(userId))
+            {
+                throw new UserAlreadyMemberException(
+                    "Cannot add a user who is already a member of the team."
+                );
+            }
+                
+            UserIds.Add(userId);
         }
     }
 }
