@@ -18,6 +18,9 @@ namespace Taskly.Domain.Entities
         [BsonRepresentation(BsonType.String)]
         public Guid? AssignedUserId {get; private set; }
 
+        public DateTime CreatedAt { get; init; }
+        public DateTime UpdatedAt { get; private set; }
+
         public TodoTask(string title, string description, Guid projectId, Guid? assignedUserId)
         {
             Title = title;
@@ -25,10 +28,17 @@ namespace Taskly.Domain.Entities
             Status = TodoStatus.Todo;
             ProjectId = projectId;
             AssignedUserId = assignedUserId;
+
+            var now = DateTime.UtcNow;
+            CreatedAt = now;
+            UpdatedAt = now;
         }
 
         public void Update(string? title, string? description)
         {
+            var oldTitle = Title;
+            var oldDescription = Description;
+
             if(Status == TodoStatus.Cancelled || Status == TodoStatus.Done)
             {
                 throw new InvalidTaskUpdateException(
@@ -39,11 +49,14 @@ namespace Taskly.Domain.Entities
                 Title = title;
             if(description != null)
                 Description = description;
-            
+
+            if(oldTitle != Title || oldDescription != Description)
+                UpdatedAt = DateTime.UtcNow;
         }
 
         public void AssignUser(Guid? userId)
         {
+            var oldAssignedUserId = AssignedUserId;
             if(Status == TodoStatus.Cancelled || Status == TodoStatus.Done)
             {
                 throw new InvalidTaskAssignmentException(
@@ -52,6 +65,9 @@ namespace Taskly.Domain.Entities
             }
 
             AssignedUserId = userId;
+
+            if(oldAssignedUserId!=AssignedUserId)
+                UpdatedAt = DateTime.UtcNow;
         }
 
         public void Start()
@@ -64,7 +80,7 @@ namespace Taskly.Domain.Entities
             }
             
             Status = TodoStatus.InProgress;
-            
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Complete()
@@ -84,6 +100,7 @@ namespace Taskly.Domain.Entities
             }
 
             Status = TodoStatus.Done;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void Cancel()
@@ -96,6 +113,7 @@ namespace Taskly.Domain.Entities
             }
 
             Status = TodoStatus.Cancelled;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }

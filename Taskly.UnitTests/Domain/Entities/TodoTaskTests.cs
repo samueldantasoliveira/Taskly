@@ -411,6 +411,215 @@ public class TodoTaskTests
         Assert.Equal("Old description", task.Description);
     }
 
+    [Fact]
+    public void TodoTask_ShouldSetCreatedAtAndUpdatedAt_WhenCreated()
+    {
+        // Act
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+
+        // Assert
+        Assert.NotEqual(default, task.CreatedAt);
+        Assert.NotEqual(default, task.UpdatedAt);
+        Assert.Equal(task.CreatedAt, task.UpdatedAt);
+    }
+
+    [Fact]
+    public void Update_ShouldUpdateUpdatedAt_WhenTitleChanges()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+        var oldUpdatedAt = task.UpdatedAt;
+
+        // Act
+        task.Update("New Title", null);
+
+        // Assert
+        Assert.NotEqual(oldUpdatedAt, task.UpdatedAt);
+    }
+
+    [Fact]
+    public void Update_ShouldUpdateUpdatedAt_WhenDescriptionChanges()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+        var oldUpdatedAt = task.UpdatedAt;
+
+        // Act
+        task.Update(null, "New Description");
+
+        // Assert
+        Assert.NotEqual(oldUpdatedAt, task.UpdatedAt);
+    }
+
+    [Fact]
+    public void Update_ShouldNotUpdateUpdatedAt_WhenNoDataChanges()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+        var oldUpdatedAt = task.UpdatedAt;
+
+        // Act
+        task.Update(null, null);
+
+        // Assert
+        Assert.Equal(oldUpdatedAt, task.UpdatedAt);
+    }
+
+    [Fact]
+    public void AssignUser_ShouldUpdateUpdatedAt_WhenAssignedUserChanges()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            null
+        );
+        var oldUpdatedAt = task.UpdatedAt;
+
+        // Act
+        task.AssignUser(Guid.NewGuid());
+
+        // Assert
+        Assert.NotEqual(oldUpdatedAt, task.UpdatedAt);
+    }
+
+    [Fact]
+    public void AssignUser_ShouldNotUpdateUpdatedAt_WhenAssignedUserDoesNotChange()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            null
+        );
+        var oldUpdatedAt = task.UpdatedAt;
+
+        // Act
+        task.AssignUser(null);
+
+        // Assert
+        Assert.Equal(oldUpdatedAt, task.UpdatedAt);
+    }
+
+    [Fact]
+    public void Start_ShouldUpdateUpdatedAt_WhenTaskIsTodo()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+        var oldUpdatedAt = task.UpdatedAt;
+
+        // Act
+        task.Start();
+
+        // Assert
+        Assert.NotEqual(oldUpdatedAt, task.UpdatedAt);
+    }
+
+    [Fact]
+    public void Complete_ShouldUpdateUpdatedAt_WhenTaskIsInProgress()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+        task.Start();
+        var oldUpdatedAt = task.UpdatedAt;
+
+        // Act
+        task.Complete();
+
+        // Assert
+        Assert.NotEqual(oldUpdatedAt, task.UpdatedAt);
+    }
+
+    [Fact]
+    public void Cancel_ShouldUpdateUpdatedAt_WhenTaskIsTodo()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+        var oldUpdatedAt = task.UpdatedAt;
+
+        // Act
+        task.Cancel();
+
+        // Assert
+        Assert.NotEqual(oldUpdatedAt, task.UpdatedAt);
+    }
+
+    [Fact]
+    public void Cancel_ShouldUpdateUpdatedAt_WhenTaskIsInProgress()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+        task.Start();
+        var oldUpdatedAt = task.UpdatedAt;
+
+        // Act
+        task.Cancel();
+
+        // Assert
+        Assert.NotEqual(oldUpdatedAt, task.UpdatedAt);
+    }
+
+    [Fact]
+    public void Start_ShouldNotUpdateUpdatedAt_WhenTaskIsNotTodo()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+        task.Start();
+        var oldUpdatedAt = task.UpdatedAt;
+
+        // Act & Assert
+        Assert.Throws<InvalidTaskTransitionException>(() => task.Start());
+
+        Assert.Equal(oldUpdatedAt, task.UpdatedAt);
+    }
+
     
 }
 
