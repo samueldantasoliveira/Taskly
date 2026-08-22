@@ -1877,4 +1877,317 @@ public class TodoTaskServiceTests
             x => x.UpdateAsync(task),
             Times.Once);
     }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnNotFound_WhenTaskDoesNotExist()
+    {
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(Guid.NewGuid(), Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnProjectNotFound_WhenProjectDoesNotExist()
+    {
+        // Arrange
+        var projectId = Guid.NewGuid();
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnProjectInactive_WhenProjectIsInactive()
+    {
+        // Arrange
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Inactive,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnTeamNotFound_WhenTeamDoesNotExist()
+    {
+        // Arrange
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnTeamInactive_WhenTeamIsInactive()
+    {
+        // Arrange
+        var authenticatedUser = Guid.NewGuid();
+
+        var team = new Team(
+            "Test team", 
+            Guid.NewGuid()
+        );
+        team.Update(null, false);
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock.Setup(
+            r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnUserNotTeamMember_WhenAuthenticatedUserIsNotTeamMember()
+    {
+        // Arrange
+        var authenticatedUser = Guid.NewGuid();
+
+        var team = new Team(
+            "Test team", 
+            Guid.NewGuid()
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock.Setup(
+            r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnNoChangesDetected_WhenRepositoryUpdateFails()
+    {
+        // Arrange
+        var authenticatedUser = Guid.NewGuid();
+
+        var team = new Team(
+            "Test team", 
+            authenticatedUser
+        );
+
+        team.UserIds.Add(authenticatedUser);
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock.Setup(
+            r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.UpdateAsync(It.IsAny<TodoTask>()))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, authenticatedUser);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NoChangesDetected, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldDeleteTask_WhenRequestIsValid()
+    {
+         // Arrange
+        var authenticatedUser = Guid.NewGuid();
+
+        var team = new Team(
+            "Test team", 
+            authenticatedUser
+        );
+
+        team.UserIds.Add(authenticatedUser);
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock.Setup(
+            r => r.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.UpdateAsync(It.IsAny<TodoTask>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, authenticatedUser);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(task.DeletedAt);
+
+        _todoTaskRepositoryMock.Verify(
+            r => r.UpdateAsync(task),
+            Times.Once);
+    }
 }

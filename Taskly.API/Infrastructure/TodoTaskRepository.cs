@@ -1,6 +1,7 @@
 ﻿using MongoDB.Driver;
 using Taskly.Application;
 using Taskly.Domain.Entities;
+using System.Linq.Expressions;
 
 namespace Taskly.Infrastructure
 {
@@ -17,20 +18,25 @@ namespace Taskly.Infrastructure
             await _context.TodoTasks.InsertOneAsync(todoTask);
         }
 
-        public async Task<List<TodoTask>> GetAllByProjectAsync(Guid projectId)
-        {
-            return await _context.TodoTasks.Find(t => t.ProjectId == projectId).ToListAsync();
-        }
-
         public async Task<TodoTask?> GetByIdAsync(Guid id)
         {
-            return await _context.TodoTasks.Find(t => t.Id == id).FirstOrDefaultAsync();
+            return await _context.TodoTasks.Find(BaseFilter(t => t.Id == id)).FirstOrDefaultAsync();
         }
 
         public async Task<bool> UpdateAsync(TodoTask task)
         {
-            var result = await _context.TodoTasks.ReplaceOneAsync(t => t.Id == task.Id, task);
+            var result = await _context.TodoTasks.ReplaceOneAsync(
+                BaseFilter(t => t.Id == task.Id), 
+                task);
             return result.ModifiedCount > 0;
+        }
+
+        private FilterDefinition<TodoTask> BaseFilter(Expression<Func<TodoTask, bool>> filter)
+{
+            return Builders<TodoTask>.Filter.And(
+                filter,
+                Builders<TodoTask>.Filter.Eq(t => t.DeletedAt, null)
+            );
         }
     }
 }

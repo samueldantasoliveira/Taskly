@@ -620,6 +620,25 @@ public class TodoTaskTests
         Assert.Equal(oldUpdatedAt, task.UpdatedAt);
     }
 
+    [Fact]
+    public void Delete_ShouldSetDeletedAtAndUpdateUpdatedAt()
+    {
+        // Arrange
+        var task = new TodoTask(
+            "Title",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid()
+        );
+
+        // Act
+        task.Delete();
+
+        // Assert
+        Assert.Equal(task.UpdatedAt, task.DeletedAt);
+        Assert.NotNull(task.DeletedAt);
+    }
+
     
 }
 

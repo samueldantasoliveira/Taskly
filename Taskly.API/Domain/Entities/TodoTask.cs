@@ -20,6 +20,7 @@ namespace Taskly.Domain.Entities
 
         public DateTime CreatedAt { get; init; }
         public DateTime UpdatedAt { get; private set; }
+        public DateTime? DeletedAt { get; private set; }
 
         public TodoTask(string title, string description, Guid projectId, Guid? assignedUserId)
         {
@@ -52,6 +53,13 @@ namespace Taskly.Domain.Entities
 
             if(oldTitle != Title || oldDescription != Description)
                 UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void Delete()
+        {
+            var now = DateTime.UtcNow;
+            DeletedAt = now;
+            UpdatedAt = now;
         }
 
         public void AssignUser(Guid? userId)

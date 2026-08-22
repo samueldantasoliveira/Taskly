@@ -62,7 +62,25 @@ namespace Taskly.Controllers
             return Ok(result.Value);
 
         }
-        
+
+        [Authorize]
+        [HttpDelete("{taskId}")]
+        public async Task<IActionResult> Delete(Guid taskId)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+            
+            var result = await _todoTaskService.DeleteTaskAsync(taskId, authenticatedUserId);
+
+            if (!result.Success)
+            {
+                return MapErrorToResponse(result.Error!);
+            }
+
+            return Ok();
+        }
+
+
         [Authorize]
         [HttpPost("{taskId}/start")]
         public async Task<IActionResult> Start(Guid taskId)
@@ -139,6 +157,8 @@ namespace Taskly.Controllers
         }
         private IActionResult MapErrorToResponse(Error error)
         {
+            if (error == TodoTaskErrors.NotFound)
+                return NotFound(error.Message);
             if (error == TodoTaskErrors.ProjectNotFound)
                 return NotFound(error.Message);
             if (error == TodoTaskErrors.ProjectInactive)

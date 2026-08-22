@@ -140,6 +140,36 @@ namespace Taskly.Application
 
             return StructuredOperationResult<TodoTaskResponseDto>.Ok(todoTaskResponseDto);
         }
+
+        public async Task<StructuredOperationResult> DeleteTaskAsync(Guid taskId, Guid authenticatedUserId)
+        {
+            var task = await _todoTaskRepository.GetByIdAsync(taskId);
+            if(task == null)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
+            
+            var project = await _projectRepository.GetByIdAsync(task.ProjectId);
+            if (project == null)
+                return StructuredOperationResult.Fail(TodoTaskErrors.ProjectNotFound);
+            if (project.Status == ProjectStatus.Inactive)
+                return StructuredOperationResult.Fail(TodoTaskErrors.ProjectInactive);
+
+            var team = await _teamRepository.GetByIdAsync(project.TeamId);
+            if (team == null)
+                return StructuredOperationResult.Fail(TodoTaskErrors.TeamNotFound);
+            if (!team.IsActive)
+                return StructuredOperationResult.Fail(TodoTaskErrors.TeamInactive);
+            if (!team.UserIds.Contains(authenticatedUserId))
+                return StructuredOperationResult.Fail(TodoTaskErrors.UserNotTeamMember);
+            
+            task.Delete();
+            var modified = await _todoTaskRepository.UpdateAsync(task);
+
+            if (!modified)
+                return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
+
+            return StructuredOperationResult.Ok();
+        }
+
         public async Task<StructuredOperationResult> StartTaskAsync(Guid taskId, Guid authenticatedUserId)
         {
             var task = await _todoTaskRepository.GetByIdAsync(taskId);
@@ -186,9 +216,9 @@ namespace Taskly.Application
             return StructuredOperationResult.Ok();
         }
 
-        public async Task<StructuredOperationResult> AssignUserAsync(Guid todoTaskId, Guid? userId, Guid authenticatedUserId)
+        public async Task<StructuredOperationResult> AssignUserAsync(Guid taskId, Guid? userId, Guid authenticatedUserId)
         {
-            var todoTask = await _todoTaskRepository.GetByIdAsync(todoTaskId);
+            var todoTask = await _todoTaskRepository.GetByIdAsync(taskId);
             if (todoTask == null)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
             
