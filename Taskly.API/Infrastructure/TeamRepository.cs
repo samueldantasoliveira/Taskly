@@ -42,19 +42,12 @@ namespace Taskly.Infrastructure
 
         public async Task<bool> UpdateAsync(Team updatedTeam)
         {
-            var update = Builders<Team>.Update
-                .Set(t => t.Name, updatedTeam.Name)
-                .Set(t => t.IsActive, updatedTeam.IsActive)
-                .Set(t => t.UserIds, updatedTeam.UserIds)
-                .Set(t => t.UpdatedAt, DateTime.UtcNow);
-
-            var result = await _context.Teams.UpdateOneAsync(
-                t => t.Id == updatedTeam.Id
-                && t.DeletedAt == null,
-                update
-            );
-            return result.MatchedCount == 1;
+            var result = await _context.Teams.ReplaceOneAsync(
+                BaseFilter(t => t.Id == updatedTeam.Id), 
+                updatedTeam);
+            return result.ModifiedCount > 0;
         }
+            
 
         private FilterDefinition<Team> BaseFilter(Expression<Func<Team, bool>> filter)
 {

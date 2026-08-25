@@ -105,7 +105,7 @@ public class ProjectServiceTests
         var projectDto = new CreateProjectDto { Name = "Project Test", Description = "Project Test", TeamId = team.Id };
         var authenticatedUserId = Guid.NewGuid();
 
-        team.UserIds.Add(authenticatedUserId);
+        team.AddMember(authenticatedUserId);
         _teamRepositoryMock.Setup(t => t.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(team);
 
         // Act
@@ -391,7 +391,7 @@ public class ProjectServiceTests
         var memberId = Guid.NewGuid();
 
         var team = new Team("Team Test", teamOwnerId);
-        team.UserIds.Add(memberId);
+        team.AddMember(memberId);
 
         var project = new Project(
             "Project Test",

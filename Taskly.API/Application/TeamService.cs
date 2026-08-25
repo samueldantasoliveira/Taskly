@@ -30,7 +30,7 @@ namespace Taskly.Application
                 Name = team.Name,
                 IsActive = team.IsActive,
                 OwnerId = team.OwnerId,
-                UserIds = team.UserIds
+                UserIds = team.UserIds.ToList()
             };
             return StructuredOperationResult<TeamResponseDto>.Ok(teamResponseDto);
         }
@@ -55,7 +55,7 @@ namespace Taskly.Application
                 Name = team.Name,
                 IsActive = team.IsActive,
                 OwnerId = team.OwnerId,
-                UserIds = team.UserIds
+                UserIds = team.UserIds.ToList()
             };
 
             return StructuredOperationResult<TeamResponseDto>.Ok(teamResponseDto);
@@ -133,7 +133,7 @@ namespace Taskly.Application
                 Name = team.Name,
                 IsActive = team.IsActive,
                 OwnerId = team.OwnerId,
-                UserIds = team.UserIds
+                UserIds = team.UserIds.ToList()
             };
 
             return teamResponseDto;

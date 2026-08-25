@@ -12,8 +12,13 @@ namespace Taskly.Domain.Entities
         public bool IsActive { get; private set; }
         [BsonRepresentation(BsonType.String)]
         public Guid OwnerId {get; private set; }
+
+        [BsonElement("UserIds")]
         [BsonRepresentation(BsonType.String)]
-        public List<Guid> UserIds { get; private set; } = new();
+        private List<Guid> _userIds = new();
+        public IReadOnlyCollection<Guid> UserIds => _userIds;
+
+        
 
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
@@ -22,7 +27,7 @@ namespace Taskly.Domain.Entities
         {
             Id = Guid.NewGuid();
             OwnerId = ownerId;
-            UserIds.Add(ownerId);
+            _userIds.Add(ownerId);
             Name = name;
             IsActive = true;
             var now = DateTime.UtcNow;
@@ -55,7 +60,9 @@ namespace Taskly.Domain.Entities
                 );
             }
                 
-            UserIds.Remove(userId);
+            _userIds.Remove(userId);
+            if (!UserIds.Contains(userId))
+                UpdatedAt = DateTime.UtcNow;
         }
 
         public void AddMember(Guid userId)
@@ -68,7 +75,9 @@ namespace Taskly.Domain.Entities
                 );
             }
                 
-            UserIds.Add(userId);
+            _userIds.Add(userId);
+            if (UserIds.Contains(userId))
+                UpdatedAt = DateTime.UtcNow;
         }
     }
 }

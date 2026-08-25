@@ -110,7 +110,7 @@ public class TodoTaskServiceTests
             Guid.NewGuid());
 
         Team team = new Team("Team Test", authenticatedUserId);
-        team.UserIds.Add(createTodoTaskDto.AssignedUserId.Value);
+        team.AddMember(createTodoTaskDto.AssignedUserId.Value);
 
         _projectRepositoryMock
             .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
@@ -173,7 +173,7 @@ public class TodoTaskServiceTests
             "Team Test",
             authenticatedUserId);
 
-        team.UserIds.Add(user.Id);
+        team.AddMember(user.Id);
 
         Project project = new Project(
             "Project Test",
@@ -678,7 +678,7 @@ public class TodoTaskServiceTests
             "Test@Test.com",
             "Test");
 
-        team.UserIds.Add(user.Id);
+        team.AddMember(user.Id);
 
         var project = new Project(
             "Project Test",
@@ -754,7 +754,7 @@ public class TodoTaskServiceTests
                 "Test@Test.com",
                 "Test");
 
-            team.UserIds.Add(user.Id);
+            team.AddMember(user.Id);
         }
 
         var project = new Project(
@@ -1269,7 +1269,7 @@ public class TodoTaskServiceTests
         );
 
         var assignedUserId = assignedUser.Id;
-        team.UserIds.Add(assignedUserId);
+        team.AddMember(assignedUserId);
 
         
 
@@ -1643,7 +1643,7 @@ public class TodoTaskServiceTests
             Guid.NewGuid()
         );
 
-        team.UserIds.Add(assignedUserId);
+        team.AddMember(assignedUserId);
 
         _todoTaskRepositoryMock
             .Setup(x => x.GetByIdAsync(taskId))
@@ -1706,7 +1706,7 @@ public class TodoTaskServiceTests
             authenticatedUserId
         );
 
-        team.UserIds.Add(assignedUserId);
+        team.AddMember(assignedUserId);
 
         _todoTaskRepositoryMock
             .Setup(x => x.GetByIdAsync(taskId))
@@ -1841,7 +1841,7 @@ public class TodoTaskServiceTests
             authenticatedUserId
         );
 
-        team.UserIds.Add(assignedUser.Id);
+        team.AddMember(assignedUser.Id);
 
         _todoTaskRepositoryMock
             .Setup(x => x.GetByIdAsync(taskId))
@@ -2092,9 +2092,7 @@ public class TodoTaskServiceTests
             "Test team", 
             authenticatedUser
         );
-
-        team.UserIds.Add(authenticatedUser);
-
+        
         var project = new Project(
             "Test project",
             "Test description",
@@ -2145,8 +2143,6 @@ public class TodoTaskServiceTests
             "Test team", 
             authenticatedUser
         );
-
-        team.UserIds.Add(authenticatedUser);
 
         var project = new Project(
             "Test project",
