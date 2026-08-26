@@ -552,4 +552,184 @@ public class TeamServiceTests
             Times.Once);
     }
 
+    [Fact]
+public async Task LeaveTeam_TeamNotFound_ReturnsFail()
+{
+    // Arrange
+    var teamId = Guid.NewGuid();
+    var authenticatedUserId = Guid.NewGuid();
+
+    _teamRepositoryMock
+        .Setup(repo => repo.GetByIdAsync(teamId))
+        .ReturnsAsync((Team?)null);
+
+    // Act
+    var result = await _teamService.LeaveTeamAsync(
+        teamId,
+        authenticatedUserId
+    );
+
+    // Assert
+    Assert.False(result.Success);
+    Assert.Equal(TeamErrors.NotFound, result.Error);
+
+    _teamRepositoryMock.Verify(
+        repo => repo.UpdateAsync(It.IsAny<Team>()),
+        Times.Never
+    );
+}
+
+
+[Fact]
+public async Task LeaveTeam_TeamInactive_ReturnsFail()
+{
+    // Arrange
+    var authenticatedUserId = Guid.NewGuid();
+
+    var team = new Team(
+        "Test team",
+        ownerId: Guid.NewGuid()
+    );
+    team.Update(null, false);
+
+    _teamRepositoryMock
+        .Setup(repo => repo.GetByIdAsync(team.Id))
+        .ReturnsAsync(team);
+
+    // Act
+    var result = await _teamService.LeaveTeamAsync(
+        team.Id,
+        authenticatedUserId
+    );
+
+    // Assert
+    Assert.False(result.Success);
+    Assert.Equal(TeamErrors.Inactive, result.Error);
+
+    _teamRepositoryMock.Verify(
+        repo => repo.UpdateAsync(It.IsAny<Team>()),
+        Times.Never
+    );
+}
+
+
+[Fact]
+public async Task LeaveTeam_ValidMember_RemovesMemberAndReturnsSuccess()
+{
+    // Arrange
+    var ownerId = Guid.NewGuid();
+    var authenticatedUserId = Guid.NewGuid();
+
+    var team = new Team(
+        "Test team",
+        ownerId: ownerId
+    );
+
+    team.AddMember(authenticatedUserId);
+
+    _teamRepositoryMock
+        .Setup(repo => repo.GetByIdAsync(team.Id))
+        .ReturnsAsync(team);
+
+    _teamRepositoryMock
+        .Setup(repo => repo.UpdateAsync(team))
+        .ReturnsAsync(true);
+
+    // Act
+    var result = await _teamService.LeaveTeamAsync(
+        team.Id,
+        authenticatedUserId
+    );
+
+    // Assert
+    Assert.True(result.Success);
+    Assert.DoesNotContain(authenticatedUserId, team.UserIds);
+
+    _teamRepositoryMock.Verify(
+        repo => repo.UpdateAsync(team),
+        Times.Once
+    );
+}
+
+
+[Fact]
+public async Task LeaveTeam_UpdateFails_ReturnsFail()
+{
+    // Arrange
+    var ownerId = Guid.NewGuid();
+    var authenticatedUserId = Guid.NewGuid();
+
+    var team = new Team(
+        "Test team",
+        ownerId: ownerId
+    );
+
+    team.AddMember(authenticatedUserId);
+
+    _teamRepositoryMock
+        .Setup(repo => repo.GetByIdAsync(team.Id))
+        .ReturnsAsync(team);
+
+    _teamRepositoryMock
+        .Setup(repo => repo.UpdateAsync(team))
+        .ReturnsAsync(false);
+
+    // Act
+    var result = await _teamService.LeaveTeamAsync(
+        team.Id,
+        authenticatedUserId
+    );
+
+    // Assert
+    Assert.False(result.Success);
+    Assert.Equal(TeamErrors.NotFound, result.Error);
+
+    _teamRepositoryMock.Verify(
+        repo => repo.UpdateAsync(team),
+        Times.Once
+    );
+}
+
+
+    [Fact]
+    public async Task LeaveTeam_ValidMember_UpdatesTeamWithoutAuthenticatedUser()
+    {
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+
+        var team = new Team(
+            "Test team",
+            ownerId: ownerId
+        );
+
+        team.AddMember(authenticatedUserId);
+
+        _teamRepositoryMock
+            .Setup(repo => repo.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        _teamRepositoryMock
+            .Setup(repo => repo.UpdateAsync(It.IsAny<Team>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _teamService.LeaveTeamAsync(
+            team.Id,
+            authenticatedUserId
+        );
+
+        // Assert
+        Assert.True(result.Success);
+
+        _teamRepositoryMock.Verify(
+            repo => repo.UpdateAsync(
+                It.Is<Team>(updatedTeam =>
+                    !updatedTeam.UserIds.Contains(authenticatedUserId)
+                )
+            ),
+            Times.Once
+        );
+    }
+
 }

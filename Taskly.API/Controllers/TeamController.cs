@@ -100,6 +100,25 @@ namespace Taskly.Controllers
             }
             return NoContent();
         }
+        [HttpDelete("{teamId}/leave")]
+        [Authorize]
+        public async Task<IActionResult> LeaveTeam(Guid teamId)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _teamService.LeaveTeamAsync(
+                teamId,
+                authenticatedUserId
+            );
+
+            if (!result.Success)
+            {
+                return MapErrorToResponse(result.Error!);
+
+            }
+            return Ok();
+        }
 
         private bool TryGetAuthenticatedUserId(out Guid userId)
         {

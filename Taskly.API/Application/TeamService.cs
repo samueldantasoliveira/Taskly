@@ -121,6 +121,25 @@ namespace Taskly.Application
 
         }
 
+        public async Task<StructuredOperationResult> LeaveTeamAsync(Guid teamId, Guid authenticatedUserId)
+        {
+            var team = await _teamRepository.GetByIdAsync(teamId);
+
+            if (team == null)
+                return StructuredOperationResult.Fail(TeamErrors.NotFound);
+
+            if (!team.IsActive)
+                return StructuredOperationResult.Fail(TeamErrors.Inactive);
+            team.RemoveMember(authenticatedUserId);
+
+             var removed = await _teamRepository.UpdateAsync(team);
+
+            if (!removed)
+                return StructuredOperationResult.Fail(TeamErrors.NotFound);
+
+            return StructuredOperationResult.Ok();
+        }
+
         public async Task<TeamResponseDto?> GetByIdAsync(Guid teamId)
         {
             var team = await _teamRepository.GetByIdAsync(teamId);

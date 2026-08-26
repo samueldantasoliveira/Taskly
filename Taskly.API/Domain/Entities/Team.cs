@@ -61,8 +61,7 @@ namespace Taskly.Domain.Entities
             }
                 
             _userIds.Remove(userId);
-            if (!UserIds.Contains(userId))
-                UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
 
         public void AddMember(Guid userId)
@@ -76,8 +75,7 @@ namespace Taskly.Domain.Entities
             }
                 
             _userIds.Add(userId);
-            if (UserIds.Contains(userId))
-                UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }
