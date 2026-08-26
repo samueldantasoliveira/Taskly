@@ -29,9 +29,16 @@ namespace Taskly.Infrastructure
             return result.ModifiedCount == 1;
         }
 
-        public Task<List<Team>> GetAllAsync()
+        public async Task<List<Team>> GetUserTeamsAsync(Guid userId)
         {
-            throw new NotImplementedException();
+            var filter = Builders<Team>.Filter.And(
+                Builders<Team>.Filter.Eq(team => team.DeletedAt, null),
+                Builders<Team>.Filter.Eq<string>("UserIds", userId.ToString())
+            );
+
+            return await _context.Teams
+                .Find(filter)
+                .ToListAsync();
         }
 
         public async Task<Team?> GetByIdAsync(Guid id)

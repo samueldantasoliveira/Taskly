@@ -732,4 +732,152 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
         );
     }
 
+    [Fact]
+    public async Task GetUserTeams_UserNotFound_ReturnsFail()
+    {
+        var userId = Guid.NewGuid();
+
+        // Act
+        var result = await _teamService.GetUserTeamsAsync(userId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TeamErrors.UserNotFound, result.Error);
+
+        _teamRepositoryMock.Verify(
+            repository => repository.GetUserTeamsAsync(It.IsAny<Guid>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task GetUserTeams_UserHasTeams_ReturnsMappedTeams()
+    {
+        // Arrange
+        var user = new User(
+            "Test user",
+            "Test@email.com",
+            "TestPassword"
+        );
+        var userId = user.Id;
+
+        var team = new Team(
+            "Test team",
+            user.Id
+        );
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(userId))
+            .ReturnsAsync(user);
+
+        _teamRepositoryMock
+            .Setup(repository => repository.GetUserTeamsAsync(userId))
+            .ReturnsAsync(new List<Team>
+            {
+                team
+            });
+
+        // Act
+        var result = await _teamService.GetUserTeamsAsync(userId);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+
+        var response = Assert.Single(result.Value);
+
+        Assert.Equal(team.Id, response.Id);
+        Assert.Equal(team.Name, response.Name);
+        Assert.Equal(team.IsActive, response.IsActive);
+        Assert.Equal(team.OwnerId, response.OwnerId);
+        Assert.Equal(team.UserIds, response.UserIds);
+    }
+
+    [Fact]
+    public async Task GetUserTeams_UserHasNoTeams_ReturnsEmptyList()
+    {
+        // Arrange
+        var user = new User(
+            "Test user",
+            "Test@email.com",
+            "TestPassword"
+        );
+        var userId = user.Id;
+
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(userId))
+            .ReturnsAsync(user);
+
+        _teamRepositoryMock
+            .Setup(repository => repository.GetUserTeamsAsync(userId))
+            .ReturnsAsync(new List<Team>());
+
+        // Act
+        var result = await _teamService.GetUserTeamsAsync(userId);
+
+        // Assert
+        Assert.True(result.Success);
+
+        Assert.NotNull(result.Value);
+        Assert.Empty(result.Value);
+
+        _teamRepositoryMock.Verify(
+            repository => repository.GetUserTeamsAsync(userId),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task GetById_TeamNotFound_ReturnsFail()
+    {
+        var teamId = Guid.NewGuid();
+
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(teamId))
+            .ReturnsAsync((Team?)null);
+
+        var result = await _teamService.GetByIdAsync(teamId, Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TeamErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_UserNotMember_ReturnsNotAuthorized()
+    {
+        var team = new Team("Test team", Guid.NewGuid());
+
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        var result = await _teamService.GetByIdAsync(team.Id, Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TeamErrors.NotAuthorized, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_UserIsMember_ReturnsMappedTeam()
+    {
+        var ownerId = Guid.NewGuid();
+        var team = new Team("Test team", ownerId);
+
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        var result = await _teamService.GetByIdAsync(team.Id, ownerId);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(team.Id, result.Value.Id);
+        Assert.Equal(team.Name, result.Value.Name);
+        Assert.Equal(team.IsActive, result.Value.IsActive);
+        Assert.Equal(team.OwnerId, result.Value.OwnerId);
+        Assert.Equal(team.UserIds, result.Value.UserIds);
+    }
+
 }

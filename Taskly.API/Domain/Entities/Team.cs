@@ -8,7 +8,7 @@ namespace Taskly.Domain.Entities
     {
         [BsonRepresentation(BsonType.String)]
         public Guid Id { get; private set; }
-        public string Name { get; private set; }
+        public string Name { get; private set; } = null!;
         public bool IsActive { get; private set; }
         [BsonRepresentation(BsonType.String)]
         public Guid OwnerId {get; private set; }
@@ -23,6 +23,10 @@ namespace Taskly.Domain.Entities
         public DateTime CreatedAt { get; private set; }
         public DateTime UpdatedAt { get; private set; }
         public DateTime? DeletedAt { get; private set; }
+
+        [BsonConstructor]
+        protected Team() { }
+
         public Team(string name, Guid ownerId)
         {
             Id = Guid.NewGuid();

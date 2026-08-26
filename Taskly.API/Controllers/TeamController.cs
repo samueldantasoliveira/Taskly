@@ -21,6 +21,36 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetUserTeams()
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _teamService.GetUserTeamsAsync(authenticatedUserId);
+
+            if (!result.Success)
+                return MapErrorToResponse(result.Error!);
+
+            return Ok(result.Value);
+        }
+
+        [Authorize]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(Guid id)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _teamService.GetByIdAsync(id, authenticatedUserId);
+
+            if (!result.Success)
+                return MapErrorToResponse(result.Error!);
+
+            return Ok(result.Value);
+        }
+
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTeamDto dto)
         {
@@ -147,6 +177,9 @@ namespace Taskly.Controllers
                 return NotFound(error.Message);
 
             if (error == TeamErrors.NotOwner)
+                return StatusCode(StatusCodes.Status403Forbidden, error.Message);
+
+            if (error == TeamErrors.NotAuthorized)
                 return StatusCode(StatusCodes.Status403Forbidden, error.Message);
             
             if (error == TeamErrors.OwnerCannotBeRemoved)

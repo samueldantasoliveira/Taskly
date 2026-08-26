@@ -140,11 +140,14 @@ namespace Taskly.Application
             return StructuredOperationResult.Ok();
         }
 
-        public async Task<TeamResponseDto?> GetByIdAsync(Guid teamId)
+        public async Task<StructuredOperationResult<TeamResponseDto>> GetByIdAsync(Guid teamId, Guid authenticatedUserId)
         {
             var team = await _teamRepository.GetByIdAsync(teamId);
             if(team == null)
-                return null;
+                return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.NotFound);
+
+            if (!team.UserIds.Contains(authenticatedUserId))
+                return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.NotAuthorized);
                 
             var teamResponseDto = new TeamResponseDto
             {
@@ -155,7 +158,7 @@ namespace Taskly.Application
                 UserIds = team.UserIds.ToList()
             };
 
-            return teamResponseDto;
+            return StructuredOperationResult<TeamResponseDto>.Ok(teamResponseDto);
         }
 
         public async Task<StructuredOperationResult> DeleteTeamAsync(Guid teamId, Guid authenticatedUserId)
@@ -171,6 +174,28 @@ namespace Taskly.Application
                 return StructuredOperationResult.Fail(TeamErrors.NotFound);
             
             return StructuredOperationResult.Ok();
+        }
+
+        public async Task<StructuredOperationResult<List<TeamResponseDto>>> GetUserTeamsAsync(Guid authenticatedUserId)
+        {
+            var user = await _userRepository.GetByIdAsync(authenticatedUserId);
+            if(user == null)
+                return StructuredOperationResult<List<TeamResponseDto>>.Fail(TeamErrors.UserNotFound);
+            
+            var teams = await _teamRepository.GetUserTeamsAsync(authenticatedUserId);
+
+            var response = teams
+                .Select(team => new TeamResponseDto
+                {
+                    Id = team.Id,
+                    Name = team.Name,
+                    IsActive = team.IsActive,
+                    OwnerId = team.OwnerId,
+                    UserIds = team.UserIds.ToList()
+                })
+                .ToList();
+
+            return StructuredOperationResult<List<TeamResponseDto>>.Ok(response);
         }
 
     }

@@ -18,6 +18,8 @@ public static class TeamErrors
         Error.Create("Team.UserNotMember", "User is not a member");
     public readonly static Error NotOwner =
         Error.Create("Team.NotOwner", "Only the team owner can perform this action");
+    public readonly static Error NotAuthorized =
+        Error.Create("Team.NotAuthorized", "User is not a member of this team");
     public readonly static Error OwnerCannotBeRemoved =
         Error.Create("Team.OwnerCannotBeRemoved", "Transfer ownership before removing the team owner.");
 }
