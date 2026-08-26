@@ -1,4 +1,4 @@
-![.NET](https://img.shields.io/badge/.NET-8-blue)
+![.NET](https://img.shields.io/badge/.NET-9-blue)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Database-green)
 ![xUnit](https://img.shields.io/badge/Tests-xUnit-success)
 # 🗂️ Taskly API
@@ -11,7 +11,7 @@ O projeto foi criado com foco em organização de código, separação de respon
 
 # 🚀 Tecnologias
 
-* .NET 8 (C#)
+* .NET 9 (C#)
 * ASP.NET Core
 * MongoDB
 * xUnit
@@ -132,8 +132,8 @@ TodoTask
 
 ### Pré-requisitos
 
-* .NET 8 SDK
-* MongoDB
+* .NET 9 SDK
+* Docker Compose ou Podman Compose
 
 ### 1. Clonar o repositório
 
@@ -142,17 +142,36 @@ git clone https://github.com/samueldantasoliveira/Taskly.git
 cd Taskly
 ```
 
-### 2. Configurar a conexão com o MongoDB
+### 2. Iniciar os bancos MongoDB
 
-No arquivo `appsettings.json`, ajuste a string de conexão conforme seu ambiente:
+O arquivo `compose.yaml` cria dois bancos independentes:
 
-```json
-{
-  "ConnectionStrings": {
-    "MongoDb": "mongodb://localhost:27017"
-  }
-}
+| Serviço | Porta | Uso | Dados |
+| ------- | ----- | --- | ----- |
+| `mongodb` | `27017` | Execução local da API | Persistentes no volume `mongodb-data` |
+| `mongodb-test` | `27018` | Testes de integração | Descartáveis em memória |
+
+Com Docker:
+
+```bash
+docker compose up -d
 ```
+
+Com Podman:
+
+```bash
+podman compose up -d
+```
+
+Para conferir o estado dos bancos:
+
+```bash
+docker compose ps
+# ou
+podman compose ps
+```
+
+As configurações padrão do projeto já apontam a API para `localhost:27017` e os testes de integração para `localhost:27018`.
 
 ### 3. Restaurar as dependências
 
@@ -173,6 +192,22 @@ dotnet test
 ```
 
 Os testes unitários e de integração são executados a partir da solução principal.
+
+Para remover os containers ao terminar:
+
+```bash
+docker compose down
+# ou
+podman compose down
+```
+
+O volume de desenvolvimento é preservado. Para também apagar os dados locais:
+
+```bash
+docker compose down --volumes
+# ou
+podman compose down --volumes
+```
 
 ### 6. Acessar a documentação da API
 

@@ -1,0 +1,31 @@
+services:
+  mongodb:
+    image: docker.io/library/mongo:8
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  mongodb-test:
+    image: docker.io/library/mongo:8
+    ports:
+      - "27018:27017"
+    tmpfs:
+      - /data/db
+      - /data/configdb
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok\""]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+volumes:
+  mongodb-data:
