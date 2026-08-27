@@ -17,6 +17,23 @@ namespace Taskly.Controllers
         {
             _projectService = projectService;
         }
+
+        [Authorize]
+        [HttpGet("team/{teamId}")]
+        public async Task<IActionResult> GetTeamProjects(Guid teamId)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _projectService.GetTeamProjectsAsync(
+                teamId,
+                authenticatedUserId);
+
+            if (!result.Success)
+                return MapErrorToResponse(result.Error!);
+
+            return Ok(result.Value);
+        }
         
         [Authorize]              
         [HttpPost]

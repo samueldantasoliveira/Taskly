@@ -14,6 +14,5 @@ namespace Taskly.Application
         public Task<StructuredOperationResult<List<TeamResponseDto>>> GetUserTeamsAsync(Guid authenticatedUserId);
         public Task<StructuredOperationResult<TeamResponseDto>> GetByIdAsync(Guid teamId, Guid authenticatedUserId);
         public Task<StructuredOperationResult> DeleteTeamAsync(Guid teamId, Guid authenticatedUserId);
-        
     }
 }

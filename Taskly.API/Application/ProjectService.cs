@@ -9,12 +9,13 @@ namespace Taskly.Application
     {
         private readonly IProjectRepository _projectRepository;
         private readonly ITeamRepository _teamRepository;
+        private readonly IUserRepository _userRepository;
 
-        public ProjectService(IProjectRepository projectRepository, ITeamRepository teamService)
+        public ProjectService(IProjectRepository projectRepository, ITeamRepository teamRepository, IUserRepository userRepository)
         {
             _projectRepository = projectRepository;
-            _teamRepository = teamService;
-
+            _teamRepository = teamRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<StructuredOperationResult<ProjectResponseDto>> AddProjectAsync(CreateProjectDto createProjectDto, Guid authenticatedUserId)
@@ -52,6 +53,8 @@ namespace Taskly.Application
             await _projectRepository.AddAsync(project);
             return StructuredOperationResult<ProjectResponseDto>.Ok(projectResponseDto);
         }
+
+        
 
         public async Task<ProjectResponseDto?> GetByIdAsync(Guid id)
         {
@@ -128,6 +131,37 @@ namespace Taskly.Application
             return StructuredOperationResult.Ok();
         }
 
+        public async Task<StructuredOperationResult<List<ProjectResponseDto>>> GetTeamProjectsAsync(Guid teamId, Guid authenticatedUserId)
+        {
+            var user = await _userRepository.GetByIdAsync(authenticatedUserId);
+            if(user == null)
+                return StructuredOperationResult<List<ProjectResponseDto>>.Fail(TeamErrors.UserNotFound);
+
+            var team = await _teamRepository.GetByIdAsync(teamId);
+            if(team == null)
+                return StructuredOperationResult<List<ProjectResponseDto>>.Fail(ProjectErrors.TeamNotFound);
+            if (!team.IsActive)
+                return StructuredOperationResult<List<ProjectResponseDto>>.Fail(ProjectErrors.TeamInactive);
+            if(!team.UserIds.Contains(authenticatedUserId))
+                return StructuredOperationResult<List<ProjectResponseDto>>.Fail(ProjectErrors.UserNotTeamMember);
+            
+            var projects = await _projectRepository.GetByTeamIdAsync(teamId);
+
+              var response = projects
+                .Select(project => new ProjectResponseDto
+                {
+                    Id = project.Id,
+                    Name = project.Name,
+                    Description = project.Description,
+                    OwnerId = project.OwnerId,
+                    Status = project.Status,
+                    TeamId = project.TeamId
+                })
+                .ToList();
+            
+            return StructuredOperationResult<List<ProjectResponseDto>>.Ok(response);
+        }
+
         private async Task<StructuredOperationResult<ProjectResponseDto>?> CanManageProject(Project? project, Guid authenticatedUserId)
         {
             if(project == null)
@@ -147,5 +181,7 @@ namespace Taskly.Application
 
             return null;
         }
+
+
     }
 }

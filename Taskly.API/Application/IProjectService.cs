@@ -5,6 +5,7 @@ namespace Taskly.Application
 {
     public interface IProjectService
     {
+        public Task<StructuredOperationResult<List<ProjectResponseDto>>> GetTeamProjectsAsync(Guid teamId, Guid authenticatedUserId);
         public Task<StructuredOperationResult<ProjectResponseDto>> AddProjectAsync(CreateProjectDto projectDto, Guid ownerId);
 
         public Task<ProjectResponseDto?> GetByIdAsync(Guid id);

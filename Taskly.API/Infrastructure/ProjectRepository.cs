@@ -32,14 +32,16 @@ namespace Taskly.Infrastructure
 
         }
 
-        public Task<List<Project>> GetAllAsync()
-        {
-            throw new NotImplementedException();
-        }
-
         public async Task<Project?> GetByIdAsync(Guid id)
         {
             return await _context.Projects.Find(BaseFilter(p => p.Id == id)).FirstOrDefaultAsync();
+        }
+
+        public async Task<List<Project>> GetByTeamIdAsync(Guid teamId)
+        {
+            return await _context.Projects
+                .Find(BaseFilter(p => p.TeamId == teamId))
+                .ToListAsync();
         }
 
         public async Task<bool> UpdateAsync(Project project)

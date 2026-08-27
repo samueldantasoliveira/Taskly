@@ -12,12 +12,17 @@ public class ProjectServiceTests
 {
     public readonly Mock<IProjectRepository> _projectRepositoryMock;
     public readonly Mock<ITeamRepository> _teamRepositoryMock;
+    public readonly Mock<IUserRepository> _userRepositoryMock;
     public readonly ProjectService _projectService;
     public ProjectServiceTests()
     {
         _projectRepositoryMock = new Mock<IProjectRepository>();
         _teamRepositoryMock = new Mock<ITeamRepository>();
-        _projectService = new ProjectService(_projectRepositoryMock.Object, _teamRepositoryMock.Object);
+        _userRepositoryMock = new Mock<IUserRepository>();
+        _projectService = new ProjectService(
+            _projectRepositoryMock.Object,
+            _teamRepositoryMock.Object,
+            _userRepositoryMock.Object);
     }
 
     [Fact]
@@ -651,5 +656,172 @@ public class ProjectServiceTests
         _teamRepositoryMock.Verify(
             t => t.GetByIdAsync(It.IsAny<Guid>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task GetTeamProjects_UserNotFound_ReturnsFail()
+    {
+        var authenticatedUserId = Guid.NewGuid();
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(authenticatedUserId))
+            .ReturnsAsync((User?)null);
+
+        var result = await _projectService.GetTeamProjectsAsync(
+            Guid.NewGuid(),
+            authenticatedUserId);
+
+        Assert.False(result.Success);
+        Assert.Equal(TeamErrors.UserNotFound, result.Error);
+
+        _teamRepositoryMock.Verify(
+            repository => repository.GetByIdAsync(It.IsAny<Guid>()),
+            Times.Never);
+        _projectRepositoryMock.Verify(
+            repository => repository.GetByTeamIdAsync(It.IsAny<Guid>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetTeamProjects_TeamNotFound_ReturnsFail()
+    {
+        var user = new User("Test user", "user@test.com", "password-hash");
+        var teamId = Guid.NewGuid();
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(teamId))
+            .ReturnsAsync((Team?)null);
+
+        var result = await _projectService.GetTeamProjectsAsync(teamId, user.Id);
+
+        Assert.False(result.Success);
+        Assert.Equal(ProjectErrors.TeamNotFound, result.Error);
+        _projectRepositoryMock.Verify(
+            repository => repository.GetByTeamIdAsync(It.IsAny<Guid>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetTeamProjects_TeamInactive_ReturnsFail()
+    {
+        var user = new User("Test user", "user@test.com", "password-hash");
+        var team = new Team("Test team", user.Id);
+        team.Update(null, false);
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        var result = await _projectService.GetTeamProjectsAsync(team.Id, user.Id);
+
+        Assert.False(result.Success);
+        Assert.Equal(ProjectErrors.TeamInactive, result.Error);
+        _projectRepositoryMock.Verify(
+            repository => repository.GetByTeamIdAsync(It.IsAny<Guid>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetTeamProjects_UserNotTeamMember_ReturnsFail()
+    {
+        var user = new User("Test user", "user@test.com", "password-hash");
+        var team = new Team("Test team", Guid.NewGuid());
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+
+        var result = await _projectService.GetTeamProjectsAsync(team.Id, user.Id);
+
+        Assert.False(result.Success);
+        Assert.Equal(ProjectErrors.UserNotTeamMember, result.Error);
+        _projectRepositoryMock.Verify(
+            repository => repository.GetByTeamIdAsync(It.IsAny<Guid>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetTeamProjects_NoProjects_ReturnsEmptyList()
+    {
+        var user = new User("Test user", "user@test.com", "password-hash");
+        var team = new Team("Test team", user.Id);
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByTeamIdAsync(team.Id))
+            .ReturnsAsync(new List<Project>());
+
+        var result = await _projectService.GetTeamProjectsAsync(team.Id, user.Id);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Empty(result.Value);
+        _projectRepositoryMock.Verify(
+            repository => repository.GetByTeamIdAsync(team.Id),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetTeamProjects_ValidRequest_ReturnsMappedProjects()
+    {
+        var user = new User("Test user", "user@test.com", "password-hash");
+        var team = new Team("Test team", user.Id);
+        var firstProject = new Project(
+            "First project",
+            "First description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+        var secondProject = new Project(
+            "Second project",
+            "Second description",
+            team.Id,
+            ProjectStatus.Inactive,
+            Guid.NewGuid());
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByTeamIdAsync(team.Id))
+            .ReturnsAsync(new List<Project> { firstProject, secondProject });
+
+        var result = await _projectService.GetTeamProjectsAsync(team.Id, user.Id);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Collection(
+            result.Value,
+            project => AssertProjectMapped(firstProject, project),
+            project => AssertProjectMapped(secondProject, project));
+    }
+
+    private static void AssertProjectMapped(
+        Project expected,
+        ProjectResponseDto actual)
+    {
+        Assert.Equal(expected.Id, actual.Id);
+        Assert.Equal(expected.Name, actual.Name);
+        Assert.Equal(expected.Description, actual.Description);
+        Assert.Equal(expected.OwnerId, actual.OwnerId);
+        Assert.Equal(expected.Status, actual.Status);
+        Assert.Equal(expected.TeamId, actual.TeamId);
     }
 }

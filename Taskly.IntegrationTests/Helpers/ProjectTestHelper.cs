@@ -1,6 +1,5 @@
 using Taskly.Application.DTOs;
 using System.Net.Http.Json;
-using System.Net.Http.Headers;
 public class ProjectTestHelper
 {
     private readonly HttpClient _client;
@@ -10,11 +9,13 @@ public class ProjectTestHelper
         _client = client;
     }
 
-    public async Task<ProjectResponseDto> CreateProjectAsync(Guid teamId)
+    public async Task<ProjectResponseDto> CreateProjectAsync(
+        Guid teamId,
+        string? name = null)
     {
         var project = new
         {
-            Name = "Test Project",
+            Name = name ?? $"Test Project {Guid.NewGuid()}",
             Description = "Project created for integration tests",
             TeamId = teamId
         };

@@ -27,6 +27,7 @@ namespace Taskly.Infrastructure
         {
             await EnsureUserIndexes();
             await EnsureTeamIndexes();
+            await EnsureProjectIndexes();
         }
 
         private async Task EnsureUserIndexes()
@@ -44,13 +45,25 @@ namespace Taskly.Infrastructure
         private async Task EnsureTeamIndexes()
         {
             var userIdsIndex = new CreateIndexModel<Team>(
-                Builders<Team>.IndexKeys.Ascending("UserIds"),
+                Builders<Team>.IndexKeys.Ascending(t => t.UserIds),
                 new CreateIndexOptions
                 {
                     Name = "ix_teams_user_ids"
                 });
 
             await Teams.Indexes.CreateOneAsync(userIdsIndex);
+        }
+
+        private async Task EnsureProjectIndexes()
+        {
+            var teamIdIndex = new CreateIndexModel<Project>(
+                Builders<Project>.IndexKeys.Ascending(p => p.TeamId),
+                new CreateIndexOptions
+                {
+                    Name = "ix_projects_team_id"
+                });
+
+            await Projects.Indexes.CreateOneAsync(teamIdIndex);
         }
     }
 }
