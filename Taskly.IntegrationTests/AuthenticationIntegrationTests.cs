@@ -31,7 +31,7 @@ public class AuthenticationIntegrationTests : IClassFixture<TasklyApiFactory>
 
         var login = new
         {
-            Email = email,
+            Email = email.ToUpperInvariant(),
             Password = password
         };
 

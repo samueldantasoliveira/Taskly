@@ -23,12 +23,18 @@ public class UserIntegrationTests : IClassFixture<TasklyApiFactory>
             Email = $"joao-{Guid.NewGuid()}@test.com",
             Password = "123456"
         };
+        var duplicateWithDifferentCasing = new
+        {
+            user.Name,
+            Email = user.Email.ToUpperInvariant(),
+            user.Password
+        };
 
         // Act
         var firstResponse = 
             await _client.PostAsJsonAsync("/api/user", user);
         var secondResponse = 
-            await _client.PostAsJsonAsync("/api/user", user);
+            await _client.PostAsJsonAsync("/api/user", duplicateWithDifferentCasing);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);

@@ -2,7 +2,6 @@ using Taskly.Domain.Entities;
 using Taskly.Application;
 using Taskly.Application.DTOs;
 using Moq;
-using Castle.Components.DictionaryAdapter;
 
 namespace Taskly.Tests;
 
@@ -46,11 +45,36 @@ public class UserServiceTests
         Assert.True(result.Success);
         Assert.NotNull(result.Value);
         Assert.Equal(userDto.Name, result.Value.Name);
+        Assert.Equal("test@test.com", result.Value.Email);
 
         _userRepositoryMock.Verify(
-            r => r.AddAsync(It.Is<User>(u => u.Name == userDto.Name)),
+            repository => repository.ExistsByEmailAsync("test@test.com"),
+            Times.Once);
+
+        _userRepositoryMock.Verify(
+            repository => repository.AddAsync(It.Is<User>(user =>
+                user.Name == userDto.Name &&
+                user.Email == "test@test.com")),
             Times.Once
         );
+    }
+
+    [Fact]
+    public async Task GetByEmail_NormalizesEmailBeforeRepositoryLookup()
+    {
+        var user = new User("User Test", "test@test.com", "HashTest");
+        _userRepositoryMock
+            .Setup(repository => repository.GetByEmailAsync("test@test.com"))
+            .ReturnsAsync(user);
+
+        var result = await _userService.GetByEmailAsync("TEST@TEST.COM");
+
+        Assert.NotNull(result);
+        Assert.Equal(user.Id, result.Id);
+        Assert.Equal("test@test.com", result.Email);
+        _userRepositoryMock.Verify(
+            repository => repository.GetByEmailAsync("test@test.com"),
+            Times.Once);
     }
 
     [Fact]
@@ -97,7 +121,7 @@ public class UserServiceTests
     public async Task UpdateUser_ShouldNotCheckEmailUniqueness_WhenEmailIsTheSame()
     {
         //Arrange
-        var updateDto = new UpdateUserDto {Name = "Name Test", Email = "email@test.com", Password = "Test"};
+        var updateDto = new UpdateUserDto {Name = "Name Test", Email = "EMAIL@TEST.COM", Password = "Test"};
         var user = new User("Name Test2", "email@test.com", "HashTest");
         _userRepositoryMock
             .Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
@@ -112,6 +136,8 @@ public class UserServiceTests
 
         //Assert
         Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal("email@test.com", result.Value.Email);
         _userRepositoryMock.Verify(
             u => u.ExistsByEmailAsync(It.IsAny<string>()),
             Times.Never
@@ -122,7 +148,7 @@ public class UserServiceTests
     public async Task UpdateUser_ValidInput_CallsRepositoryUpdateAsync()
     {
         //Arrange
-        var updateDto = new UpdateUserDto {Name = "Name Test", Email = "email@test.com", Password = "Test"};
+        var updateDto = new UpdateUserDto {Name = "Name Test", Email = "EMAIL@TEST.COM", Password = "Test"};
         var user = new User("Name Test2", "email2@test.com", "HashTest");
 
         _userRepositoryMock
@@ -141,7 +167,10 @@ public class UserServiceTests
         Assert.NotNull(result.Value);
         Assert.NotEqual("HashTest", user.PasswordHash);
         Assert.Equal(updateDto.Name, result.Value.Name);
-        Assert.Equal(updateDto.Email, result.Value.Email);
+        Assert.Equal("email@test.com", result.Value.Email);
+        _userRepositoryMock.Verify(
+            repository => repository.ExistsByEmailAsync("email@test.com"),
+            Times.Once);
         _userRepositoryMock.Verify(
             u => u.UpdateAsync(It.IsAny<User>()),
             Times.Once

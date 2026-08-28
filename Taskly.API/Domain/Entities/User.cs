@@ -28,7 +28,7 @@ namespace Taskly.Domain.Entities
                 throw new ArgumentException("Invalid Email format.", nameof(email));
             if (string.IsNullOrWhiteSpace(passwordHash))
                 throw new ArgumentException("Password cannot be empty.", nameof(passwordHash));
-                
+
             Id = Guid.NewGuid();
             Name = name;
             Email = email.ToLowerInvariant();
@@ -37,15 +37,21 @@ namespace Taskly.Domain.Entities
             CreatedAt = now;
             UpdatedAt = now;
         }
-        
+
         public void Update(string? name, string? email, string? passwordHash)
         {
             if (name != null)
                 Name = name;
 
             if (email != null)
-                Email = email;
-                
+            {
+                if (!IsValidEmail(email))
+                    throw new ArgumentException("Invalid email format.", nameof(email));
+
+                Email = email.ToLowerInvariant();
+            }
+
+
             if (passwordHash != null)
                 PasswordHash = passwordHash;
         }
@@ -61,7 +67,7 @@ namespace Taskly.Domain.Entities
                 return false;
             }
         }
-        
+
 
     }
 }

@@ -8,21 +8,22 @@ namespace Taskly.Application
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        public UserService(IUserRepository repository) 
+        public UserService(IUserRepository repository)
         {
             _userRepository = repository;
         }
 
         public async Task<StructuredOperationResult<UserResponseDto>> AddUserAsync(CreateUserDto userDto)
         {
-            if (await _userRepository.ExistsByEmailAsync(userDto.Email))
+            var hash = PasswordHasher.HashPassword(userDto.Password);
+            var user = new User(userDto.Name, userDto.Email, hash);
+
+            if (await _userRepository.ExistsByEmailAsync(user.Email))
                 return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.EmailAlreadyExists);
 
-            var hash = PasswordHasher.HashPassword(userDto.Password);
-            
-            var user = new User(userDto.Name, userDto.Email, hash);
+
             await _userRepository.AddAsync(user);
-            
+
             var userResponse = new UserResponseDto{
                 Id = user.Id,
                 Name = user.Name,
@@ -38,7 +39,9 @@ namespace Taskly.Application
 
         public async Task<UserResponseDto?> GetByEmailAsync(string email)
         {
-            var user = await _userRepository.GetByEmailAsync(email);
+            var normalizedEmail = email.ToLowerInvariant();
+
+            var user = await _userRepository.GetByEmailAsync(normalizedEmail);
             if( user == null )
                 return null;
 
@@ -68,26 +71,27 @@ namespace Taskly.Application
 
         public async Task<StructuredOperationResult<UserResponseDto>> UpdateUserAsync(Guid id, UpdateUserDto userDto)
         {
+            var normalizedEmail = userDto.Email?.ToLowerInvariant();
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null)
                 return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.NotFound);
 
-            if (userDto.Email != null && user.Email != userDto.Email)
+            if (normalizedEmail != null && user.Email != normalizedEmail)
             {
-                if (await _userRepository.ExistsByEmailAsync(userDto.Email))
+                if (await _userRepository.ExistsByEmailAsync(normalizedEmail))
                     return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.EmailAlreadyExists);
             }
-                
+
             string? passwordHash = null;
             if (userDto.Password != null)
                 passwordHash = PasswordHasher.HashPassword(userDto.Password);
-            user.Update(userDto.Name, userDto.Email, passwordHash);
+            user.Update(userDto.Name, normalizedEmail, passwordHash);
 
             var updated = await _userRepository.UpdateAsync(user);
 
             if (!updated)
                 return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.NotFound);
-            
+
             var userResponse = new UserResponseDto{
                 Id = user.Id,
                 Name = user.Name,
