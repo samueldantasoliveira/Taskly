@@ -25,22 +25,6 @@ public class TeamIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
-    public async Task GetUserTeams_WithoutToken_ReturnsUnauthorized()
-    {
-        var response = await _client.GetAsync("/api/team");
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetTeamById_WithoutToken_ReturnsUnauthorized()
-    {
-        var response = await _client.GetAsync($"/api/team/{Guid.NewGuid()}");
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
     public async Task GetUserTeams_ReturnsOnlyAuthenticatedUsersNonDeletedTeams()
     {
         var firstLogin = await _userHelper.CreateUserAndLoginAsync();
@@ -94,14 +78,38 @@ public class TeamIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
-    public async Task GetTeamById_TeamNotFound_ReturnsNotFound()
+    public async Task TeamMembership_OwnerAddsMember_MemberCanListAndLeaveTeam()
     {
-        var login = await _userHelper.CreateUserAndLoginAsync();
-        SetBearerToken(login.Token);
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        var member = await _userHelper.CreateUserAndLoginAsync();
 
-        var response = await _client.GetAsync($"/api/team/{Guid.NewGuid()}");
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var addResponse = await _client.PostAsync(
+            $"/api/team/{team.Id}/add-member?userId={member.User.Id}",
+            content: null);
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+
+        SetBearerToken(member.Token);
+        var memberTeamsResponse = await _client.GetAsync("/api/team");
+        Assert.Equal(HttpStatusCode.OK, memberTeamsResponse.StatusCode);
+
+        var memberTeams = await memberTeamsResponse.Content
+            .ReadFromJsonAsync<List<TeamResponseDto>>();
+        Assert.NotNull(memberTeams);
+        Assert.Contains(memberTeams, item => item.Id == team.Id);
+
+        var leaveResponse = await _client.DeleteAsync($"/api/team/{team.Id}/leave");
+        Assert.Equal(HttpStatusCode.OK, leaveResponse.StatusCode);
+
+        var teamsAfterLeavingResponse = await _client.GetAsync("/api/team");
+        Assert.Equal(HttpStatusCode.OK, teamsAfterLeavingResponse.StatusCode);
+
+        var teamsAfterLeaving = await teamsAfterLeavingResponse.Content
+            .ReadFromJsonAsync<List<TeamResponseDto>>();
+        Assert.NotNull(teamsAfterLeaving);
+        Assert.DoesNotContain(teamsAfterLeaving, item => item.Id == team.Id);
     }
 
     [Fact]

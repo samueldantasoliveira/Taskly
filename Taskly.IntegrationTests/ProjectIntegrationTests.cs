@@ -59,7 +59,7 @@ public class ProjectIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
-    public async Task GetTeamProjects_UserOutsideTeam_ReturnsForbidden()
+    public async Task GetTeamProjects_NonMemberReturnsForbidden()
     {
         var teamOwnerLogin = await _userHelper.CreateUserAndLoginAsync();
         SetBearerToken(teamOwnerLogin.Token);

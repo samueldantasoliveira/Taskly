@@ -73,11 +73,36 @@ namespace Taskly.Application
             return StructuredOperationResult<TodoTaskResponseDto>.Ok(todoTaskResponseDto);
         }
 
-        public async Task<TodoTaskResponseDto?> GetByIdAsync(Guid todoTaskId)
+        public async Task<StructuredOperationResult<TodoTaskResponseDto>> GetByIdAsync(
+            Guid todoTaskId,
+            Guid authenticatedUserId)
         {
             var todoTask = await _todoTaskRepository.GetByIdAsync(todoTaskId);
-            if(todoTask == null)
-                return null;
+            if (todoTask == null)
+                return StructuredOperationResult<TodoTaskResponseDto>
+                    .Fail(TodoTaskErrors.NotFound);
+
+            var project = await _projectRepository.GetByIdAsync(todoTask.ProjectId);
+            if (project == null)
+                return StructuredOperationResult<TodoTaskResponseDto>
+                    .Fail(TodoTaskErrors.ProjectNotFound);
+
+            if (project.Status == ProjectStatus.Inactive)
+                return StructuredOperationResult<TodoTaskResponseDto>
+                    .Fail(TodoTaskErrors.ProjectInactive);
+
+            var team = await _teamRepository.GetByIdAsync(project.TeamId);
+            if (team == null)
+                return StructuredOperationResult<TodoTaskResponseDto>
+                    .Fail(TodoTaskErrors.TeamNotFound);
+
+            if (!team.IsActive)
+                return StructuredOperationResult<TodoTaskResponseDto>
+                    .Fail(TodoTaskErrors.TeamInactive);
+
+            if (!team.UserIds.Contains(authenticatedUserId))
+                return StructuredOperationResult<TodoTaskResponseDto>
+                    .Fail(TodoTaskErrors.UserNotTeamMember);
 
             var todoTaskResponseDto = new TodoTaskResponseDto
             {
@@ -91,7 +116,8 @@ namespace Taskly.Application
                 UpdatedAt = todoTask.UpdatedAt
             };
 
-            return todoTaskResponseDto;
+            return StructuredOperationResult<TodoTaskResponseDto>
+                .Ok(todoTaskResponseDto);
         }
 
 

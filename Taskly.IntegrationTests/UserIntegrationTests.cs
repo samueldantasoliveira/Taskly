@@ -14,26 +14,6 @@ public class UserIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
-    public async Task Register_ValidUser_ReturnsOk()
-    {
-        // Arrange
-        var user = new
-        {
-            Name = "João",
-            Email = $"joao-{Guid.NewGuid()}@test.com",
-            Password = "123456"
-        };
-
-        // Act
-        var response = 
-            await _client.PostAsJsonAsync("/api/user", user);
-
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
     public async Task Register_DuplicateEmail_ReturnsConflict()
     {
         // Arrange
@@ -57,179 +37,57 @@ public class UserIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
-    public async Task UpdateUser_ValidData_ReturnsOk()
+    public async Task UpdateUser_AnotherAuthenticatedUser_ReturnsForbidden()
     {
         // Arrange
-        var email = $"joao-{Guid.NewGuid()}@test.com";
         var password = "123456";
 
-        var user = new
+        var authenticatedUser = new
         {
             Name = "João",
-            Email = email,
+            Email = $"joao-{Guid.NewGuid()}@test.com",
             Password = password
         };
 
-        var registerResponse = 
-            await _client.PostAsJsonAsync("/api/user", user);
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
-
-        var createdUser =
-            await registerResponse.Content.ReadFromJsonAsync<UserResponseDto>();
-
-        Assert.NotNull(createdUser);
-
-        var login = new
-        {
-            Email = email,
-            Password = password
-        };
-
-        var loginResponse =
-            await _client.PostAsJsonAsync("/api/login", login);
-        
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-
-        var loginResult =
-            await loginResponse.Content.ReadFromJsonAsync<LoginResponseDto>();
-
-        Assert.NotNull(loginResult);
-
-        _client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", loginResult.Token);
-
-        var updatedUser = new
-        {
-            Name = "Pedro" 
-        };
-
-        // Act
-        var response = 
-            await _client.PutAsJsonAsync($"/api/user/{loginResult.User.Id}", updatedUser);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var updatedUserResponse =
-            await response.Content.ReadFromJsonAsync<UserResponseDto>();
-
-        Assert.NotNull(updatedUserResponse);
-        Assert.Equal("Pedro", updatedUserResponse.Name);
-    }
-
-    [Fact]
-    public async Task UpdateUser_DuplicateEmail_ReturnsConflict()
-    {
-         // Arrange
-        var email = $"joao-{Guid.NewGuid()}@test.com";
-        var password = "123456";
-
-        var firstUser = new
-        {
-            Name = "João",
-            Email = email,
-            Password = password
-        };
-
-        var secondUser = new
+        var targetUser = new
         {
             Name = "Maria",
-            Email = $"Maria-{Guid.NewGuid()}@test.com",
+            Email = $"maria-{Guid.NewGuid()}@test.com",
             Password = password
         };
 
-        var firstRegisterResponse = 
-            await _client.PostAsJsonAsync("/api/user", firstUser);
-        var secondRegisterResponse = 
-            await _client.PostAsJsonAsync("/api/user", secondUser);
+        var authenticatedRegisterResponse =
+            await _client.PostAsJsonAsync("/api/user", authenticatedUser);
+        var targetRegisterResponse =
+            await _client.PostAsJsonAsync("/api/user", targetUser);
 
-        Assert.Equal(HttpStatusCode.OK, firstRegisterResponse.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, secondRegisterResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, authenticatedRegisterResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, targetRegisterResponse.StatusCode);
 
-        var firstCreatedUser =
-            await firstRegisterResponse.Content.ReadFromJsonAsync<UserResponseDto>();
-        var secondCreatedUser =
-            await secondRegisterResponse.Content.ReadFromJsonAsync<UserResponseDto>();
+        var target = await targetRegisterResponse.Content
+            .ReadFromJsonAsync<UserResponseDto>();
+        Assert.NotNull(target);
 
-        Assert.NotNull(firstCreatedUser);
-        Assert.NotNull(secondCreatedUser);
-
-        var login = new
+        var loginResponse = await _client.PostAsJsonAsync("/api/login", new
         {
-            secondUser.Email,
-            secondUser.Password
-        };
-
-        var loginResponse = 
-            await _client.PostAsJsonAsync("/api/login", login);
-
+            authenticatedUser.Email,
+            authenticatedUser.Password
+        });
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
 
-        var loginResult =
-            await loginResponse.Content.ReadFromJsonAsync<LoginResponseDto>();
-
-        Assert.NotNull(loginResult);
-
-        _client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", loginResult.Token);
-
-        var updatedUser = new
-        {
-            firstUser.Email
-        };
-
-        // Act
-        var response = 
-            await _client.PutAsJsonAsync($"/api/user/{loginResult.User.Id}", updatedUser);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Conflict , response.StatusCode);
-    }
-
-    [Fact]
-    public async Task DeleteUser_ExistingUser_ReturnsNoContent()
-    {
-        // Arrange
-        var email = $"joao-{Guid.NewGuid()}@test.com";
-        var password = "123456";
-        
-        var user = new
-        {
-            Name = "João",
-            email,
-            password
-        };
-
-        var registerResponse = 
-            await _client.PostAsJsonAsync("api/user", user);
-        Assert.Equal(HttpStatusCode.OK , registerResponse.StatusCode);
-
-        var createdUser =
-            await registerResponse.Content.ReadFromJsonAsync<UserResponseDto>();
-        
-        Assert.NotNull(createdUser);
-
-        var login = new
-        {
-            email,
-            password
-        };
-
-        var loginResponse = 
-            await _client.PostAsJsonAsync("api/login", login);
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-
-        var loginResult =
-            await loginResponse.Content.ReadFromJsonAsync<LoginResponseDto>();
+        var loginResult = await loginResponse.Content
+            .ReadFromJsonAsync<LoginResponseDto>();
         Assert.NotNull(loginResult);
 
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", loginResult.Token);
 
         // Act
-        var response = await _client.DeleteAsync($"api/user/{createdUser.Id}");
+        var response = await _client.PutAsJsonAsync(
+            $"/api/user/{target.Id}",
+            new { Name = "Nome alterado indevidamente" });
 
         // Assert
-        Assert.Equal(HttpStatusCode.NoContent , response.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 }

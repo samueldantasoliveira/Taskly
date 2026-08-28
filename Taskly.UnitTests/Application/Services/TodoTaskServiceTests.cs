@@ -2186,4 +2186,199 @@ public class TodoTaskServiceTests
             r => r.UpdateAsync(task),
             Times.Once);
     }
+
+    [Fact]
+    public async Task GetById_TaskNotFound_ReturnsFail()
+    {
+        var result = await _todoTaskService.GetByIdAsync(
+            Guid.NewGuid(),
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_ProjectNotFound_ReturnsFail()
+    {
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            Guid.NewGuid(),
+            null);
+
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_ProjectInactive_ReturnsFail()
+    {
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Inactive,
+            Guid.NewGuid());
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null);
+
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_TeamNotFound_ReturnsFail()
+    {
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid());
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null);
+
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_TeamInactive_ReturnsFail()
+    {
+        var authenticatedUserId = Guid.NewGuid();
+        var team = new Team("Test team", authenticatedUserId);
+        team.Update(null, false);
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            authenticatedUserId);
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            authenticatedUserId);
+
+        SetupGetByIdDependencies(task, project, team);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            authenticatedUserId);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_UserNotTeamMember_ReturnsFail()
+    {
+        var team = new Team("Test team", Guid.NewGuid());
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            team.OwnerId);
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null);
+
+        SetupGetByIdDependencies(task, project, team);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_ValidRequest_ReturnsMappedTask()
+    {
+        var authenticatedUserId = Guid.NewGuid();
+        var team = new Team("Test team", authenticatedUserId);
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            authenticatedUserId);
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            authenticatedUserId);
+
+        SetupGetByIdDependencies(task, project, team);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            authenticatedUserId);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(task.Id, result.Value.Id);
+        Assert.Equal(task.Title, result.Value.Title);
+        Assert.Equal(task.Description, result.Value.Description);
+        Assert.Equal(task.ProjectId, result.Value.ProjectId);
+        Assert.Equal(task.AssignedUserId, result.Value.AssignedUserId);
+        Assert.Equal(task.Status, result.Value.Status);
+    }
+
+    private void SetupGetByIdDependencies(
+        TodoTask task,
+        Project project,
+        Team team)
+    {
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+    }
 }

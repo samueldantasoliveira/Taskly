@@ -38,8 +38,17 @@ namespace Taskly.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var todoTask = await _todoTaskService.GetByIdAsync(id);
-            return todoTask is null ? NotFound() : Ok(todoTask);
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _todoTaskService.GetByIdAsync(
+                id,
+                authenticatedUserId);
+
+            if (!result.Success)
+                return MapErrorToResponse(result.Error!);
+
+            return Ok(result.Value);
         }
 
         [Authorize]
