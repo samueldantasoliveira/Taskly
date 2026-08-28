@@ -45,7 +45,7 @@ namespace Taskly.Infrastructure
         private async Task EnsureTeamIndexes()
         {
             var userIdsIndex = new CreateIndexModel<Team>(
-                Builders<Team>.IndexKeys.Ascending(t => t.UserIds),
+                Builders<Team>.IndexKeys.Ascending("UserIds"),
                 new CreateIndexOptions
                 {
                     Name = "ix_teams_user_ids"
