@@ -30,11 +30,6 @@ namespace Taskly.Infrastructure
             return result.ModifiedCount == 1;
         }
 
-        public Task<List<User>> GetAllAsync()
-        {
-            throw new NotImplementedException();
-        }
-
         public async Task<User?> GetByIdAsync(Guid id)
         {
             return await _context.Users.Find(BaseFilter(u => u.Id == id)).FirstOrDefaultAsync();
