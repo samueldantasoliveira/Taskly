@@ -15,6 +15,8 @@ namespace Taskly.Application
 
         public async Task<StructuredOperationResult<UserResponseDto>> AddUserAsync(CreateUserDto userDto)
         {
+            if (string.IsNullOrWhiteSpace(userDto.Password))
+                return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.InvalidPassword);
             var hash = PasswordHasher.HashPassword(userDto.Password);
             var user = new User(userDto.Name, userDto.Email, hash);
 
@@ -84,7 +86,12 @@ namespace Taskly.Application
 
             string? passwordHash = null;
             if (userDto.Password != null)
+            {
+                if (string.IsNullOrWhiteSpace(userDto.Password))
+                    return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.InvalidPassword);
                 passwordHash = PasswordHasher.HashPassword(userDto.Password);
+            }
+
             user.Update(userDto.Name, normalizedEmail, passwordHash);
 
             var updated = await _userRepository.UpdateAsync(user);

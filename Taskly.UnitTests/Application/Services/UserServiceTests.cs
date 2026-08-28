@@ -31,6 +31,31 @@ public class UserServiceTests
         Assert.NotNull(result.Error);
         Assert.Equal("User.EmailAlreadyExists", result.Error.Code);
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task AddUser_EmptyPassword_ReturnsInvalidPassword(
+        string invalidPassword)
+    {
+        var userDto = new CreateUserDto
+        {
+            Name = "User Test",
+            Email = "test@test.com",
+            Password = invalidPassword
+        };
+
+        var result = await _userService.AddUserAsync(userDto);
+
+        Assert.False(result.Success);
+        Assert.Equal("User.InvalidPassword", result.Error?.Code);
+        _userRepositoryMock.Verify(
+            repository => repository.ExistsByEmailAsync(It.IsAny<string>()),
+            Times.Never);
+        _userRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<User>()),
+            Times.Never);
+    }
     
     [Fact]
     public async Task AddUser_ValidInput_CallsRepositoryAddAsync()
@@ -93,6 +118,27 @@ public class UserServiceTests
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
         Assert.Equal("User.NotFound", result.Error.Code);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task UpdateUser_EmptyPassword_ReturnsInvalidPassword(
+        string invalidPassword)
+    {
+        var user = new User("User Test", "test@test.com", "HashTest");
+        var updateDto = new UpdateUserDto { Password = invalidPassword };
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+
+        var result = await _userService.UpdateUserAsync(user.Id, updateDto);
+
+        Assert.False(result.Success);
+        Assert.Equal("User.InvalidPassword", result.Error?.Code);
+        _userRepositoryMock.Verify(
+            repository => repository.UpdateAsync(It.IsAny<User>()),
+            Times.Never);
     }
 
     [Fact]
