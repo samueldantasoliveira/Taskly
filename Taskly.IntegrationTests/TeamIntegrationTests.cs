@@ -120,7 +120,7 @@ public class TeamIntegrationTests : IClassFixture<TasklyApiFactory>
 
         var teamId = Guid.NewGuid();
         var mongoClient = _factory.Services.GetRequiredService<MongoClient>();
-        var database = mongoClient.GetDatabase("TasklyIntegrationTests");
+        var database = mongoClient.GetDatabase(_factory.DatabaseName);
         var teams = database.GetCollection<BsonDocument>("Teams");
 
         await teams.InsertOneAsync(new BsonDocument

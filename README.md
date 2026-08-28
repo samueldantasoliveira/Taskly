@@ -3,7 +3,7 @@
 ![xUnit](https://img.shields.io/badge/Tests-xUnit-success)
 # 🗂️ Taskly API
 
-API para gerenciamento de usuários, equipes, projetos e tarefas, desenvolvida com .NET 8 e MongoDB.
+API para gerenciamento de usuários, equipes, projetos e tarefas, desenvolvida com .NET 9 e MongoDB.
 
 O projeto foi criado com foco em organização de código, separação de responsabilidades e aplicação prática de conceitos utilizados no desenvolvimento back-end.
 
@@ -144,7 +144,7 @@ cd Taskly
 
 ### 2. Iniciar os bancos MongoDB
 
-O arquivo `compose.yaml` cria dois bancos independentes:
+O arquivo `compose.yaml` cria dois containers MongoDB independentes:
 
 | Serviço | Porta | Uso | Dados |
 | ------- | ----- | --- | ----- |
@@ -172,6 +172,8 @@ podman compose ps
 ```
 
 As configurações padrão do projeto já apontam a API para `localhost:27017` e os testes de integração para `localhost:27018`.
+
+O container `mongodb-test` é reutilizado durante a execução da suíte. Cada classe de testes de integração recebe um banco lógico exclusivo, com nome no formato `TasklyIntegrationTests_<guid>`. O MongoDB cria esse banco na primeira gravação, e a `TasklyApiFactory` o remove automaticamente quando a classe termina. Assim, os testes podem executar isoladamente sem acumular dados entre execuções e sem criar um novo container para cada teste.
 
 ### 3. Restaurar as dependências
 
