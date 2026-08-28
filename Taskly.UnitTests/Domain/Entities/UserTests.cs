@@ -1,4 +1,5 @@
 using Taskly.Domain.Entities;
+using Taskly.Domain.Exceptions;
 
 namespace Taskly.Tests;
 
@@ -28,7 +29,7 @@ public class UserTests
     public void CreateUser_InvalidName_ThrowsException(string invalidName)
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => new User(invalidName, "Email@Test.com", "PasswordTest"));
+        Assert.Throws<InvalidUserNameException>(() => new User(invalidName, "Email@Test.com", "PasswordTest"));
     }
 
     [Theory]
@@ -39,7 +40,7 @@ public class UserTests
     public void CreateUser_InvalidEmail_ThrowsException(string invalidEmail)
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => new User("NameTest", invalidEmail, "PasswordTest"));
+        Assert.Throws<InvalidUserEmailException>(() => new User("NameTest", invalidEmail, "PasswordTest"));
     }
 
     [Theory]
@@ -48,7 +49,7 @@ public class UserTests
     public void CreateUser_InvalidPassword_ThrowsException(string invalidPassword)
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => new User("NameTest", "Email@Test.com", invalidPassword));
+        Assert.Throws<InvalidUserPasswordException>(() => new User("NameTest", "Email@Test.com", invalidPassword));
     }
 
 }

@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
+using Taskly.Domain.Exceptions;
 
 namespace Taskly.Domain.Entities
 {
@@ -21,13 +22,11 @@ namespace Taskly.Domain.Entities
         public User(string name, string email, string passwordHash)
         {
             if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Name cannot be empty.", nameof(name));
-            if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("Email cannot be empty.", nameof(email));
+                throw new InvalidUserNameException("Name cannot be empty.");
             if (!IsValidEmail(email))
-                throw new ArgumentException("Invalid Email format.", nameof(email));
+                throw new InvalidUserEmailException("Invalid Email format.");
             if (string.IsNullOrWhiteSpace(passwordHash))
-                throw new ArgumentException("Password cannot be empty.", nameof(passwordHash));
+                throw new InvalidUserPasswordException("Password cannot be empty.");
 
             Id = Guid.NewGuid();
             Name = name;
@@ -41,20 +40,34 @@ namespace Taskly.Domain.Entities
         public void Update(string? name, string? email, string? passwordHash)
         {
             if (name != null)
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                    throw new InvalidUserNameException("Name cannot be empty.");
                 Name = name;
+            }
+                
 
             if (email != null)
             {
                 if (!IsValidEmail(email))
-                    throw new ArgumentException("Invalid email format.", nameof(email));
+                    throw new InvalidUserEmailException("Invalid Email format.");
 
                 Email = email.ToLowerInvariant();
             }
 
 
             if (passwordHash != null)
+            {
+                if (string.IsNullOrWhiteSpace(passwordHash))
+                    throw new InvalidUserPasswordException("Password cannot be empty.");
+
                 PasswordHash = passwordHash;
+            }
+
+            if(name != null || email != null || passwordHash != null)
+                UpdatedAt = DateTime.UtcNow;             
         }
+        
         public static bool IsValidEmail(string email)
         {
             try
