@@ -23,6 +23,15 @@ namespace Taskly.Infrastructure
             return await _context.TodoTasks.Find(BaseFilter(t => t.Id == id)).FirstOrDefaultAsync();
         }
 
+        public async Task<List<TodoTask>> GetByProjectIdAsync(
+            Guid projectId,
+            CancellationToken cancellationToken)
+        {
+            return await _context.TodoTasks
+                .Find(BaseFilter(t => t.ProjectId == projectId))
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<bool> UpdateAsync(TodoTask task)
         {
             var result = await _context.TodoTasks.ReplaceOneAsync(

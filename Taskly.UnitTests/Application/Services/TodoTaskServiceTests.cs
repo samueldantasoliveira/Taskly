@@ -2366,6 +2366,251 @@ public class TodoTaskServiceTests
         Assert.Equal(task.Status, result.Value.Status);
     }
 
+    [Fact]
+    public async Task GetByProjectId_UserNotFound_ReturnsFail()
+    {
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.UserNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_ProjectNotFound_ReturnsFail()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            Guid.NewGuid(),
+            user.Id,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_ProjectInactive_ReturnsFail()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Inactive,
+            user.Id);
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_TeamNotFound_ReturnsFail()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            user.Id);
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_TeamInactive_ReturnsFail()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        team.Update(null, false);
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+
+        SetupGetByProjectIdDependencies(user, project, team);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_UserNotTeamMember_ReturnsFail()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", Guid.NewGuid());
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            team.OwnerId);
+
+        SetupGetByProjectIdDependencies(user, project, team);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
+        _todoTaskRepositoryMock.Verify(
+            repository => repository.GetByProjectIdAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_NoTasks_ReturnsEmptyList()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+
+        SetupGetByProjectIdDependencies(user, project, team);
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByProjectIdAsync(
+                project.Id,
+                cancellationToken))
+            .ReturnsAsync([]);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            cancellationToken);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Empty(result.Value);
+        _todoTaskRepositoryMock.Verify(
+            repository => repository.GetByProjectIdAsync(
+                project.Id,
+                cancellationToken),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_ValidRequest_ReturnsMappedTasks()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+        var firstTask = new TodoTask(
+            "First task",
+            "First description",
+            project.Id,
+            user.Id);
+        var secondTask = new TodoTask(
+            "Second task",
+            "Second description",
+            project.Id,
+            null);
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+
+        SetupGetByProjectIdDependencies(user, project, team);
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByProjectIdAsync(
+                project.Id,
+                cancellationToken))
+            .ReturnsAsync([firstTask, secondTask]);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            cancellationToken);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Collection(
+            result.Value,
+            first =>
+            {
+                Assert.Equal(firstTask.Title, first.Title);
+                Assert.Equal(firstTask.Description, first.Description);
+                Assert.Equal(firstTask.ProjectId, first.ProjectId);
+                Assert.Equal(firstTask.AssignedUserId, first.AssignedUserId);
+                Assert.Equal(firstTask.Status, first.Status);
+            },
+            second =>
+            {
+                Assert.Equal(secondTask.Title, second.Title);
+                Assert.Equal(secondTask.Description, second.Description);
+                Assert.Equal(secondTask.ProjectId, second.ProjectId);
+                Assert.Equal(secondTask.AssignedUserId, second.AssignedUserId);
+                Assert.Equal(secondTask.Status, second.Status);
+            });
+    }
+
+    private void SetupGetByProjectIdDependencies(
+        User user,
+        Project project,
+        Team team)
+    {
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .ReturnsAsync(user);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .ReturnsAsync(project);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id))
+            .ReturnsAsync(team);
+    }
+
     private void SetupGetByIdDependencies(
         TodoTask task,
         Project project,

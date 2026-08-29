@@ -120,6 +120,60 @@ namespace Taskly.Application
                 .Ok(todoTaskResponseDto);
         }
 
+        public async Task<StructuredOperationResult<List<TodoTaskResponseDto>>> GetByProjectIdAsync(
+            Guid projectId,
+            Guid authenticatedUserId,
+            CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByIdAsync(authenticatedUserId);
+            if (user == null)
+                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.UserNotFound);
+
+            var project = await _projectRepository.GetByIdAsync(projectId);
+            if (project == null)
+                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.ProjectNotFound);
+
+            if (project.Status == ProjectStatus.Inactive)
+                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.ProjectInactive);
+
+            var team = await _teamRepository.GetByIdAsync(project.TeamId);
+            if (team == null)
+                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.TeamNotFound);
+
+            if (!team.IsActive)
+                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.TeamInactive);
+
+            if (!team.UserIds.Contains(authenticatedUserId))
+                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.UserNotTeamMember);
+
+            var todoTasks = await _todoTaskRepository.GetByProjectIdAsync(
+                projectId,
+                cancellationToken);
+
+            var response = todoTasks
+                .Select(todoTask => new TodoTaskResponseDto
+                {
+                    Id = todoTask.Id,
+                    Title = todoTask.Title,
+                    Description = todoTask.Description,
+                    Status = todoTask.Status,
+                    ProjectId = todoTask.ProjectId,
+                    AssignedUserId = todoTask.AssignedUserId,
+                    CreatedAt = todoTask.CreatedAt,
+                    UpdatedAt = todoTask.UpdatedAt
+                })
+                .ToList();
+
+            return StructuredOperationResult<List<TodoTaskResponseDto>>
+                .Ok(response);
+        }
+
 
         public async Task<StructuredOperationResult<TodoTaskResponseDto>> UpdateAsync(Guid id, UpdateTodoTaskDto dto, Guid authenticatedUserId)
         {

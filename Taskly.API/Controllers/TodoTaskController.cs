@@ -52,6 +52,26 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
+        [HttpGet("project/{projectId}")]
+        public async Task<IActionResult> GetByProjectId(
+            Guid projectId,
+            CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _todoTaskService.GetByProjectIdAsync(
+                projectId,
+                authenticatedUserId,
+                cancellationToken);
+
+            if (!result.Success)
+                return MapErrorToResponse(result.Error!);
+
+            return Ok(result.Value);
+        }
+
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTodoTaskDto todoTaskDto)
         {

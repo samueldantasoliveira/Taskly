@@ -52,6 +52,17 @@ public class TodoTaskIntegrationTests : IClassFixture<TasklyApiFactory>
         Assert.NotNull(completedTask);
         Assert.Equal(TodoStatus.Done, completedTask.Status);
         Assert.Equal(member.User.Id, completedTask.AssignedUserId);
+
+        var listResponse = await _client.GetAsync(
+            $"/api/TodoTask/project/{project.Id}");
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+
+        var projectTasks = await listResponse.Content
+            .ReadFromJsonAsync<List<TodoTaskResponseDto>>();
+        Assert.NotNull(projectTasks);
+        var listedTask = Assert.Single(projectTasks);
+        Assert.Equal(task.Id, listedTask.Id);
+        Assert.Equal(TodoStatus.Done, listedTask.Status);
     }
 
     [Fact]
@@ -68,6 +79,8 @@ public class TodoTaskIntegrationTests : IClassFixture<TasklyApiFactory>
         SetBearerToken(outsider.Token);
 
         var readResponse = await _client.GetAsync($"/api/TodoTask/{task.Id}");
+        var listResponse = await _client.GetAsync(
+            $"/api/TodoTask/project/{project.Id}");
         var updateResponse = await _client.PutAsJsonAsync(
             $"/api/TodoTask/{task.Id}",
             new
@@ -78,9 +91,11 @@ public class TodoTaskIntegrationTests : IClassFixture<TasklyApiFactory>
 
         Assert.True(
             readResponse.StatusCode == HttpStatusCode.Forbidden &&
+            listResponse.StatusCode == HttpStatusCode.Forbidden &&
             updateResponse.StatusCode == HttpStatusCode.Forbidden,
-            $"Expected read and update to return Forbidden, but read returned " +
-            $"{readResponse.StatusCode} and update returned {updateResponse.StatusCode}.");
+            $"Expected read, list and update to return Forbidden, but read returned " +
+            $"{readResponse.StatusCode}, list returned {listResponse.StatusCode} and " +
+            $"update returned {updateResponse.StatusCode}.");
     }
 
     private async Task AddMemberAsync(Guid teamId, Guid userId)

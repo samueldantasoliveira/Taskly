@@ -28,6 +28,7 @@ namespace Taskly.Infrastructure
             await EnsureUserIndexes();
             await EnsureTeamIndexes();
             await EnsureProjectIndexes();
+            await EnsureTodoTaskIndexes();
         }
 
         private async Task EnsureUserIndexes()
@@ -64,6 +65,18 @@ namespace Taskly.Infrastructure
                 });
 
             await Projects.Indexes.CreateOneAsync(teamIdIndex);
+        }
+
+        private async Task EnsureTodoTaskIndexes()
+        {
+            var projectIdIndex = new CreateIndexModel<TodoTask>(
+                Builders<TodoTask>.IndexKeys.Ascending(task => task.ProjectId),
+                new CreateIndexOptions
+                {
+                    Name = "ix_todo_tasks_project_id"
+                });
+
+            await TodoTasks.Indexes.CreateOneAsync(projectIdIndex);
         }
     }
 }
