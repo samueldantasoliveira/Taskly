@@ -6,9 +6,9 @@ namespace Taskly.Application
     {
         Task<List<TodoTask>> GetByProjectIdAsync(
             Guid projectId,
-            CancellationToken cancellationToken);
-        Task<TodoTask?> GetByIdAsync(Guid id);
-        Task AddAsync(TodoTask task);
-        Task<bool> UpdateAsync(TodoTask task);
+            CancellationToken cancellationToken = default);
+        Task<TodoTask?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task AddAsync(TodoTask task, CancellationToken cancellationToken = default);
+        Task<bool> UpdateAsync(TodoTask task, CancellationToken cancellationToken = default);
     }
 }

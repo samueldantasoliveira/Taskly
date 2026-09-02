@@ -13,30 +13,31 @@ namespace Taskly.Infrastructure
         {
             _context = context;
         }
-        public async Task AddAsync(TodoTask todoTask)
+        public async Task AddAsync(TodoTask todoTask, CancellationToken cancellationToken = default)
         {
-            await _context.TodoTasks.InsertOneAsync(todoTask);
+            await _context.TodoTasks.InsertOneAsync(todoTask, cancellationToken: cancellationToken);
         }
 
-        public async Task<TodoTask?> GetByIdAsync(Guid id)
+        public async Task<TodoTask?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.TodoTasks.Find(BaseFilter(t => t.Id == id)).FirstOrDefaultAsync();
+            return await _context.TodoTasks.Find(BaseFilter(t => t.Id == id)).FirstOrDefaultAsync(cancellationToken);
         }
 
         public async Task<List<TodoTask>> GetByProjectIdAsync(
             Guid projectId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken = default)
         {
             return await _context.TodoTasks
                 .Find(BaseFilter(t => t.ProjectId == projectId))
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<bool> UpdateAsync(TodoTask task)
+        public async Task<bool> UpdateAsync(TodoTask task, CancellationToken cancellationToken = default)
         {
             var result = await _context.TodoTasks.ReplaceOneAsync(
                 BaseFilter(t => t.Id == task.Id), 
-                task);
+                task,
+                cancellationToken: cancellationToken);
             return result.ModifiedCount > 0;
         }
 

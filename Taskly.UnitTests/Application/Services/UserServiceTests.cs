@@ -21,7 +21,7 @@ public class UserServiceTests
     {
         // Arrange
         var userDto = new CreateUserDto { Name = "User Test", Password = "Password", Email = "Test@Test.com"};
-        _userRepositoryMock.Setup(u => u.ExistsByEmailAsync(It.IsAny<string>())).ReturnsAsync(true);
+        _userRepositoryMock.Setup(u => u.ExistsByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act
         var result = await _userService.AddUserAsync(userDto);
@@ -50,10 +50,10 @@ public class UserServiceTests
         Assert.False(result.Success);
         Assert.Equal("User.InvalidPassword", result.Error?.Code);
         _userRepositoryMock.Verify(
-            repository => repository.ExistsByEmailAsync(It.IsAny<string>()),
+            repository => repository.ExistsByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _userRepositoryMock.Verify(
-            repository => repository.AddAsync(It.IsAny<User>()),
+            repository => repository.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
     
@@ -73,13 +73,13 @@ public class UserServiceTests
         Assert.Equal("test@test.com", result.Value.Email);
 
         _userRepositoryMock.Verify(
-            repository => repository.ExistsByEmailAsync("test@test.com"),
+            repository => repository.ExistsByEmailAsync("test@test.com", It.IsAny<CancellationToken>()),
             Times.Once);
 
         _userRepositoryMock.Verify(
             repository => repository.AddAsync(It.Is<User>(user =>
                 user.Name == userDto.Name &&
-                user.Email == "test@test.com")),
+                user.Email == "test@test.com"), It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -89,7 +89,7 @@ public class UserServiceTests
     {
         var user = new User("User Test", "test@test.com", "HashTest");
         _userRepositoryMock
-            .Setup(repository => repository.GetByEmailAsync("test@test.com"))
+            .Setup(repository => repository.GetByEmailAsync("test@test.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         var result = await _userService.GetByEmailAsync("TEST@TEST.COM");
@@ -98,7 +98,7 @@ public class UserServiceTests
         Assert.Equal(user.Id, result.Id);
         Assert.Equal("test@test.com", result.Email);
         _userRepositoryMock.Verify(
-            repository => repository.GetByEmailAsync("test@test.com"),
+            repository => repository.GetByEmailAsync("test@test.com", It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -137,7 +137,7 @@ public class UserServiceTests
         Assert.False(result.Success);
         Assert.Equal("User.InvalidPassword", result.Error?.Code);
         _userRepositoryMock.Verify(
-            repository => repository.UpdateAsync(It.IsAny<User>()),
+            repository => repository.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -151,7 +151,7 @@ public class UserServiceTests
             .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         _userRepositoryMock
-            .Setup(u => u.ExistsByEmailAsync(It.IsAny<string>()))
+            .Setup(u => u.ExistsByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         
         //Act
@@ -174,7 +174,7 @@ public class UserServiceTests
             .ReturnsAsync(user);
 
         _userRepositoryMock
-            .Setup(u => u.UpdateAsync(It.IsAny<User>()))
+            .Setup(u => u.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         //Act
@@ -185,7 +185,7 @@ public class UserServiceTests
         Assert.NotNull(result.Value);
         Assert.Equal("email@test.com", result.Value.Email);
         _userRepositoryMock.Verify(
-            u => u.ExistsByEmailAsync(It.IsAny<string>()),
+            u => u.ExistsByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never
         );
     }
@@ -202,7 +202,7 @@ public class UserServiceTests
             .ReturnsAsync(user);
 
         _userRepositoryMock
-            .Setup(u => u.UpdateAsync(It.IsAny<User>()))
+            .Setup(u => u.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         
         //Act
@@ -215,11 +215,29 @@ public class UserServiceTests
         Assert.Equal(updateDto.Name, result.Value.Name);
         Assert.Equal("email@test.com", result.Value.Email);
         _userRepositoryMock.Verify(
-            repository => repository.ExistsByEmailAsync("email@test.com"),
+            repository => repository.ExistsByEmailAsync("email@test.com", It.IsAny<CancellationToken>()),
             Times.Once);
         _userRepositoryMock.Verify(
-            u => u.UpdateAsync(It.IsAny<User>()),
+            u => u.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()),
             Times.Once
         );
+    }
+
+    [Fact]
+    public async Task DeleteUser_PropagatesCancellationTokenToRepository()
+    {
+        var userId = Guid.NewGuid();
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+        _userRepositoryMock
+            .Setup(repository => repository.DeleteAsync(userId, cancellationToken))
+            .ReturnsAsync(true);
+
+        var result = await _userService.DeleteUserAsync(userId, cancellationToken);
+
+        Assert.True(result);
+        _userRepositoryMock.Verify(
+            repository => repository.DeleteAsync(userId, cancellationToken),
+            Times.Once);
     }
 }

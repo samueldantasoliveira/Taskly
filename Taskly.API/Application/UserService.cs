@@ -13,18 +13,19 @@ namespace Taskly.Application
             _userRepository = repository;
         }
 
-        public async Task<StructuredOperationResult<UserResponseDto>> AddUserAsync(CreateUserDto userDto)
+        public async Task<StructuredOperationResult<UserResponseDto>> AddUserAsync(CreateUserDto userDto, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(userDto.Password))
                 return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.InvalidPassword);
+            cancellationToken.ThrowIfCancellationRequested();
             var hash = PasswordHasher.HashPassword(userDto.Password);
             var user = new User(userDto.Name, userDto.Email, hash);
 
-            if (await _userRepository.ExistsByEmailAsync(user.Email))
+            if (await _userRepository.ExistsByEmailAsync(user.Email, cancellationToken))
                 return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.EmailAlreadyExists);
 
 
-            await _userRepository.AddAsync(user);
+            await _userRepository.AddAsync(user, cancellationToken);
 
             var userResponse = new UserResponseDto{
                 Id = user.Id,
@@ -34,16 +35,16 @@ namespace Taskly.Application
             return StructuredOperationResult<UserResponseDto>.Ok(userResponse);
         }
 
-        public async Task<bool> DeleteUserAsync(Guid id)
+        public async Task<bool> DeleteUserAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _userRepository.DeleteAsync(id);
+            return await _userRepository.DeleteAsync(id, cancellationToken);
         }
 
-        public async Task<UserResponseDto?> GetByEmailAsync(string email)
+        public async Task<UserResponseDto?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             var normalizedEmail = email.ToLowerInvariant();
 
-            var user = await _userRepository.GetByEmailAsync(normalizedEmail);
+            var user = await _userRepository.GetByEmailAsync(normalizedEmail, cancellationToken);
             if( user == null )
                 return null;
 
@@ -56,9 +57,9 @@ namespace Taskly.Application
             return userResponseDto;
         }
 
-        public async Task<UserResponseDto?> GetByIdAsync(Guid id)
+        public async Task<UserResponseDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var user = await _userRepository.GetByIdAsync(id);
+            var user = await _userRepository.GetByIdAsync(id, cancellationToken);
             if( user == null )
                 return null;
 
@@ -71,16 +72,16 @@ namespace Taskly.Application
             return userResponseDto;
         }
 
-        public async Task<StructuredOperationResult<UserResponseDto>> UpdateUserAsync(Guid id, UpdateUserDto userDto)
+        public async Task<StructuredOperationResult<UserResponseDto>> UpdateUserAsync(Guid id, UpdateUserDto userDto, CancellationToken cancellationToken = default)
         {
             var normalizedEmail = userDto.Email?.ToLowerInvariant();
-            var user = await _userRepository.GetByIdAsync(id);
+            var user = await _userRepository.GetByIdAsync(id, cancellationToken);
             if (user == null)
                 return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.NotFound);
 
             if (normalizedEmail != null && user.Email != normalizedEmail)
             {
-                if (await _userRepository.ExistsByEmailAsync(normalizedEmail))
+                if (await _userRepository.ExistsByEmailAsync(normalizedEmail, cancellationToken))
                     return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.EmailAlreadyExists);
             }
 
@@ -89,12 +90,13 @@ namespace Taskly.Application
             {
                 if (string.IsNullOrWhiteSpace(userDto.Password))
                     return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.InvalidPassword);
+                cancellationToken.ThrowIfCancellationRequested();
                 passwordHash = PasswordHasher.HashPassword(userDto.Password);
             }
 
             user.Update(userDto.Name, normalizedEmail, passwordHash);
 
-            var updated = await _userRepository.UpdateAsync(user);
+            var updated = await _userRepository.UpdateAsync(user, cancellationToken);
 
             if (!updated)
                 return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.NotFound);

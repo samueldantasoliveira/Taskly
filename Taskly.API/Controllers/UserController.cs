@@ -20,9 +20,9 @@ namespace Taskly.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(CreateUserDto userDto)
+        public async Task<IActionResult> Create(CreateUserDto userDto, CancellationToken cancellationToken)
         {
-            var result = await _userService.AddUserAsync(userDto);
+            var result = await _userService.AddUserAsync(userDto, cancellationToken);
             if (!result.Success)
             {
                 return MapErrorToResponse(result.Error!);
@@ -33,7 +33,7 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
             return Unauthorized();
@@ -41,7 +41,7 @@ namespace Taskly.Controllers
             if (authenticatedUserId != id)
                 return Forbid();
 
-            var deleted = await _userService.DeleteUserAsync(id);
+            var deleted = await _userService.DeleteUserAsync(id, cancellationToken);
             if (!deleted)
                 return NotFound();
             return NoContent();
@@ -49,7 +49,7 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, UpdateUserDto dto)
+        public async Task<IActionResult> Update(Guid id, UpdateUserDto dto, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
             return Unauthorized();
@@ -57,7 +57,7 @@ namespace Taskly.Controllers
             if (authenticatedUserId != id)
                 return Forbid();
 
-            var result = await _userService.UpdateUserAsync(id, dto);
+            var result = await _userService.UpdateUserAsync(id, dto, cancellationToken);
             if(!result.Success)
                 return MapErrorToResponse(result.Error!);
             

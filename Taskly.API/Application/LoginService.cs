@@ -18,12 +18,14 @@ public class LoginService
    
     public async Task<StructuredOperationResult<LoginResponseDto>> LoginAsync(
         string email, 
-        string password)
+        string password,
+        CancellationToken cancellationToken = default)
     {
         var normalizedEmail = email.ToLowerInvariant();
-        var user = await _userRespository.GetByEmailAsync(normalizedEmail);
+        var user = await _userRespository.GetByEmailAsync(normalizedEmail, cancellationToken);
         if (user == null)
             return StructuredOperationResult<LoginResponseDto>.Fail(UserErrors.InvalidCredentials);
+        cancellationToken.ThrowIfCancellationRequested();
         if (!PasswordHasher.VerifyPassword(password, user.PasswordHash))
             return StructuredOperationResult<LoginResponseDto>.Fail(UserErrors.InvalidCredentials);
 

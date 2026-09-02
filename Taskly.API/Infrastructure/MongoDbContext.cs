@@ -23,15 +23,15 @@ namespace Taskly.Infrastructure
         public IMongoCollection<Team> Teams => _database.GetCollection<Team>("Teams");
         public IMongoCollection<Project> Projects => _database.GetCollection<Project>("Projects");
     
-        public async Task EnsureIndexesAsync()
+        public async Task EnsureIndexesAsync(CancellationToken cancellationToken = default)
         {
-            await EnsureUserIndexes();
-            await EnsureTeamIndexes();
-            await EnsureProjectIndexes();
-            await EnsureTodoTaskIndexes();
+            await EnsureUserIndexes(cancellationToken);
+            await EnsureTeamIndexes(cancellationToken);
+            await EnsureProjectIndexes(cancellationToken);
+            await EnsureTodoTaskIndexes(cancellationToken);
         }
 
-        private async Task EnsureUserIndexes()
+        private async Task EnsureUserIndexes(CancellationToken cancellationToken)
         {
             var emailIndex = new CreateIndexModel<User>(
                 Builders<User>.IndexKeys.Ascending(u => u.Email),
@@ -40,10 +40,10 @@ namespace Taskly.Infrastructure
                     Unique = true
                 });
 
-            await Users.Indexes.CreateOneAsync(emailIndex);
+            await Users.Indexes.CreateOneAsync(emailIndex, cancellationToken: cancellationToken);
         }
 
-        private async Task EnsureTeamIndexes()
+        private async Task EnsureTeamIndexes(CancellationToken cancellationToken)
         {
             var userIdsIndex = new CreateIndexModel<Team>(
                 Builders<Team>.IndexKeys.Ascending("UserIds"),
@@ -52,10 +52,10 @@ namespace Taskly.Infrastructure
                     Name = "ix_teams_user_ids"
                 });
 
-            await Teams.Indexes.CreateOneAsync(userIdsIndex);
+            await Teams.Indexes.CreateOneAsync(userIdsIndex, cancellationToken: cancellationToken);
         }
 
-        private async Task EnsureProjectIndexes()
+        private async Task EnsureProjectIndexes(CancellationToken cancellationToken)
         {
             var teamIdIndex = new CreateIndexModel<Project>(
                 Builders<Project>.IndexKeys.Ascending(p => p.TeamId),
@@ -64,10 +64,10 @@ namespace Taskly.Infrastructure
                     Name = "ix_projects_team_id"
                 });
 
-            await Projects.Indexes.CreateOneAsync(teamIdIndex);
+            await Projects.Indexes.CreateOneAsync(teamIdIndex, cancellationToken: cancellationToken);
         }
 
-        private async Task EnsureTodoTaskIndexes()
+        private async Task EnsureTodoTaskIndexes(CancellationToken cancellationToken)
         {
             var projectIdIndex = new CreateIndexModel<TodoTask>(
                 Builders<TodoTask>.IndexKeys.Ascending(task => task.ProjectId),
@@ -76,7 +76,7 @@ namespace Taskly.Infrastructure
                     Name = "ix_todo_tasks_project_id"
                 });
 
-            await TodoTasks.Indexes.CreateOneAsync(projectIdIndex);
+            await TodoTasks.Indexes.CreateOneAsync(projectIdIndex, cancellationToken: cancellationToken);
         }
     }
 }

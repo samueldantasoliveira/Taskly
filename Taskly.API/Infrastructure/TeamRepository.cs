@@ -12,24 +12,25 @@ namespace Taskly.Infrastructure
         {
             _context = context;
         }
-        public async Task AddAsync(Team team)
+        public async Task AddAsync(Team team, CancellationToken cancellationToken = default)
         {
-            await _context.Teams.InsertOneAsync(team);
+            await _context.Teams.InsertOneAsync(team, cancellationToken: cancellationToken);
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var update = Builders<Team>.Update
                 .Set(t => t.DeletedAt, DateTime.UtcNow);
 
             var result = await _context.Teams.UpdateOneAsync(
                 t => t.Id == id && t.DeletedAt == null,
-                update
+                update,
+                cancellationToken: cancellationToken
             );
             return result.ModifiedCount == 1;
         }
 
-        public async Task<List<Team>> GetUserTeamsAsync(Guid userId)
+        public async Task<List<Team>> GetUserTeamsAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             var filter = Builders<Team>.Filter.And(
                 Builders<Team>.Filter.Eq(team => team.DeletedAt, null),
@@ -38,7 +39,7 @@ namespace Taskly.Infrastructure
 
             return await _context.Teams
                 .Find(filter)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<Team?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -47,11 +48,12 @@ namespace Taskly.Infrastructure
             
         }
 
-        public async Task<bool> UpdateAsync(Team updatedTeam)
+        public async Task<bool> UpdateAsync(Team updatedTeam, CancellationToken cancellationToken = default)
         {
             var result = await _context.Teams.ReplaceOneAsync(
                 BaseFilter(t => t.Id == updatedTeam.Id), 
-                updatedTeam);
+                updatedTeam,
+                cancellationToken: cancellationToken);
             return result.ModifiedCount > 0;
         }
             

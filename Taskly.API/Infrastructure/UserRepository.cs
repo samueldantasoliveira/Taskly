@@ -12,19 +12,20 @@ namespace Taskly.Infrastructure
         {
             _context = context;
         }
-        public async Task AddAsync(User user)
+        public async Task AddAsync(User user, CancellationToken cancellationToken = default)
         {
-            await _context.Users.InsertOneAsync(user);
+            await _context.Users.InsertOneAsync(user, cancellationToken: cancellationToken);
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var update = Builders<User>.Update
                 .Set(u => u.DeletedAt, DateTime.UtcNow);
 
             var result = await _context.Users.UpdateOneAsync(
                 u => u.Id == id && u.DeletedAt == null,
-                update
+                update,
+                cancellationToken: cancellationToken
             );
 
             return result.ModifiedCount == 1;
@@ -35,18 +36,18 @@ namespace Taskly.Infrastructure
             return await _context.Users.Find(BaseFilter(u => u.Id == id)).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<User?> GetByEmailAsync(string email)
+        public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
-            return await _context.Users.Find(BaseFilter(u => u.Email == email)).FirstOrDefaultAsync();
+            return await _context.Users.Find(BaseFilter(u => u.Email == email)).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<bool> ExistsByEmailAsync(string email)
+        public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             var filter = Builders<User>.Filter.Eq(u => u.Email, email);
-            return await _context.Users.Find(filter).AnyAsync();
+            return await _context.Users.Find(filter).AnyAsync(cancellationToken);
         }
 
-        public async Task<bool> UpdateAsync(User user)
+        public async Task<bool> UpdateAsync(User user, CancellationToken cancellationToken = default)
         {
             var update = Builders<User>.Update
                 .Set(u => u.Name, user.Name)
@@ -58,7 +59,8 @@ namespace Taskly.Infrastructure
                 u => u.Id == user.Id 
                 && u.DeletedAt == null,
                 //&& u.UpdatedAt == user.UpdatedAt,
-                update
+                update,
+                cancellationToken: cancellationToken
             );
             
             return result.MatchedCount == 1;

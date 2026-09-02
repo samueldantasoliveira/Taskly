@@ -27,7 +27,7 @@ public class LoginServiceTests
     {
         // Arrange
         _userRepository
-            .Setup(u => u.GetByEmailAsync(It.IsAny<string>()))
+            .Setup(u => u.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -54,7 +54,7 @@ public class LoginServiceTests
         );
 
         _userRepository
-            .Setup(u => u.GetByEmailAsync(It.IsAny<string>()))
+            .Setup(u => u.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -83,7 +83,7 @@ public class LoginServiceTests
         var expiresAt = DateTime.UtcNow.AddHours(1);
 
         _userRepository
-            .Setup(u => u.GetByEmailAsync(It.IsAny<string>()))
+            .Setup(u => u.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _tokenServiceMock
@@ -125,7 +125,7 @@ public class LoginServiceTests
         );
 
         _userRepository
-            .Setup(u => u.GetByEmailAsync("test@email.com"))
+            .Setup(u => u.GetByEmailAsync("test@email.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _tokenServiceMock
@@ -140,8 +140,32 @@ public class LoginServiceTests
 
         // Assert
         _userRepository.Verify(
-            u => u.GetByEmailAsync("test@email.com"),
+            u => u.GetByEmailAsync("test@email.com", It.IsAny<CancellationToken>()),
             Times.Once
         );
+    }
+
+    [Fact]
+    public async Task Login_PropagatesCancellationTokenToRepository()
+    {
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+
+        _userRepository
+            .Setup(repository => repository.GetByEmailAsync(
+                "missing@email.com",
+                cancellationToken))
+            .ReturnsAsync((User?)null);
+
+        await _loginService.LoginAsync(
+            "missing@email.com",
+            "password",
+            cancellationToken);
+
+        _userRepository.Verify(
+            repository => repository.GetByEmailAsync(
+                "missing@email.com",
+                cancellationToken),
+            Times.Once);
     }
 }

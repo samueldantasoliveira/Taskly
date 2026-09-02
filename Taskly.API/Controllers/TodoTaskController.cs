@@ -20,12 +20,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Create(CreateTodoTaskDto todoTask)
+        public async Task<IActionResult> Create(CreateTodoTaskDto todoTask, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _todoTaskService.AddTodoTaskAsync(todoTask, authenticatedUserId);
+            var result = await _todoTaskService.AddTodoTaskAsync(todoTask, authenticatedUserId, cancellationToken);
 
             if (!result.Success)
                 return MapErrorToResponse(result.Error!);
@@ -36,14 +36,15 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
             var result = await _todoTaskService.GetByIdAsync(
                 id,
-                authenticatedUserId);
+                authenticatedUserId,
+                cancellationToken);
 
             if (!result.Success)
                 return MapErrorToResponse(result.Error!);
@@ -73,7 +74,7 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTodoTaskDto todoTaskDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateTodoTaskDto todoTaskDto, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -81,7 +82,7 @@ namespace Taskly.Controllers
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _todoTaskService.UpdateAsync(id, todoTaskDto, authenticatedUserId);
+            var result = await _todoTaskService.UpdateAsync(id, todoTaskDto, authenticatedUserId, cancellationToken);
 
             if (!result.Success)
             {
@@ -94,12 +95,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpDelete("{taskId}")]
-        public async Task<IActionResult> Delete(Guid taskId)
+        public async Task<IActionResult> Delete(Guid taskId, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
             
-            var result = await _todoTaskService.DeleteTaskAsync(taskId, authenticatedUserId);
+            var result = await _todoTaskService.DeleteTaskAsync(taskId, authenticatedUserId, cancellationToken);
 
             if (!result.Success)
             {
@@ -112,12 +113,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPost("{taskId}/start")]
-        public async Task<IActionResult> Start(Guid taskId)
+        public async Task<IActionResult> Start(Guid taskId, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _todoTaskService.StartTaskAsync(taskId, authenticatedUserId);
+            var result = await _todoTaskService.StartTaskAsync(taskId, authenticatedUserId, cancellationToken);
 
             if (!result.Success)
             {
@@ -129,12 +130,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPost("{taskId}/complete")]
-        public async Task<IActionResult> Complete(Guid taskId)
+        public async Task<IActionResult> Complete(Guid taskId, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _todoTaskService.CompleteTaskAsync(taskId, authenticatedUserId);
+            var result = await _todoTaskService.CompleteTaskAsync(taskId, authenticatedUserId, cancellationToken);
 
             if (!result.Success)
             {
@@ -146,12 +147,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPost("{taskId}/cancel")]
-        public async Task<IActionResult> Cancel(Guid taskId)
+        public async Task<IActionResult> Cancel(Guid taskId, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _todoTaskService.CancelTaskAsync(taskId, authenticatedUserId);
+            var result = await _todoTaskService.CancelTaskAsync(taskId, authenticatedUserId, cancellationToken);
 
             if (!result.Success)
             {
@@ -163,7 +164,7 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPost("{taskId}/assign")]
-        public async Task<IActionResult> AssignUser(Guid taskId, [FromBody] AssignTodoTaskUserDto dto)
+        public async Task<IActionResult> AssignUser(Guid taskId, [FromBody] AssignTodoTaskUserDto dto, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
@@ -171,7 +172,8 @@ namespace Taskly.Controllers
             var result = await _todoTaskService.AssignUserAsync(
                 taskId,
                 dto.UserId,
-                authenticatedUserId);
+                authenticatedUserId,
+                cancellationToken);
 
             if (!result.Success)
                 return MapErrorToResponse(result.Error!);

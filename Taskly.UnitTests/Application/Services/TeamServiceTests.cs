@@ -50,7 +50,7 @@ public class TeamServiceTests
         r => r.AddAsync(It.Is<Team>(t =>
             t.Name == teamDto.Name &&
             t.OwnerId == ownerId &&
-            t.UserIds.Contains(ownerId))),
+            t.UserIds.Contains(ownerId)), It.IsAny<CancellationToken>()),
         Times.Once);
     }
 
@@ -129,7 +129,7 @@ public class TeamServiceTests
             .ReturnsAsync(team);
 
         _teamRepositoryMock
-            .Setup(r => r.UpdateAsync(team))
+            .Setup(r => r.UpdateAsync(team, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -163,7 +163,7 @@ public class TeamServiceTests
             .ReturnsAsync(team);
 
         _teamRepositoryMock
-            .Setup(r => r.UpdateAsync(team))
+            .Setup(r => r.UpdateAsync(team, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -180,7 +180,7 @@ public class TeamServiceTests
         _teamRepositoryMock.Verify(
             r => r.UpdateAsync(It.Is<Team>(t =>
                 t.Name == "New Name" &&
-                t.IsActive == false)),
+                t.IsActive == false), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -281,7 +281,7 @@ public class TeamServiceTests
             .ReturnsAsync(user);
 
         _teamRepositoryMock
-            .Setup(r => r.UpdateAsync(team))
+            .Setup(r => r.UpdateAsync(team, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -305,7 +305,7 @@ public class TeamServiceTests
         var user = new User("User Test", "Test@Test.com", "Test");
 
         _teamRepositoryMock.Setup(r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>())).ReturnsAsync(team);
-        _teamRepositoryMock.Setup(r => r.UpdateAsync(team)).ReturnsAsync(true);
+        _teamRepositoryMock.Setup(r => r.UpdateAsync(team, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _userRepositoryMock.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         // Act
@@ -317,7 +317,7 @@ public class TeamServiceTests
         Assert.Equal(user.Id, result.Value.UserId);
         Assert.Equal(team.Id, result.Value.TeamId);
 
-        _teamRepositoryMock.Verify(r => r.UpdateAsync(team), Times.Once);
+        _teamRepositoryMock.Verify(r => r.UpdateAsync(team, It.IsAny<CancellationToken>()), Times.Once);
 
     }
 
@@ -400,7 +400,7 @@ public class TeamServiceTests
             .ReturnsAsync(team);
 
         _teamRepositoryMock
-            .Setup(r => r.UpdateAsync(team))
+            .Setup(r => r.UpdateAsync(team, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -430,7 +430,7 @@ public class TeamServiceTests
             .ReturnsAsync(team);
 
         _teamRepositoryMock
-            .Setup(r => r.UpdateAsync(team))
+            .Setup(r => r.UpdateAsync(team, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -450,7 +450,7 @@ public class TeamServiceTests
             Times.Once);
 
         _teamRepositoryMock.Verify(
-            r => r.UpdateAsync(team),
+            r => r.UpdateAsync(team, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -509,7 +509,7 @@ public class TeamServiceTests
             .ReturnsAsync(team);
 
         _teamRepositoryMock
-            .Setup(r => r.DeleteAsync(team.Id))
+            .Setup(r => r.DeleteAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -535,7 +535,7 @@ public class TeamServiceTests
             .ReturnsAsync(team);
 
         _teamRepositoryMock
-            .Setup(r => r.DeleteAsync(team.Id))
+            .Setup(r => r.DeleteAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -548,7 +548,7 @@ public class TeamServiceTests
         Assert.Null(result.Error);
 
         _teamRepositoryMock.Verify(
-            r => r.DeleteAsync(team.Id),
+            r => r.DeleteAsync(team.Id, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -574,7 +574,7 @@ public async Task LeaveTeam_TeamNotFound_ReturnsFail()
     Assert.Equal(TeamErrors.NotFound, result.Error);
 
     _teamRepositoryMock.Verify(
-        repo => repo.UpdateAsync(It.IsAny<Team>()),
+        repo => repo.UpdateAsync(It.IsAny<Team>(), It.IsAny<CancellationToken>()),
         Times.Never
     );
 }
@@ -607,7 +607,7 @@ public async Task LeaveTeam_TeamInactive_ReturnsFail()
     Assert.Equal(TeamErrors.Inactive, result.Error);
 
     _teamRepositoryMock.Verify(
-        repo => repo.UpdateAsync(It.IsAny<Team>()),
+        repo => repo.UpdateAsync(It.IsAny<Team>(), It.IsAny<CancellationToken>()),
         Times.Never
     );
 }
@@ -632,7 +632,7 @@ public async Task LeaveTeam_ValidMember_RemovesMemberAndReturnsSuccess()
         .ReturnsAsync(team);
 
     _teamRepositoryMock
-        .Setup(repo => repo.UpdateAsync(team))
+        .Setup(repo => repo.UpdateAsync(team, It.IsAny<CancellationToken>()))
         .ReturnsAsync(true);
 
     // Act
@@ -646,7 +646,7 @@ public async Task LeaveTeam_ValidMember_RemovesMemberAndReturnsSuccess()
     Assert.DoesNotContain(authenticatedUserId, team.UserIds);
 
     _teamRepositoryMock.Verify(
-        repo => repo.UpdateAsync(team),
+        repo => repo.UpdateAsync(team, It.IsAny<CancellationToken>()),
         Times.Once
     );
 }
@@ -671,7 +671,7 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
         .ReturnsAsync(team);
 
     _teamRepositoryMock
-        .Setup(repo => repo.UpdateAsync(team))
+        .Setup(repo => repo.UpdateAsync(team, It.IsAny<CancellationToken>()))
         .ReturnsAsync(false);
 
     // Act
@@ -685,7 +685,7 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
     Assert.Equal(TeamErrors.NotFound, result.Error);
 
     _teamRepositoryMock.Verify(
-        repo => repo.UpdateAsync(team),
+        repo => repo.UpdateAsync(team, It.IsAny<CancellationToken>()),
         Times.Once
     );
 }
@@ -710,7 +710,7 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
             .ReturnsAsync(team);
 
         _teamRepositoryMock
-            .Setup(repo => repo.UpdateAsync(It.IsAny<Team>()))
+            .Setup(repo => repo.UpdateAsync(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
@@ -727,7 +727,7 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
                 It.Is<Team>(updatedTeam =>
                     !updatedTeam.UserIds.Contains(authenticatedUserId)
                 )
-            ),
+            , It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -746,7 +746,7 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
         Assert.Equal(TeamErrors.UserNotFound, result.Error);
 
         _teamRepositoryMock.Verify(
-            repository => repository.GetUserTeamsAsync(It.IsAny<Guid>()),
+            repository => repository.GetUserTeamsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never
         );
     }
@@ -772,7 +772,7 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
             .ReturnsAsync(user);
 
         _teamRepositoryMock
-            .Setup(repository => repository.GetUserTeamsAsync(userId))
+            .Setup(repository => repository.GetUserTeamsAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Team>
             {
                 team
@@ -811,7 +811,7 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
             .ReturnsAsync(user);
 
         _teamRepositoryMock
-            .Setup(repository => repository.GetUserTeamsAsync(userId))
+            .Setup(repository => repository.GetUserTeamsAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Team>());
 
         // Act
@@ -824,7 +824,7 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
         Assert.Empty(result.Value);
 
         _teamRepositoryMock.Verify(
-            repository => repository.GetUserTeamsAsync(userId),
+            repository => repository.GetUserTeamsAsync(userId, It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -878,6 +878,25 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
         Assert.Equal(team.IsActive, result.Value.IsActive);
         Assert.Equal(team.OwnerId, result.Value.OwnerId);
         Assert.Equal(team.UserIds, result.Value.UserIds);
+    }
+
+    [Fact]
+    public async Task AddTeam_PropagatesCancellationTokenToRepository()
+    {
+        var dto = new CreateTeamDto { Name = "Test team" };
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+
+        await _teamService.AddTeamAsync(
+            dto,
+            Guid.NewGuid(),
+            cancellationToken);
+
+        _teamRepositoryMock.Verify(
+            repository => repository.AddAsync(
+                It.Is<Team>(team => team.Name == dto.Name),
+                cancellationToken),
+            Times.Once);
     }
 
 }

@@ -22,12 +22,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetUserTeams()
+        public async Task<IActionResult> GetUserTeams(CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _teamService.GetUserTeamsAsync(authenticatedUserId);
+            var result = await _teamService.GetUserTeamsAsync(authenticatedUserId, cancellationToken);
 
             if (!result.Success)
                 return MapErrorToResponse(result.Error!);
@@ -37,12 +37,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _teamService.GetByIdAsync(id, authenticatedUserId);
+            var result = await _teamService.GetByIdAsync(id, authenticatedUserId, cancellationToken);
 
             if (!result.Success)
                 return MapErrorToResponse(result.Error!);
@@ -52,12 +52,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateTeamDto dto)
+        public async Task<IActionResult> Create([FromBody] CreateTeamDto dto, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _teamService.AddTeamAsync(dto, authenticatedUserId);
+            var result = await _teamService.AddTeamAsync(dto, authenticatedUserId, cancellationToken);
 
             if (!result.Success)
             {
@@ -69,12 +69,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, UpdateTeamDto dto)
+        public async Task<IActionResult> Update(Guid id, UpdateTeamDto dto, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _teamService.UpdateTeamAsync(id, dto, authenticatedUserId);
+            var result = await _teamService.UpdateTeamAsync(id, dto, authenticatedUserId, cancellationToken);
 
             if(!result.Success)
                 return MapErrorToResponse(result.Error!);
@@ -84,12 +84,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpPost("{teamId}/add-member")]
-        public async Task<IActionResult> AddMember(Guid teamId, Guid userId)
+        public async Task<IActionResult> AddMember(Guid teamId, Guid userId, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _teamService.AddMemberAsync(teamId, userId, authenticatedUserId);
+            var result = await _teamService.AddMemberAsync(teamId, userId, authenticatedUserId, cancellationToken);
             if (!result.Success)
             {
                 return MapErrorToResponse(result.Error!);
@@ -100,12 +100,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpDelete("{teamId}/remove-member")]
-        public async Task<IActionResult> RemoveMember(Guid teamId, Guid userId)
+        public async Task<IActionResult> RemoveMember(Guid teamId, Guid userId, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _teamService.RemoveMemberAsync(teamId, userId, authenticatedUserId);
+            var result = await _teamService.RemoveMemberAsync(teamId, userId, authenticatedUserId, cancellationToken);
             if (!result.Success)
             {
                 return MapErrorToResponse(result.Error!);
@@ -116,12 +116,12 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _teamService.DeleteTeamAsync(id, authenticatedUserId);
+            var result = await _teamService.DeleteTeamAsync(id, authenticatedUserId, cancellationToken);
             
             if (!result.Success)
             {
@@ -132,14 +132,15 @@ namespace Taskly.Controllers
         }
         [HttpDelete("{teamId}/leave")]
         [Authorize]
-        public async Task<IActionResult> LeaveTeam(Guid teamId)
+        public async Task<IActionResult> LeaveTeam(Guid teamId, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
             var result = await _teamService.LeaveTeamAsync(
                 teamId,
-                authenticatedUserId
+                authenticatedUserId,
+                cancellationToken
             );
 
             if (!result.Success)

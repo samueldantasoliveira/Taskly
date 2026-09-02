@@ -99,7 +99,7 @@ if (!app.Environment.IsEnvironment("Testing"))
     using (var scope = app.Services.CreateScope())
     {
         var context = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
-        await context.EnsureIndexesAsync();
+        await context.EnsureIndexesAsync(app.Lifetime.ApplicationStopping);
     }  
 }
 

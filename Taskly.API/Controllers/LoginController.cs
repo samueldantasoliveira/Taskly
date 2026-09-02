@@ -16,9 +16,12 @@ public class LoginController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Login(LoginDto loginDto)
+    public async Task<IActionResult> Login(LoginDto loginDto, CancellationToken cancellationToken)
     {
-        var result = await _loginService.LoginAsync(loginDto.Email, loginDto.Password);
+        var result = await _loginService.LoginAsync(
+            loginDto.Email,
+            loginDto.Password,
+            cancellationToken);
         if (!result.Success)
         {
             return MapErrorToResponse(result.Error!);
