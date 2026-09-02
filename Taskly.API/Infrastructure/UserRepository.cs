@@ -30,9 +30,9 @@ namespace Taskly.Infrastructure
             return result.ModifiedCount == 1;
         }
 
-        public async Task<User?> GetByIdAsync(Guid id)
+        public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.Users.Find(BaseFilter(u => u.Id == id)).FirstOrDefaultAsync();
+            return await _context.Users.Find(BaseFilter(u => u.Id == id)).FirstOrDefaultAsync(cancellationToken);
         }
 
         public async Task<User?> GetByEmailAsync(string email)

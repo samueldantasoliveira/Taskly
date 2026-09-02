@@ -73,6 +73,59 @@ public class ProjectIntegrationTests : IClassFixture<TasklyApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetById_TeamMemberReturnsProject()
+    {
+        var login = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(login.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        var expected = await _projectHelper.CreateProjectAsync(
+            team.Id,
+            "Project returned by id");
+
+        var response = await _client.GetAsync($"/api/project/{expected.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var project = await response.Content
+            .ReadFromJsonAsync<ProjectResponseDto>();
+        Assert.NotNull(project);
+        Assert.Equal(expected.Id, project.Id);
+        Assert.Equal(expected.Name, project.Name);
+        Assert.Equal(expected.Description, project.Description);
+        Assert.Equal(expected.OwnerId, project.OwnerId);
+        Assert.Equal(expected.Status, project.Status);
+        Assert.Equal(expected.TeamId, project.TeamId);
+    }
+
+    [Fact]
+    public async Task GetById_ProjectNotFoundReturnsNotFound()
+    {
+        var login = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(login.Token);
+
+        var response = await _client.GetAsync($"/api/project/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetById_UserOutsideTeamReturnsForbidden()
+    {
+        var ownerLogin = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(ownerLogin.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        var project = await _projectHelper.CreateProjectAsync(
+            team.Id,
+            "Private project");
+
+        var outsiderLogin = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(outsiderLogin.Token);
+
+        var response = await _client.GetAsync($"/api/project/{project.Id}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     private void SetBearerToken(string token)
     {
         _client.DefaultRequestHeaders.Authorization =

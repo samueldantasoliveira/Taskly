@@ -13,38 +13,39 @@ namespace Taskly.Infrastructure
         {
             _context = context;
         }
-        public async Task AddAsync(Project project)
+        public async Task AddAsync(Project project, CancellationToken cancellationToken = default)
         {
-            await _context.Projects.InsertOneAsync(project);
+            await _context.Projects.InsertOneAsync(project, cancellationToken: cancellationToken);
         }
 
-        public async Task<bool> DeleteAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var update = Builders<Project>.Update
                 .Set(p => p.DeletedAt, DateTime.UtcNow);
 
             var result = await _context.Projects.UpdateOneAsync(
                 p => p.Id == id && p.DeletedAt == null,
-                update
+                update,
+                cancellationToken: cancellationToken
             );
 
             return result.ModifiedCount == 1;
 
         }
 
-        public async Task<Project?> GetByIdAsync(Guid id)
+        public async Task<Project?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.Projects.Find(BaseFilter(p => p.Id == id)).FirstOrDefaultAsync();
+            return await _context.Projects.Find(BaseFilter(p => p.Id == id)).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<List<Project>> GetByTeamIdAsync(Guid teamId)
+        public async Task<List<Project>> GetByTeamIdAsync(Guid teamId, CancellationToken cancellationToken = default)
         {
             return await _context.Projects
                 .Find(BaseFilter(p => p.TeamId == teamId))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<bool> UpdateAsync(Project project)
+        public async Task<bool> UpdateAsync(Project project, CancellationToken cancellationToken = default)
          {
             var update = Builders<Project>.Update
                 .Set(p => p.Name, project.Name)
@@ -57,7 +58,8 @@ namespace Taskly.Infrastructure
             var result = await _context.Projects.UpdateOneAsync(
                 p => p.Id == project.Id
                 && p.DeletedAt == null,
-                update
+                update,
+                cancellationToken: cancellationToken
             );
             return result.MatchedCount == 1;
         }

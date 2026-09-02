@@ -5,7 +5,7 @@ namespace Taskly.Application
     public interface ITeamRepository
     {
         Task<List<Team>> GetUserTeamsAsync(Guid userId);
-        Task<Team?> GetByIdAsync(Guid id);
+        Task<Team?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task AddAsync(Team team);
         Task<bool> UpdateAsync(Team team);
         Task<bool> DeleteAsync(Guid id);

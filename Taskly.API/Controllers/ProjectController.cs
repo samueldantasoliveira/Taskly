@@ -20,14 +20,15 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpGet("team/{teamId}")]
-        public async Task<IActionResult> GetTeamProjects(Guid teamId)
+        public async Task<IActionResult> GetTeamProjects(Guid teamId, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
             var result = await _projectService.GetTeamProjectsAsync(
                 teamId,
-                authenticatedUserId);
+                authenticatedUserId,
+                cancellationToken);
 
             if (!result.Success)
                 return MapErrorToResponse(result.Error!);
@@ -37,12 +38,12 @@ namespace Taskly.Controllers
         
         [Authorize]              
         [HttpPost]
-        public async Task<IActionResult> Create(CreateProjectDto project)
+        public async Task<IActionResult> Create(CreateProjectDto project, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _projectService.AddProjectAsync(project, authenticatedUserId);
+            var result = await _projectService.AddProjectAsync(project, authenticatedUserId, cancellationToken);
             if (!result.Success)
             {
                 return MapErrorToResponse(result.Error!);
@@ -51,13 +52,31 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, UpdateProjectDto projectDto)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _projectService.UpdateProjectAsync(id, projectDto, authenticatedUserId);
+            var result = await _projectService.GetByIdAsync(
+                id,
+                authenticatedUserId,
+                cancellationToken);
+
+            if (!result.Success)
+                return MapErrorToResponse(result.Error!);
+
+            return Ok(result.Value);
+        }
+
+        [Authorize]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, UpdateProjectDto projectDto, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _projectService.UpdateProjectAsync(id, projectDto, authenticatedUserId, cancellationToken);
             if(!result.Success)
                 return MapErrorToResponse(result.Error!);
             
@@ -66,13 +85,13 @@ namespace Taskly.Controllers
 
         [Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
             
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
 
-            var result = await _projectService.DeleteProjectAsync(id, authenticatedUserId);
+            var result = await _projectService.DeleteProjectAsync(id, authenticatedUserId, cancellationToken);
             if (!result.Success)
                 return MapErrorToResponse(result.Error!);
             

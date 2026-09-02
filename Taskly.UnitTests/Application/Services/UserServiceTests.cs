@@ -108,7 +108,7 @@ public class UserServiceTests
         //Arrange
         var updateDto = new UpdateUserDto {Email = "Email@test.com", Name = "Name Test", Password = "Test"};
         _userRepositoryMock
-            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         //Act
@@ -129,7 +129,7 @@ public class UserServiceTests
         var user = new User("User Test", "test@test.com", "HashTest");
         var updateDto = new UpdateUserDto { Password = invalidPassword };
         _userRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         var result = await _userService.UpdateUserAsync(user.Id, updateDto);
@@ -148,7 +148,7 @@ public class UserServiceTests
         var updateDto = new UpdateUserDto {Email = "Email@test.com", Name = "Name Test", Password = "Test"};
         var user = new User("Name Test2", "Email2@test.com", "HashTest");
         _userRepositoryMock
-            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         _userRepositoryMock
             .Setup(u => u.ExistsByEmailAsync(It.IsAny<string>()))
@@ -170,7 +170,7 @@ public class UserServiceTests
         var updateDto = new UpdateUserDto {Name = "Name Test", Email = "EMAIL@TEST.COM", Password = "Test"};
         var user = new User("Name Test2", "email@test.com", "HashTest");
         _userRepositoryMock
-            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _userRepositoryMock
@@ -198,7 +198,7 @@ public class UserServiceTests
         var user = new User("Name Test2", "email2@test.com", "HashTest");
 
         _userRepositoryMock
-            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _userRepositoryMock

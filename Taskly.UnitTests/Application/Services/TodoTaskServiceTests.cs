@@ -41,7 +41,7 @@ public class TodoTaskServiceTests
         };
 
         _projectRepositoryMock
-            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project?)null);
 
         // Act
@@ -74,7 +74,7 @@ public class TodoTaskServiceTests
             Guid.NewGuid());
 
         _projectRepositoryMock
-            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         // Act 
@@ -113,15 +113,15 @@ public class TodoTaskServiceTests
         team.AddMember(createTodoTaskDto.AssignedUserId.Value);
 
         _projectRepositoryMock
-            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(t => t.GetByIdAsync(project.TeamId))
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         _userRepositoryMock
-            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act 
@@ -191,15 +191,15 @@ public class TodoTaskServiceTests
         };
 
         _projectRepositoryMock
-            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(t => t.GetByIdAsync(project.TeamId))
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         _userRepositoryMock
-            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -247,11 +247,11 @@ public class TodoTaskServiceTests
         };
 
         _projectRepositoryMock
-            .Setup(p => p.GetByIdAsync(project.Id))
+            .Setup(p => p.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(t => t.GetByIdAsync(project.TeamId))
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Team?)null);
 
         // Act
@@ -292,11 +292,11 @@ public class TodoTaskServiceTests
         };
 
         _projectRepositoryMock
-            .Setup(p => p.GetByIdAsync(project.Id))
+            .Setup(p => p.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(t => t.GetByIdAsync(project.TeamId))
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         // Act
@@ -335,11 +335,11 @@ public class TodoTaskServiceTests
         };
 
         _projectRepositoryMock
-            .Setup(p => p.GetByIdAsync(project.Id))
+            .Setup(p => p.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(t => t.GetByIdAsync(project.TeamId))
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         // Act
@@ -380,11 +380,11 @@ public class TodoTaskServiceTests
         };
 
         _projectRepositoryMock
-            .Setup(p => p.GetByIdAsync(project.Id))
+            .Setup(p => p.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(t => t.GetByIdAsync(project.TeamId))
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         // Act
@@ -445,7 +445,7 @@ public class TodoTaskServiceTests
             .ReturnsAsync(todoTask);
 
         _projectRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project?)null);
 
         // Act
@@ -490,7 +490,7 @@ public class TodoTaskServiceTests
             .ReturnsAsync(todoTask);
 
         _projectRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         // Act
@@ -540,11 +540,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(todoTask);
 
         _projectRepositoryMock
-            .Setup(r => r.GetByIdAsync(project.Id))
+            .Setup(r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(r => r.GetByIdAsync(team.Id))
+            .Setup(r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         // Act
@@ -589,11 +589,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(todoTask);
 
         _projectRepositoryMock
-            .Setup(r => r.GetByIdAsync(project.Id))
+            .Setup(r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(r => r.GetByIdAsync(project.TeamId))
+            .Setup(r => r.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Team?)null);
 
         // Act
@@ -644,11 +644,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(todoTask);
 
         _projectRepositoryMock
-            .Setup(r => r.GetByIdAsync(project.Id))
+            .Setup(r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(r => r.GetByIdAsync(project.TeamId))
+            .Setup(r => r.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         // Act
@@ -708,15 +708,15 @@ public class TodoTaskServiceTests
             .ReturnsAsync(false);
 
         _projectRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         _userRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         // Act
@@ -785,15 +785,15 @@ public class TodoTaskServiceTests
             .ReturnsAsync(true);
 
         _projectRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _userRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         _teamRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         // Act
@@ -1278,15 +1278,15 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock
-            .Setup(x => x.GetByIdAsync(projectId))
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(x => x.GetByIdAsync(teamId))
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         _userRepositoryMock
-            .Setup(x => x.GetByIdAsync(assignedUserId))
+            .Setup(x => x.GetByIdAsync(assignedUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(assignedUser);
 
         _todoTaskRepositoryMock
@@ -1342,11 +1342,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock
-            .Setup(x => x.GetByIdAsync(projectId))
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(x => x.GetByIdAsync(teamId))
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         _todoTaskRepositoryMock
@@ -1364,7 +1364,7 @@ public class TodoTaskServiceTests
         Assert.Null(task.AssignedUserId);
 
         _userRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<Guid>()),
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _todoTaskRepositoryMock.Verify(
@@ -1394,7 +1394,7 @@ public class TodoTaskServiceTests
         Assert.Equal(TodoTaskErrors.NotFound, result.Error);
 
         _projectRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<Guid>()),
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _todoTaskRepositoryMock.Verify(
@@ -1422,7 +1422,7 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock
-            .Setup(x => x.GetByIdAsync(projectId))
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project?)null);
 
         // Act
@@ -1436,7 +1436,7 @@ public class TodoTaskServiceTests
         Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
 
         _teamRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<Guid>()),
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _todoTaskRepositoryMock.Verify(
@@ -1473,7 +1473,7 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock
-            .Setup(x => x.GetByIdAsync(projectId))
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         // Act
@@ -1487,7 +1487,7 @@ public class TodoTaskServiceTests
         Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
 
         _teamRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<Guid>()),
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _todoTaskRepositoryMock.Verify(
@@ -1524,11 +1524,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock
-            .Setup(x => x.GetByIdAsync(projectId))
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(x => x.GetByIdAsync(teamId))
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Team?)null);
 
         // Act
@@ -1542,7 +1542,7 @@ public class TodoTaskServiceTests
         Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
 
         _userRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<Guid>()),
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _todoTaskRepositoryMock.Verify(
@@ -1587,11 +1587,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock
-            .Setup(x => x.GetByIdAsync(projectId))
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(x => x.GetByIdAsync(teamId))
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         // Act
@@ -1605,7 +1605,7 @@ public class TodoTaskServiceTests
         Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
 
         _userRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<Guid>()),
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _todoTaskRepositoryMock.Verify(
@@ -1650,11 +1650,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock
-            .Setup(x => x.GetByIdAsync(projectId))
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(x => x.GetByIdAsync(teamId))
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         // Act
@@ -1668,7 +1668,7 @@ public class TodoTaskServiceTests
         Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
 
         _userRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<Guid>()),
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
         _todoTaskRepositoryMock.Verify(
@@ -1713,15 +1713,15 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock
-            .Setup(x => x.GetByIdAsync(projectId))
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(x => x.GetByIdAsync(teamId))
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         _userRepositoryMock
-            .Setup(x => x.GetByIdAsync(assignedUserId))
+            .Setup(x => x.GetByIdAsync(assignedUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((User?)null);
 
         // Act
@@ -1780,15 +1780,15 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock
-            .Setup(x => x.GetByIdAsync(projectId))
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(x => x.GetByIdAsync(teamId))
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         _userRepositoryMock
-            .Setup(x => x.GetByIdAsync(assignedUser.Id))
+            .Setup(x => x.GetByIdAsync(assignedUser.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(assignedUser);
 
         // Act
@@ -1848,15 +1848,15 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock
-            .Setup(x => x.GetByIdAsync(projectId))
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock
-            .Setup(x => x.GetByIdAsync(teamId))
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         _userRepositoryMock
-            .Setup(x => x.GetByIdAsync(assignedUser.Id))
+            .Setup(x => x.GetByIdAsync(assignedUser.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(assignedUser);
 
         _todoTaskRepositoryMock
@@ -1939,7 +1939,7 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock.Setup(
-            r => r.GetByIdAsync(project.Id))
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         // Act
@@ -1975,7 +1975,7 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock.Setup(
-            r => r.GetByIdAsync(project.Id))
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         // Act
@@ -2019,11 +2019,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock.Setup(
-            r => r.GetByIdAsync(project.Id))
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock.Setup(
-            r => r.GetByIdAsync(team.Id))
+            r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         // Act
@@ -2066,11 +2066,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock.Setup(
-            r => r.GetByIdAsync(project.Id))
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock.Setup(
-            r => r.GetByIdAsync(team.Id))
+            r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         // Act
@@ -2113,11 +2113,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock.Setup(
-            r => r.GetByIdAsync(project.Id))
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock.Setup(
-            r => r.GetByIdAsync(team.Id))
+            r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         _todoTaskRepositoryMock.Setup(
@@ -2164,11 +2164,11 @@ public class TodoTaskServiceTests
             .ReturnsAsync(task);
 
         _projectRepositoryMock.Setup(
-            r => r.GetByIdAsync(project.Id))
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         _teamRepositoryMock.Setup(
-            r => r.GetByIdAsync(team.Id))
+            r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
 
         _todoTaskRepositoryMock.Setup(
@@ -2238,7 +2238,7 @@ public class TodoTaskServiceTests
             .Setup(repository => repository.GetByIdAsync(task.Id))
             .ReturnsAsync(task);
         _projectRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         var result = await _todoTaskService.GetByIdAsync(
@@ -2268,7 +2268,7 @@ public class TodoTaskServiceTests
             .Setup(repository => repository.GetByIdAsync(task.Id))
             .ReturnsAsync(task);
         _projectRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         var result = await _todoTaskService.GetByIdAsync(
@@ -2383,7 +2383,7 @@ public class TodoTaskServiceTests
     {
         var user = new User("User Test", "user@test.com", "HashTest");
         _userRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         var result = await _todoTaskService.GetByProjectIdAsync(
@@ -2407,10 +2407,10 @@ public class TodoTaskServiceTests
             user.Id);
 
         _userRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         _projectRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         var result = await _todoTaskService.GetByProjectIdAsync(
@@ -2434,10 +2434,10 @@ public class TodoTaskServiceTests
             user.Id);
 
         _userRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         _projectRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         var result = await _todoTaskService.GetByProjectIdAsync(
@@ -2601,13 +2601,13 @@ public class TodoTaskServiceTests
         Team team)
     {
         _userRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(user.Id))
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         _projectRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
         _teamRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(team.Id))
+            .Setup(repository => repository.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
     }
 
@@ -2620,10 +2620,10 @@ public class TodoTaskServiceTests
             .Setup(repository => repository.GetByIdAsync(task.Id))
             .ReturnsAsync(task);
         _projectRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(project.Id))
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
         _teamRepositoryMock
-            .Setup(repository => repository.GetByIdAsync(team.Id))
+            .Setup(repository => repository.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(team);
     }
 }

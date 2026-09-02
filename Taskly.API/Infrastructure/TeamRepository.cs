@@ -41,9 +41,9 @@ namespace Taskly.Infrastructure
                 .ToListAsync();
         }
 
-        public async Task<Team?> GetByIdAsync(Guid id)
+        public async Task<Team?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.Teams.Find(BaseFilter(t => t.Id == id)).FirstOrDefaultAsync();
+            return await _context.Teams.Find(BaseFilter(t => t.Id == id)).FirstOrDefaultAsync(cancellationToken);
             
         }
 

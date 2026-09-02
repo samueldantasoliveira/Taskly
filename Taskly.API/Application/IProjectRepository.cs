@@ -4,10 +4,10 @@ namespace Taskly.Application
 {
     public interface IProjectRepository
     {
-        Task<List<Project>> GetByTeamIdAsync(Guid teamId);
-        Task<Project?> GetByIdAsync(Guid id);
-        Task AddAsync(Project project);
-        Task<bool> UpdateAsync(Project project);
-        Task<bool> DeleteAsync(Guid id);
+        Task<List<Project>> GetByTeamIdAsync(Guid teamId, CancellationToken cancellationToken = default);
+        Task<Project?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task AddAsync(Project project, CancellationToken cancellationToken = default);
+        Task<bool> UpdateAsync(Project project, CancellationToken cancellationToken = default);
+        Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }
