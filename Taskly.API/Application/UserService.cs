@@ -57,6 +57,33 @@ namespace Taskly.Application
             return userResponseDto;
         }
 
+        public async Task<StructuredOperationResult<UserResponseDto>> SearchByEmailAsync(
+            string? email,
+            CancellationToken cancellationToken = default)
+        {
+            var normalizedEmail = email?.Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(normalizedEmail) ||
+                !User.IsValidEmail(normalizedEmail))
+            {
+                return StructuredOperationResult<UserResponseDto>.Fail(
+                    UserErrors.InvalidEmail);
+            }
+
+            var user = await _userRepository.GetByEmailAsync(
+                normalizedEmail,
+                cancellationToken);
+
+            if (user == null)
+                return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.NotFound);
+
+            return StructuredOperationResult<UserResponseDto>.Ok(new UserResponseDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email
+            });
+        }
+
         public async Task<UserResponseDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var user = await _userRepository.GetByIdAsync(id, cancellationToken);

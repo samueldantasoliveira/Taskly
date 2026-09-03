@@ -1,6 +1,7 @@
 using Taskly.Domain.Entities;
 using Taskly.Application;
 using Taskly.Application.DTOs;
+using Taskly.Application.Results;
 using Moq;
 
 namespace Taskly.Tests;
@@ -100,6 +101,67 @@ public class UserServiceTests
         _userRepositoryMock.Verify(
             repository => repository.GetByEmailAsync("test@test.com", It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task SearchByEmail_ValidEmail_ReturnsUserAndPropagatesCancellationToken()
+    {
+        var user = new User("User Test", "test@test.com", "HashTest");
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+        _userRepositoryMock
+            .Setup(repository => repository.GetByEmailAsync(
+                "test@test.com",
+                cancellationToken))
+            .ReturnsAsync(user);
+
+        var result = await _userService.SearchByEmailAsync(
+            "  TEST@TEST.COM  ",
+            cancellationToken);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(user.Id, result.Value.Id);
+        Assert.Equal(user.Name, result.Value.Name);
+        Assert.Equal(user.Email, result.Value.Email);
+        _userRepositoryMock.Verify(
+            repository => repository.GetByEmailAsync(
+                "test@test.com",
+                cancellationToken),
+            Times.Once);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("invalid-email")]
+    public async Task SearchByEmail_InvalidEmail_ReturnsInvalidEmail(string? email)
+    {
+        var result = await _userService.SearchByEmailAsync(email);
+
+        Assert.False(result.Success);
+        Assert.Equal(UserErrors.InvalidEmail, result.Error);
+        _userRepositoryMock.Verify(
+            repository => repository.GetByEmailAsync(
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SearchByEmail_UserNotFound_ReturnsNotFound()
+    {
+        _userRepositoryMock
+            .Setup(repository => repository.GetByEmailAsync(
+                "missing@test.com",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        var result = await _userService.SearchByEmailAsync("missing@test.com");
+
+        Assert.False(result.Success);
+        Assert.Equal(UserErrors.NotFound, result.Error);
     }
 
     [Fact]

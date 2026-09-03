@@ -49,6 +49,22 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchByEmail(
+            [FromQuery] string? email,
+            CancellationToken cancellationToken)
+        {
+            var result = await _userService.SearchByEmailAsync(
+                email,
+                cancellationToken);
+
+            if (!result.Success)
+                return MapErrorToResponse(result.Error!);
+
+            return Ok(result.Value);
+        }
+
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
@@ -94,6 +110,8 @@ namespace Taskly.Controllers
             if (error == UserErrors.InvalidName)
                 return BadRequest(error.Message);
             if (error == UserErrors.InvalidPassword)
+                return BadRequest(error.Message);
+            if (error == UserErrors.InvalidEmail)
                 return BadRequest(error.Message);
             if (error == UserErrors.NotFound)
                 return NotFound(error.Message);
