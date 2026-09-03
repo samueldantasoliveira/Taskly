@@ -7,10 +7,12 @@ namespace Taskly.IntegrationTests;
 public class UserIntegrationTests : IClassFixture<TasklyApiFactory>
 {
     private readonly HttpClient _client;
+    private readonly UserTestHelper _userHelper;
 
     public UserIntegrationTests(TasklyApiFactory factory)
     {
         _client = factory.CreateClient();
+        _userHelper = new UserTestHelper(_client);
     }
 
     [Fact]
@@ -95,5 +97,49 @@ public class UserIntegrationTests : IClassFixture<TasklyApiFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_AuthenticatedUser_ReturnsUser()
+    {
+        var login = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(login.Token);
+
+        var response = await _client.GetAsync("/api/user/me");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var user = await response.Content.ReadFromJsonAsync<UserResponseDto>();
+        Assert.NotNull(user);
+        Assert.Equal(login.User.Id, user.Id);
+        Assert.Equal(login.User.Name, user.Name);
+        Assert.Equal(login.User.Email, user.Email);
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        var response = await _client.GetAsync("/api/user/me");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_DeletedUser_ReturnsNotFound()
+    {
+        var login = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(login.Token);
+        var deleteResponse = await _client.DeleteAsync(
+            $"/api/user/{login.User.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var response = await _client.GetAsync("/api/user/me");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private void SetBearerToken(string token)
+    {
+        _client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
     }
 }

@@ -32,6 +32,23 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var user = await _userService.GetByIdAsync(
+                authenticatedUserId,
+                cancellationToken);
+
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
+        }
+
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
