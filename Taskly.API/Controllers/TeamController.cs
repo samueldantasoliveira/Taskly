@@ -51,6 +51,26 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
+        [HttpGet("{teamId}/members")]
+        public async Task<IActionResult> GetMembers(
+            Guid teamId,
+            CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _teamService.GetMembersAsync(
+                teamId,
+                authenticatedUserId,
+                cancellationToken);
+
+            if (!result.Success)
+                return MapErrorToResponse(result.Error!);
+
+            return Ok(result.Value);
+        }
+
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTeamDto dto, CancellationToken cancellationToken)
         {

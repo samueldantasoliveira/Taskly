@@ -146,6 +146,121 @@ public class TeamIntegrationTests : IClassFixture<TasklyApiFactory>
         Assert.Equal("Legacy team", team.Name);
     }
 
+    [Fact]
+    public async Task GetTeamMembers_MemberReturnsMembersAndIdentifiesOwner()
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        var member = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        var addMemberResponse = await _client.PostAsync(
+            $"/api/team/{team.Id}/add-member?userId={member.User.Id}",
+            content: null);
+        Assert.Equal(HttpStatusCode.OK, addMemberResponse.StatusCode);
+        SetBearerToken(member.Token);
+
+        var response = await _client.GetAsync(
+            $"/api/team/{team.Id}/members");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var members = await response.Content
+            .ReadFromJsonAsync<List<TeamMemberResponseDto>>();
+        Assert.NotNull(members);
+        Assert.Equal(2, members.Count);
+        Assert.True(Assert.Single(
+            members,
+            item => item.Id == owner.User.Id).IsOwner);
+        Assert.False(Assert.Single(
+            members,
+            item => item.Id == member.User.Id).IsOwner);
+    }
+
+    [Fact]
+    public async Task GetTeamMembers_UserIsNotMember_ReturnsForbidden()
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        var outsider = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(outsider.Token);
+
+        var response = await _client.GetAsync(
+            $"/api/team/{team.Id}/members");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetTeamMembers_TeamDoesNotExist_ReturnsNotFound()
+    {
+        var login = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(login.Token);
+
+        var response = await _client.GetAsync(
+            $"/api/team/{Guid.NewGuid()}/members");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetTeamMembers_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        var response = await _client.GetAsync(
+            $"/api/team/{Guid.NewGuid()}/members");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetTeamMembers_DeletedUsersAreNotReturned()
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        var member = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        var addMemberResponse = await _client.PostAsync(
+            $"/api/team/{team.Id}/add-member?userId={member.User.Id}",
+            content: null);
+        Assert.Equal(HttpStatusCode.OK, addMemberResponse.StatusCode);
+
+        SetBearerToken(member.Token);
+        var deleteResponse = await _client.DeleteAsync(
+            $"/api/user/{member.User.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        SetBearerToken(owner.Token);
+
+        var response = await _client.GetAsync(
+            $"/api/team/{team.Id}/members");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var members = await response.Content
+            .ReadFromJsonAsync<List<TeamMemberResponseDto>>();
+        Assert.NotNull(members);
+        var returnedOwner = Assert.Single(members);
+        Assert.Equal(owner.User.Id, returnedOwner.Id);
+        Assert.True(returnedOwner.IsOwner);
+    }
+
+    [Fact]
+    public async Task GetTeamMembers_NoValidMembers_ReturnsEmptyList()
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        var deleteResponse = await _client.DeleteAsync(
+            $"/api/user/{owner.User.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var response = await _client.GetAsync(
+            $"/api/team/{team.Id}/members");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var members = await response.Content
+            .ReadFromJsonAsync<List<TeamMemberResponseDto>>();
+        Assert.NotNull(members);
+        Assert.Empty(members);
+    }
+
     private void SetBearerToken(string token)
     {
         _client.DefaultRequestHeaders.Authorization =

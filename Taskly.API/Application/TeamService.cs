@@ -161,6 +161,41 @@ namespace Taskly.Application
             return StructuredOperationResult<TeamResponseDto>.Ok(teamResponseDto);
         }
 
+        public async Task<StructuredOperationResult<List<TeamMemberResponseDto>>> GetMembersAsync(
+            Guid teamId,
+            Guid authenticatedUserId,
+            CancellationToken cancellationToken = default)
+        {
+            var team = await _teamRepository.GetByIdAsync(teamId, cancellationToken);
+            if (team == null)
+            {
+                return StructuredOperationResult<List<TeamMemberResponseDto>>
+                    .Fail(TeamErrors.NotFound);
+            }
+
+            if (!team.UserIds.Contains(authenticatedUserId))
+            {
+                return StructuredOperationResult<List<TeamMemberResponseDto>>
+                    .Fail(TeamErrors.NotAuthorized);
+            }
+
+            var users = await _userRepository.GetByIdsAsync(
+                team.UserIds,
+                cancellationToken);
+
+            var members = users
+                .Select(user => new TeamMemberResponseDto
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Email = user.Email,
+                    IsOwner = user.Id == team.OwnerId
+                })
+                .ToList();
+
+            return StructuredOperationResult<List<TeamMemberResponseDto>>.Ok(members);
+        }
+
         public async Task<StructuredOperationResult> DeleteTeamAsync(Guid teamId, Guid authenticatedUserId, CancellationToken cancellationToken = default)
         {
             var team = await _teamRepository.GetByIdAsync(teamId, cancellationToken);

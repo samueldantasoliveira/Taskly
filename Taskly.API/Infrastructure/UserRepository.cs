@@ -36,6 +36,16 @@ namespace Taskly.Infrastructure
             return await _context.Users.Find(BaseFilter(u => u.Id == id)).FirstOrDefaultAsync(cancellationToken);
         }
 
+        public async Task<List<User>> GetByIdsAsync(
+            IEnumerable<Guid> ids,
+            CancellationToken cancellationToken = default)
+        {
+            var filter = Builders<User>.Filter.In(user => user.Id, ids);
+            return await _context.Users
+                .Find(BaseFilter(filter))
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             return await _context.Users.Find(BaseFilter(u => u.Email == email)).FirstOrDefaultAsync(cancellationToken);
@@ -66,10 +76,18 @@ namespace Taskly.Infrastructure
             return result.MatchedCount == 1;
         }       
         private FilterDefinition<User> BaseFilter(Expression<Func<User, bool>> filter)
-{
+        {
             return Builders<User>.Filter.And(
                 filter,
                 Builders<User>.Filter.Eq(u => u.DeletedAt, null)
+            );
+        }
+
+        private FilterDefinition<User> BaseFilter(FilterDefinition<User> filter)
+        {
+            return Builders<User>.Filter.And(
+                filter,
+                Builders<User>.Filter.Eq(user => user.DeletedAt, null)
             );
         }
     }

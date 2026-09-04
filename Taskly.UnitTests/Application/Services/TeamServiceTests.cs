@@ -881,6 +881,113 @@ public async Task LeaveTeam_UpdateFails_ReturnsFail()
     }
 
     [Fact]
+    public async Task GetMembers_TeamNotFound_ReturnsNotFound()
+    {
+        var teamId = Guid.NewGuid();
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(
+                teamId,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Team?)null);
+
+        var result = await _teamService.GetMembersAsync(
+            teamId,
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TeamErrors.NotFound, result.Error);
+        _userRepositoryMock.Verify(
+            repository => repository.GetByIdsAsync(
+                It.IsAny<IEnumerable<Guid>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetMembers_UserIsNotMember_ReturnsNotAuthorized()
+    {
+        var team = new Team("Test team", Guid.NewGuid());
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(
+                team.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        var result = await _teamService.GetMembersAsync(
+            team.Id,
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TeamErrors.NotAuthorized, result.Error);
+        _userRepositoryMock.Verify(
+            repository => repository.GetByIdsAsync(
+                It.IsAny<IEnumerable<Guid>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetMembers_MemberReturnsUsersAndIdentifiesOwner()
+    {
+        var owner = new User("Owner", "owner@test.com", "Hash");
+        var member = new User("Member", "member@test.com", "Hash");
+        var team = new Team("Test team", owner.Id);
+        team.AddMember(member.Id);
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(
+                team.Id,
+                cancellationToken))
+            .ReturnsAsync(team);
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdsAsync(
+                It.Is<IEnumerable<Guid>>(ids => ids.SequenceEqual(team.UserIds)),
+                cancellationToken))
+            .ReturnsAsync(new List<User> { owner, member });
+
+        var result = await _teamService.GetMembersAsync(
+            team.Id,
+            member.Id,
+            cancellationToken);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(2, result.Value.Count);
+        Assert.True(Assert.Single(result.Value, item => item.Id == owner.Id).IsOwner);
+        Assert.False(Assert.Single(result.Value, item => item.Id == member.Id).IsOwner);
+        _userRepositoryMock.Verify(
+            repository => repository.GetByIdsAsync(
+                It.Is<IEnumerable<Guid>>(ids => ids.SequenceEqual(team.UserIds)),
+                cancellationToken),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetMembers_NoValidUsers_ReturnsEmptyList()
+    {
+        var ownerId = Guid.NewGuid();
+        var team = new Team("Test team", ownerId);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(
+                team.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdsAsync(
+                It.IsAny<IEnumerable<Guid>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<User>());
+
+        var result = await _teamService.GetMembersAsync(team.Id, ownerId);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Empty(result.Value);
+    }
+
+    [Fact]
     public async Task AddTeam_PropagatesCancellationTokenToRepository()
     {
         var dto = new CreateTeamDto { Name = "Test team" };
