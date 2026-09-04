@@ -1,9 +1,10 @@
 ![.NET](https://img.shields.io/badge/.NET-9-blue)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Database-green)
+![React](https://img.shields.io/badge/React-19-61dafb)
 ![xUnit](https://img.shields.io/badge/Tests-xUnit-success)
-# 🗂️ Taskly API
+# 🗂️ Taskly
 
-API para gerenciamento de usuários, equipes, projetos e tarefas, desenvolvida com .NET 9 e MongoDB.
+Aplicação para gerenciamento de usuários, equipes, projetos e tarefas, com API em .NET 9, MongoDB e interface web em React.
 
 O projeto foi criado com foco em organização de código, separação de responsabilidades e aplicação prática de conceitos utilizados no desenvolvimento back-end.
 
@@ -20,6 +21,11 @@ O projeto foi criado com foco em organização de código, separação de respon
 * JWT Authentication
 * MongoDB.Driver
 * Microsoft.AspNetCore.Mvc.Testing
+* React 19 e TypeScript
+* Vite
+* TanStack Query
+* React Hook Form e Zod
+* Vitest e Testing Library
 
 ---
 
@@ -39,7 +45,10 @@ Taskly/
  │   ├── Application/
  │   └── Domain/
  │
- └── Taskly.IntegrationTests/
+ ├── Taskly.IntegrationTests/
+ │
+ └── Taskly.Web/
+     └── src/
 ```
 
 ### Camadas
@@ -67,6 +76,8 @@ Taskly/
 | Hash de Senha                       | Armazenamento seguro de credenciais                   | ✅      |
 | Soft Delete                         | Exclusão lógica utilizando `DeletedAt`                | ✅      |
 | Tratamento de Erros                 | Retornos padronizados com `StructuredOperationResult` | ✅      |
+| Interface Web Responsiva            | Fluxos de autenticação, equipes, projetos e perfil     | ✅      |
+| Quadro Kanban                       | Criação, atribuição e mudança de estado das tarefas    | ✅      |
 
 ---
 
@@ -134,6 +145,7 @@ TodoTask
 
 * .NET 9 SDK
 * Docker Compose ou Podman Compose
+* Node.js 22.12 ou superior (Node 24 recomendado)
 
 ### 1. Clonar o repositório
 
@@ -183,14 +195,31 @@ dotnet restore
 
 ### 4. Executar a aplicação
 
+Em um terminal, inicie a API:
+
 ```bash
 dotnet run --project Taskly.API/Taskly.API.csproj
 ```
 
-### 5. Executar os testes
+Em outro terminal, inicie o frontend:
+
+```bash
+cd Taskly.Web
+nvm use
+npm install
+npm run dev
+```
+
+A aplicação estará em `http://localhost:5173` e a API em `http://localhost:5219`.
+
+### 5. Executar os testes e verificações
 
 ```bash
 dotnet test
+cd Taskly.Web
+npm test
+npm run lint
+npm run build
 ```
 
 Os testes unitários e de integração são executados a partir da solução principal.
@@ -214,7 +243,7 @@ podman compose down --volumes
 ### 6. Acessar a documentação da API
 
 ```text
-https://localhost:<porta>/swagger
+http://localhost:5219/swagger
 ```
 
 ---
@@ -223,7 +252,6 @@ https://localhost:<porta>/swagger
 
 * Expandir cobertura de testes unitários
 * Expandir cobertura dos testes de integração
-* Implementar endpoints de consulta e listagem para projetos e equipes
 * Adicionar paginação e filtros nas consultas
 * Realizar deploy da aplicação
 
