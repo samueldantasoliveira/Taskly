@@ -16,5 +16,5 @@ obj/
 
 # Secrets
 appsettings.*.json
+!Taskly.API/appsettings.Development.json
 !Taskly.API/appsettings.Testing.json
-

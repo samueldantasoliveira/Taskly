@@ -2,6 +2,7 @@
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Microsoft.Extensions.Options;
 using Taskly.Domain.Entities;
 
 namespace Taskly.Infrastructure
@@ -10,11 +11,14 @@ namespace Taskly.Infrastructure
     {
         private readonly IMongoDatabase _database;
 
-        public MongoDbContext(MongoClient client, IConfiguration configuration)
+        public MongoDbContext(
+            MongoClient client,
+            IOptions<MongoDbSettings> mongoDbOptions
+        )
         {
-            var databaseName = configuration["MongoDb:DatabaseName"];
-
-            _database = client.GetDatabase(databaseName);
+            _database = client.GetDatabase(
+                mongoDbOptions.Value.DatabaseName
+            );
         }
 
         // Coleção de tarefas

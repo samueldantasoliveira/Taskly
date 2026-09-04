@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 
 namespace Taskly.IntegrationTests;
 
 public class TasklyApiFactory : WebApplicationFactory<Program>
 {
-    private const string ConnectionString = "mongodb://localhost:27018";
+    public const string AllowedOrigin = "https://frontend.taskly.test";
 
     public string DatabaseName { get; } =
         $"TasklyIntegrationTests_{Guid.NewGuid():N}";
@@ -20,7 +21,6 @@ public class TasklyApiFactory : WebApplicationFactory<Program>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["MongoDb:ConnectionString"] = ConnectionString,
                 ["MongoDb:DatabaseName"] = DatabaseName
             });
         });
@@ -28,7 +28,7 @@ public class TasklyApiFactory : WebApplicationFactory<Program>
 
     public override async ValueTask DisposeAsync()
     {
-        var mongoClient = new MongoClient(ConnectionString);
+        var mongoClient = Services.GetRequiredService<MongoClient>();
         await mongoClient.DropDatabaseAsync(DatabaseName);
         await base.DisposeAsync();
     }
