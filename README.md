@@ -1,10 +1,10 @@
-![.NET](https://img.shields.io/badge/.NET-9-blue)
+![.NET](https://img.shields.io/badge/.NET-10-blue)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Database-green)
 ![React](https://img.shields.io/badge/React-19-61dafb)
 ![xUnit](https://img.shields.io/badge/Tests-xUnit-success)
 # 🗂️ Taskly
 
-Aplicação para gerenciamento de usuários, equipes, projetos e tarefas, com API em .NET 9, MongoDB e interface web em React.
+Aplicação para gerenciamento de usuários, equipes, projetos e tarefas, com API em .NET 10, MongoDB e interface web em React.
 
 O projeto foi criado com foco em organização de código, separação de responsabilidades e aplicação prática de conceitos utilizados no desenvolvimento back-end.
 
@@ -12,7 +12,7 @@ O projeto foi criado com foco em organização de código, separação de respon
 
 # 🚀 Tecnologias
 
-* .NET 9 (C#)
+* .NET 10 LTS (C#)
 * ASP.NET Core
 * MongoDB
 * xUnit
@@ -143,7 +143,7 @@ TodoTask
 
 ### Pré-requisitos
 
-* .NET 9 SDK
+* .NET 10 SDK
 * Docker Compose ou Podman Compose
 * Node.js 22.12 ou superior (Node 24 recomendado)
 
