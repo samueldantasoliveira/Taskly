@@ -230,7 +230,7 @@ dotnet test
 cd Taskly.Web
 npm test
 npm run lint
-npm run build
+VITE_API_URL=https://taskly-api-samueldantasoliveira.onrender.com npm run build
 ```
 
 Os testes unitários e de integração são executados a partir da solução principal.
@@ -262,26 +262,35 @@ O Swagger é habilitado somente quando `ASPNETCORE_ENVIRONMENT` está como
 
 ---
 
-# ☁️ API em produção no Render
+# ☁️ Produção no Render
 
-Crie um **Web Service** usando o `Taskly.API/Dockerfile`. O Render fornece a
-variável `PORT` automaticamente; a API lê esse valor e escuta em
-`0.0.0.0:<PORT>`. Configure o health check do serviço como
-`/health/ready`.
+O `render.yaml` da raiz funciona como um Blueprint para criar os dois serviços:
+
+| Serviço | Tipo | Configuração principal |
+| ------- | ---- | ---------------------- |
+| `taskly-api-samueldantasoliveira` | Web Service Docker | `Taskly.API/Dockerfile` e health check em `/health/ready` |
+| `taskly-web-samueldantasoliveira` | Static Site | Node.js 24, `npm ci && npm run build` e publicação de `dist` |
+
+O frontend recebe cache otimizado para assets, cabeçalhos de segurança e o
+rewrite de `/*` para `/index.html` exigido pelas rotas do React. Sua variável
+`VITE_API_URL` aponta para a URL HTTPS pública da API e não contém segredos.
+
+O Render fornece `PORT` automaticamente ao backend; a API lê esse valor e
+escuta em `0.0.0.0:<PORT>`.
 
 As configurações específicas e os segredos de produção não ficam em arquivos
-versionados. Cadastre estas variáveis no painel do Render:
+versionados. O Blueprint configura estas variáveis:
 
-| Variável | Exemplo ou finalidade |
-| -------- | --------------------- |
-| `ASPNETCORE_ENVIRONMENT` | `Production` |
-| `AllowedHosts` | Host público da API, sem `https://`, por exemplo `taskly-api.onrender.com` |
-| `Cors__AllowedOrigins__0` | URL HTTPS pública do frontend, sem `/` no final |
-| `MongoDb__ConnectionString` | String de conexão secreta do MongoDB de produção |
-| `MongoDb__DatabaseName` | Nome do banco de produção |
-| `Jwt__Key` | Chave Base64 secreta com pelo menos 32 bytes |
+| Variável | Origem |
+| -------- | ------ |
+| `ASPNETCORE_ENVIRONMENT` | Definida como `Production` no Blueprint |
+| `AllowedHosts` | Host público exato da API |
+| `Cors__AllowedOrigins__0` | URL HTTPS pública exata do frontend |
+| `MongoDb__ConnectionString` | Solicitada de forma secreta ao criar o Blueprint |
+| `MongoDb__DatabaseName` | Definida como `Taskly` no Blueprint |
+| `Jwt__Key` | Gerada automaticamente pelo Render como Base64 de 256 bits |
 
-Uma chave JWT adequada pode ser gerada localmente com:
+Para fazer uma rotação manual futura da chave JWT, gere uma nova com:
 
 ```bash
 openssl rand -base64 32
@@ -310,8 +319,8 @@ Endpoints de saúde:
 
 * ✅ Migrar a API para o .NET 10 LTS
 * ✅ Preparar a API e sua imagem Docker para produção
-* ⏭️ Preparar o frontend para produção, com build otimizado e configuração da URL da API
-* Provisionar o MongoDB e publicar API e frontend
+* ✅ Preparar o frontend para produção, com build otimizado e configuração da URL da API
+* ⏭️ Provisionar o MongoDB e publicar o Blueprint no Render
 * Configurar integração e deploy contínuos
 * Adicionar paginação e filtros nas consultas
 * Expandir a cobertura dos testes automatizados

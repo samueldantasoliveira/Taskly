@@ -18,4 +18,5 @@ Taskly.IntegrationTests/
 **/appsettings.*.json
 
 compose.yaml
+render.yaml
 README.md

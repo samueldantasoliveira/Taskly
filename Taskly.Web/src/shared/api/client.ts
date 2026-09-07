@@ -1,6 +1,12 @@
 import { clearSession, getAccessToken } from '../../features/auth/auth-storage'
 
-const apiUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:5219')
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim()
+
+if (import.meta.env.PROD && !configuredApiUrl) {
+  throw new Error('VITE_API_URL não foi configurada para produção.')
+}
+
+const apiUrl = (configuredApiUrl || 'http://localhost:5219')
   .replace(/\/$/, '')
 
 export class ApiError extends Error {

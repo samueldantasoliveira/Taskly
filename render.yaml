@@ -1,0 +1,62 @@
+services:
+  - type: web
+    name: taskly-api-samueldantasoliveira
+    runtime: docker
+    plan: free
+    region: virginia
+    dockerfilePath: ./Taskly.API/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health/ready
+    autoDeployTrigger: commit
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: AllowedHosts
+        value: taskly-api-samueldantasoliveira.onrender.com
+      - key: Cors__AllowedOrigins__0
+        value: https://taskly-web-samueldantasoliveira.onrender.com
+      - key: MongoDb__ConnectionString
+        sync: false
+      - key: MongoDb__DatabaseName
+        value: Taskly
+      - key: Jwt__Key
+        generateValue: true
+
+  - type: web
+    name: taskly-web-samueldantasoliveira
+    runtime: static
+    rootDir: Taskly.Web
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: VITE_API_URL
+        value: https://taskly-api-samueldantasoliveira.onrender.com
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+      - path: /*
+        name: Content-Security-Policy
+        value: default-src 'self'; connect-src 'self' https://taskly-api-samueldantasoliveira.onrender.com; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -34,6 +34,10 @@ VITE_API_URL=http://localhost:5219
 
 Para outro ambiente, copie `.env.example`, ajuste a URL pública da API e disponibilize `VITE_API_URL` no momento do build. Variáveis `VITE_*` ficam embutidas no bundle e não devem conter segredos.
 
+O build de produção falha deliberadamente quando `VITE_API_URL` estiver
+ausente, não for HTTPS ou não representar somente a origem da API. Isso evita
+publicar um bundle que tente acessar o backend local.
+
 ## Executando
 
 ```bash
@@ -53,6 +57,28 @@ A interface estará disponível em `http://localhost:5173`, origem já liberada 
 | `npm run lint` | Análise estática do código |
 | `npm test` | Suíte de testes uma vez |
 | `npm run test:watch` | Testes em modo interativo |
+
+## Produção no Render
+
+O frontend é publicado como **Static Site** e entregue pelo CDN do Render. A
+configuração fica no `render.yaml` da raiz do repositório e inclui:
+
+- Node.js 24 e instalação reproduzível com `npm ci`;
+- build otimizado do Vite em `dist`;
+- cache longo para assets versionados e revalidação do `index.html`;
+- cabeçalhos de segurança para todas as páginas;
+- rewrite de `/*` para `/index.html`, necessário para abrir diretamente rotas
+  como `/teams` e `/projects/:projectId`;
+- URL HTTPS da API incorporada no bundle durante o build.
+
+Para reproduzir o build do Render localmente:
+
+```bash
+VITE_API_URL=https://taskly-api-samueldantasoliveira.onrender.com npm run build
+```
+
+Não coloque senhas, tokens ou strings de conexão em variáveis `VITE_*`, pois
+elas são públicas no JavaScript entregue ao navegador.
 
 ## Organização
 
