@@ -1,8 +1,28 @@
 services:
+  api:
+    image: localhost/taskly-api:local
+    build:
+      context: .
+      dockerfile: Taskly.API/Dockerfile
+    ports:
+      - "${TASKLY_API_PORT:-5219}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080
+      AllowedHosts: localhost;127.0.0.1;[::1]
+      Cors__AllowedOrigins__0: http://localhost:5173
+      Jwt__Key: Ay3/YsgUxPYBiJ+BXFfC50wEUy7/uBk2swF+0uBgwGA=
+      MongoDb__ConnectionString: mongodb://mongodb:27017
+      MongoDb__DatabaseName: Taskly
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
   mongodb:
     image: docker.io/library/mongo:8
     ports:
-      - "27017:27017"
+      - "${TASKLY_MONGO_PORT:-27017}:27017"
     volumes:
       - mongodb-data:/data/db
     healthcheck:
@@ -16,7 +36,7 @@ services:
   mongodb-test:
     image: docker.io/library/mongo:8
     ports:
-      - "27018:27017"
+      - "${TASKLY_MONGO_TEST_PORT:-27018}:27017"
     tmpfs:
       - /data/db
       - /data/configdb

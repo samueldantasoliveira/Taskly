@@ -107,14 +107,33 @@ public class CorsConfigurationTests
         );
     }
 
+    [Fact]
+    public void Startup_LocalHttpOriginInProduction_ThrowsValidationException()
+    {
+        using var factory = CreateFactory(
+            "http://localhost:5173",
+            "Production"
+        );
+
+        var exception = Assert.Throws<OptionsValidationException>(
+            () => factory.CreateClient()
+        );
+
+        Assert.Contains(
+            "Cors:AllowedOrigins must contain only HTTPS, non-local origins in Production.",
+            exception.Failures
+        );
+    }
+
     private static WebApplicationFactory<Program> CreateFactory(
-        string? allowedOrigin = null
+        string? allowedOrigin = null,
+        string environment = "ConfigurationTests"
     )
     {
         return new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
-                builder.UseEnvironment("ConfigurationTests");
+                builder.UseEnvironment(environment);
 
                 builder.ConfigureAppConfiguration((context, config) =>
                 {

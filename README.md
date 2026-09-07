@@ -156,23 +156,24 @@ cd Taskly
 
 ### 2. Iniciar os bancos MongoDB
 
-O arquivo `compose.yaml` cria dois containers MongoDB independentes:
+O arquivo `compose.yaml` constrói a imagem da API e inicia três containers:
 
 | Serviço | Porta | Uso | Dados |
 | ------- | ----- | --- | ----- |
+| `api` | `5219` | API ASP.NET Core em um container .NET 10 | Sem dados locais |
 | `mongodb` | `27017` | Execução local da API | Persistentes no volume `mongodb-data` |
 | `mongodb-test` | `27018` | Testes de integração | Descartáveis em memória |
 
 Com Docker:
 
 ```bash
-docker compose up -d
+docker compose up --build -d
 ```
 
 Com Podman:
 
 ```bash
-podman compose up -d
+podman compose up --build -d
 ```
 
 Para conferir o estado dos bancos:
@@ -183,11 +184,21 @@ docker compose ps
 podman compose ps
 ```
 
-As configurações padrão do projeto já apontam a API para `localhost:27017` e os testes de integração para `localhost:27018`.
+A API containerizada usa o endereço interno `mongodb:27017`. A porta `5219` da máquina é encaminhada para a porta `8080` do container. Para escolher outras portas locais, defina `TASKLY_API_PORT`, `TASKLY_MONGO_PORT` e `TASKLY_MONGO_TEST_PORT`, por exemplo:
+
+```bash
+TASKLY_API_PORT=5220 TASKLY_MONGO_PORT=27019 docker compose up --build -d
+```
+
+As configurações executadas diretamente na máquina continuam apontando para `localhost:27017`, e os testes de integração usam `localhost:27018`.
+O `appsettings.Development.json` não é copiado para a imagem; o Compose injeta
+os valores locais equivalentes como variáveis de ambiente.
 
 O container `mongodb-test` é reutilizado durante a execução da suíte. Cada classe de testes de integração recebe um banco lógico exclusivo, com nome no formato `TasklyIntegrationTests_<guid>`. O MongoDB cria esse banco na primeira gravação, e a `TasklyApiFactory` o remove automaticamente quando a classe termina. Assim, os testes podem executar isoladamente sem acumular dados entre execuções e sem criar um novo container para cada teste.
 
-### 3. Restaurar as dependências
+### 3. Restaurar as dependências (execução sem container)
+
+Esta etapa é necessária somente se você quiser executar a API diretamente com o SDK instalado:
 
 ```bash
 dotnet restore
@@ -195,7 +206,7 @@ dotnet restore
 
 ### 4. Executar a aplicação
 
-Em um terminal, inicie a API:
+Se você iniciou o Compose completo na etapa 2, a API já estará disponível. Para executá-la diretamente com o SDK em vez do container:
 
 ```bash
 dotnet run --project Taskly.API/Taskly.API.csproj
@@ -246,14 +257,64 @@ podman compose down --volumes
 http://localhost:5219/swagger
 ```
 
+O Swagger é habilitado somente quando `ASPNETCORE_ENVIRONMENT` está como
+`Development`. Em produção, suas rotas retornam `404`.
+
+---
+
+# ☁️ API em produção no Render
+
+Crie um **Web Service** usando o `Taskly.API/Dockerfile`. O Render fornece a
+variável `PORT` automaticamente; a API lê esse valor e escuta em
+`0.0.0.0:<PORT>`. Configure o health check do serviço como
+`/health/ready`.
+
+As configurações específicas e os segredos de produção não ficam em arquivos
+versionados. Cadastre estas variáveis no painel do Render:
+
+| Variável | Exemplo ou finalidade |
+| -------- | --------------------- |
+| `ASPNETCORE_ENVIRONMENT` | `Production` |
+| `AllowedHosts` | Host público da API, sem `https://`, por exemplo `taskly-api.onrender.com` |
+| `Cors__AllowedOrigins__0` | URL HTTPS pública do frontend, sem `/` no final |
+| `MongoDb__ConnectionString` | String de conexão secreta do MongoDB de produção |
+| `MongoDb__DatabaseName` | Nome do banco de produção |
+| `Jwt__Key` | Chave Base64 secreta com pelo menos 32 bytes |
+
+Uma chave JWT adequada pode ser gerada localmente com:
+
+```bash
+openssl rand -base64 32
+```
+
+Não salve o resultado no repositório. Se houver mais de uma origem pública
+permitida, use `Cors__AllowedOrigins__1`, `Cors__AllowedOrigins__2` e assim por
+diante. Em produção, a API rejeita origens HTTP, locais ou inválidas, o curinga
+em `AllowedHosts` e a chave JWT conhecida de desenvolvimento.
+
+O TLS é encerrado pelo proxy do Render. A aplicação aceita os cabeçalhos
+encaminhados pelo proxy antes de aplicar HSTS e redirecionamento HTTPS, de modo
+que reconhece corretamente a requisição original como HTTPS.
+
+Endpoints de saúde:
+
+| Endpoint | Verificação |
+| -------- | ----------- |
+| `/health/live` | Processo da API está respondendo |
+| `/health/ready` | Conexão real com o MongoDB por meio de `ping` |
+| `/health` | Alias compatível para o readiness |
+
 ---
 
 # 📚 Próximos Passos
 
-* Expandir cobertura de testes unitários
-* Expandir cobertura dos testes de integração
+* ✅ Migrar a API para o .NET 10 LTS
+* ✅ Preparar a API e sua imagem Docker para produção
+* ⏭️ Preparar o frontend para produção, com build otimizado e configuração da URL da API
+* Provisionar o MongoDB e publicar API e frontend
+* Configurar integração e deploy contínuos
 * Adicionar paginação e filtros nas consultas
-* Realizar deploy da aplicação
+* Expandir a cobertura dos testes automatizados
 
 ---
 

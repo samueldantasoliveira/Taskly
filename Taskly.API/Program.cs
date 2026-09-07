@@ -3,6 +3,9 @@ using MongoDB.Driver;
 using Taskly.Application;
 using Taskly.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
@@ -10,6 +13,8 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+ConfigureRenderPort(builder);
 
 // HOST FILTERING CONFIG
 var allowedHostsOptionsBuilder = builder.Services
@@ -35,7 +40,7 @@ allowedHostsOptionsBuilder.ValidateOnStart();
 
 // CORS CONFIG
 const string corsPolicyName = "Frontend";
-builder.Services
+var corsOptionsBuilder = builder.Services
     .AddOptions<CorsSettings>()
     .BindConfiguration(CorsSettings.SectionName)
     .Validate(
@@ -45,8 +50,17 @@ builder.Services
     .Validate(
         settings => settings.AllowedOrigins.All(IsValidOrigin),
         "Cors:AllowedOrigins must contain only valid HTTP or HTTPS origins."
-    )
-    .ValidateOnStart();
+    );
+
+if (builder.Environment.IsProduction())
+{
+    corsOptionsBuilder.Validate(
+        settings => settings.AllowedOrigins.All(IsValidProductionOrigin),
+        "Cors:AllowedOrigins must contain only HTTPS, non-local origins in Production."
+    );
+}
+
+corsOptionsBuilder.ValidateOnStart();
 
 builder.Services.AddCors(options =>
 {
@@ -171,6 +185,34 @@ builder.Services.AddSingleton(serviceProvider =>
     return new MongoClient(mongoDbSettings.ConnectionString);
 });
 
+builder.Services
+    .AddHealthChecks()
+    .AddCheck<MongoDbHealthCheck>(
+        "mongodb",
+        failureStatus: HealthStatus.Unhealthy,
+        tags: ["ready"],
+        timeout: TimeSpan.FromSeconds(5)
+    );
+
+if (builder.Environment.IsProduction())
+{
+    builder.Services.AddHttpsRedirection(options =>
+    {
+        options.HttpsPort = 443;
+    });
+
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders =
+            ForwardedHeaders.XForwardedFor
+            | ForwardedHeaders.XForwardedProto;
+
+        // No Render, a API recebe tráfego somente por meio do proxy da plataforma.
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
+
 // Token Service
 builder.Services.AddSingleton<ITokenService, TokenService>();
 
@@ -194,16 +236,29 @@ if (!app.Environment.IsEnvironment("Testing"))
     {
         var context = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
         await context.EnsureIndexesAsync(app.Lifetime.ApplicationStopping);
-    }  
+    }
 }
 
 
-//Swagger
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsProduction())
+{
+    app.UseForwardedHeaders();
+}
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseHttpsRedirection();
+
+if (app.Environment.IsProduction())
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
 app.UseRouting();
 app.UseCors(corsPolicyName);
 app.UseAuthentication();
@@ -211,7 +266,19 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/health", () => Results.Ok());
+var readinessOptions = new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("ready"),
+    ResponseWriter = WriteHealthResponse
+};
+
+app.MapHealthChecks("/health", readinessOptions);
+app.MapHealthChecks("/health/ready", readinessOptions);
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false,
+    ResponseWriter = WriteHealthResponse
+});
 
 app.Run();
 
@@ -230,6 +297,55 @@ static bool IsValidOrigin(string origin)
         && uri.AbsolutePath == "/"
         && string.IsNullOrEmpty(uri.Query)
         && string.IsNullOrEmpty(uri.Fragment);
+}
+
+static bool IsValidProductionOrigin(string origin)
+{
+    return Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+        && uri.Scheme == Uri.UriSchemeHttps
+        && !uri.IsLoopback;
+}
+
+static void ConfigureRenderPort(WebApplicationBuilder builder)
+{
+    var portValue = builder.Configuration["PORT"];
+
+    if (string.IsNullOrWhiteSpace(portValue))
+    {
+        return;
+    }
+
+    if (!int.TryParse(portValue, out var port)
+        || port is < 1 or > 65535)
+    {
+        throw new InvalidOperationException(
+            "PORT must be an integer between 1 and 65535."
+        );
+    }
+
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
+static Task WriteHealthResponse(
+    HttpContext context,
+    HealthReport report
+)
+{
+    context.Response.ContentType = "application/json";
+
+    return context.Response.WriteAsJsonAsync(
+        new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                duration = entry.Value.Duration.TotalMilliseconds
+            })
+        },
+        cancellationToken: context.RequestAborted
+    );
 }
 
 static bool HasAllowedHosts(string allowedHosts)
