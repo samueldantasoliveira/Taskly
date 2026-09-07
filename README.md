@@ -10,6 +10,18 @@ O projeto foi criado com foco em organização de código, separação de respon
 
 ---
 
+# 🌐 Demonstração
+
+| Recurso | URL |
+| ------- | --- |
+| Aplicação web | [Abrir o Taskly](https://taskly-web-samueldantasoliveira.onrender.com) |
+| API | [Health check público](https://taskly-api-samueldantasoliveira.onrender.com/health/ready) |
+
+> A API utiliza o plano gratuito do Render e pode levar aproximadamente um
+> minuto para responder ao primeiro acesso após um período sem atividade.
+
+---
+
 # 🚀 Tecnologias
 
 * .NET 10 LTS (C#)
@@ -264,12 +276,13 @@ O Swagger é habilitado somente quando `ASPNETCORE_ENVIRONMENT` está como
 
 # ☁️ Produção no Render
 
-O `render.yaml` da raiz funciona como um Blueprint para criar os dois serviços:
+O projeto está publicado no Render. O `render.yaml` da raiz funciona como o
+Blueprint responsável pelos dois serviços:
 
-| Serviço | Tipo | Configuração principal |
-| ------- | ---- | ---------------------- |
-| `taskly-api-samueldantasoliveira` | Web Service Docker | `Taskly.API/Dockerfile` e health check em `/health/ready` |
-| `taskly-web-samueldantasoliveira` | Static Site | Node.js 24, `npm ci && npm run build` e publicação de `dist` |
+| Serviço | Tipo | Status | Configuração principal |
+| ------- | ---- | ------ | ---------------------- |
+| `taskly-api-samueldantasoliveira` | Web Service Docker | ✅ Online | `Taskly.API/Dockerfile` e health check em `/health/ready` |
+| `taskly-web-samueldantasoliveira` | Static Site | ✅ Online | Node.js 24, `npm ci && npm run build` e publicação de `dist` |
 
 O frontend recebe cache otimizado para assets, cabeçalhos de segurança e o
 rewrite de `/*` para `/index.html` exigido pelas rotas do React. Sua variável
@@ -320,8 +333,8 @@ Endpoints de saúde:
 * ✅ Migrar a API para o .NET 10 LTS
 * ✅ Preparar a API e sua imagem Docker para produção
 * ✅ Preparar o frontend para produção, com build otimizado e configuração da URL da API
-* ⏭️ Provisionar o MongoDB e publicar o Blueprint no Render
-* Configurar integração e deploy contínuos
+* ✅ Provisionar o MongoDB e publicar o Blueprint no Render
+* ⏭️ Configurar integração e deploy contínuos
 * Adicionar paginação e filtros nas consultas
 * Expandir a cobertura dos testes automatizados
 
