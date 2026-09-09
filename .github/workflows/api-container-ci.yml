@@ -1,0 +1,99 @@
+name: API Container CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  api-container:
+    name: API - imagem e container
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v6
+
+      - name: Construir imagem da API
+        run: docker build -f Taskly.API/Dockerfile -t taskly-api:ci .
+
+      - name: Iniciar MongoDB
+        run: |
+          docker network create taskly-ci
+
+          docker run -d \
+            --name taskly-mongodb-ci \
+            --network taskly-ci \
+            mongo:8
+
+      - name: Aguardar MongoDB
+        timeout-minutes: 2
+        run: |
+          for attempt in {1..30}; do
+            if docker exec taskly-mongodb-ci \
+              mongosh --quiet --eval \
+              'quit(db.adminCommand({ ping: 1 }).ok ? 0 : 1)'; then
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "MongoDB não ficou disponível."
+          exit 1
+
+      - name: Iniciar container da API
+        run: |
+          CI_JWT_KEY="$(openssl rand -base64 32)"
+          echo "::add-mask::$CI_JWT_KEY"
+
+          docker run -d \
+            --name taskly-api-ci \
+            --network taskly-ci \
+            -p 127.0.0.1:10000:10000 \
+            -e ASPNETCORE_ENVIRONMENT=Production \
+            -e PORT=10000 \
+            -e AllowedHosts=localhost \
+            -e Cors__AllowedOrigins__0=https://frontend.taskly.test \
+            -e MongoDb__ConnectionString=mongodb://taskly-mongodb-ci:27017 \
+            -e MongoDb__DatabaseName=TasklyContainerCI \
+            -e Jwt__Key="$CI_JWT_KEY" \
+            taskly-api:ci
+
+      - name: Verificar saúde da API
+        timeout-minutes: 3
+        run: |
+          for attempt in {1..30}; do
+            status="$(curl --silent --output /dev/null \
+              --write-out '%{http_code}' \
+              --max-time 5 \
+              -H 'X-Forwarded-Proto: https' \
+              http://localhost:10000/health/ready || true)"
+
+            if [ "$status" = "200" ]; then
+              echo "API pronta dentro do container."
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "API não ficou saudável."
+          exit 1
+
+      - name: Mostrar logs em caso de falha
+        if: failure()
+        run: |
+          docker logs taskly-api-ci || true
+          docker logs taskly-mongodb-ci || true
+
+      - name: Limpar containers e rede
+        if: always()
+        run: |
+          docker rm -f taskly-api-ci taskly-mongodb-ci || true
+          docker network rm taskly-ci || true
