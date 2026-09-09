@@ -8,6 +8,13 @@ services:
     dockerContext: .
     healthCheckPath: /health/ready
     autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - Taskly.API/**
+        - global.json
+        - .dockerignore
+      ignoredPaths:
+        - Taskly.API/**/*.md
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -29,6 +36,11 @@ services:
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - Taskly.Web/**
+      ignoredPaths:
+        - Taskly.Web/**/*.md
     envVars:
       - key: NODE_VERSION
         value: "24"
