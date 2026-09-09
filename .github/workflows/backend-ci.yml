@@ -1,0 +1,56 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Build e testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27018:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'quit(db.adminCommand({ ping: 1 }).ok ? 0 : 1)'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v6
+
+      - name: Preparar .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restaurar dependências
+        run: dotnet restore Taskly.sln
+
+      - name: Compilar
+        run: dotnet build Taskly.sln --configuration Release --no-restore
+
+      - name: Executar testes unitários
+        run: >
+          dotnet test Taskly.UnitTests/Taskly.UnitTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+
+      - name: Executar testes de integração
+        run: >
+          dotnet test Taskly.IntegrationTests/Taskly.IntegrationTests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
