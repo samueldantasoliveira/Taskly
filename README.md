@@ -2,6 +2,8 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-Database-green)
 ![React](https://img.shields.io/badge/React-19-61dafb)
 ![xUnit](https://img.shields.io/badge/Tests-xUnit-success)
+[![Backend CI](https://github.com/samueldantasoliveira/Taskly/actions/workflows/backend-ci.yml/badge.svg?branch=main)](https://github.com/samueldantasoliveira/Taskly/actions/workflows/backend-ci.yml?query=branch%3Amain)
+
 # 🗂️ Taskly
 
 Aplicação para gerenciamento de usuários, equipes, projetos e tarefas, com API em .NET 10, MongoDB e interface web em React.
