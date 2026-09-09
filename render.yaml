@@ -7,7 +7,7 @@ services:
     dockerfilePath: ./Taskly.API/Dockerfile
     dockerContext: .
     healthCheckPath: /health/ready
-    autoDeployTrigger: commit
+    autoDeployTrigger: checksPass
     buildFilter:
       paths:
         - Taskly.API/**
@@ -35,7 +35,7 @@ services:
     rootDir: Taskly.Web
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
-    autoDeployTrigger: commit
+    autoDeployTrigger: checksPass
     buildFilter:
       paths:
         - Taskly.Web/**

@@ -3,6 +3,8 @@
 ![React](https://img.shields.io/badge/React-19-61dafb)
 ![xUnit](https://img.shields.io/badge/Tests-xUnit-success)
 [![Backend CI](https://github.com/samueldantasoliveira/Taskly/actions/workflows/backend-ci.yml/badge.svg?branch=main)](https://github.com/samueldantasoliveira/Taskly/actions/workflows/backend-ci.yml?query=branch%3Amain)
+[![Frontend CI](https://github.com/samueldantasoliveira/Taskly/actions/workflows/frontend-ci.yml/badge.svg?branch=main)](https://github.com/samueldantasoliveira/Taskly/actions/workflows/frontend-ci.yml?query=branch%3Amain)
+[![API Container CI](https://github.com/samueldantasoliveira/Taskly/actions/workflows/api-container-ci.yml/badge.svg?branch=main)](https://github.com/samueldantasoliveira/Taskly/actions/workflows/api-container-ci.yml?query=branch%3Amain)
 
 # 🗂️ Taskly
 
@@ -16,8 +18,8 @@ O projeto foi criado com foco em organização de código, separação de respon
 
 | Recurso | URL |
 | ------- | --- |
-| Aplicação web | [Abrir o Taskly](https://taskly-web-samueldantasoliveira.onrender.com) |
-| API | [Health check público](https://taskly-api-samueldantasoliveira.onrender.com/health/ready) |
+| Aplicação web | <a href="https://taskly-web-samueldantasoliveira.onrender.com" target="_blank" rel="noopener noreferrer">Abrir o Taskly</a> |
+| API | <a href="https://taskly-api-samueldantasoliveira.onrender.com/health/ready" target="_blank" rel="noopener noreferrer">Health check público</a> |
 
 > A API utiliza o plano gratuito do Render e pode levar aproximadamente um
 > minuto para responder ao primeiro acesso após um período sem atividade.
@@ -276,6 +278,50 @@ O Swagger é habilitado somente quando `ASPNETCORE_ENVIRONMENT` está como
 
 ---
 
+# 🔄 CI/CD
+
+O GitHub Actions executa três workflows em Pull Requests destinados à `main`
+e em pushes nessa branch. Os badges no topo mostram os resultados na `main`.
+
+| Workflow | Validação |
+| -------- | --------- |
+| [Backend CI](.github/workflows/backend-ci.yml) | Restore, build em Release, testes unitários e de integração com MongoDB temporário |
+| [Frontend CI](.github/workflows/frontend-ci.yml) | Instalação pelo lockfile, lint, testes e build do frontend |
+| [API Container CI](.github/workflows/api-container-ci.yml) | Build do Dockerfile e inicialização da API em Production com MongoDB e chave JWT temporários, verificando `/health/ready` |
+
+O fluxo de contribuição e publicação é:
+
+```text
+Branch de trabalho → PR → Checks aprovados → Merge na main
+                                              ↓
+                                    CI do commit na main
+                                              ↓
+                                    Deploy automático no Render
+```
+
+O ruleset da `main`, configurado no GitHub, exige PR e os três checks antes do
+merge. O `render.yaml` define `autoDeployTrigger: checksPass` nos dois serviços:
+após o merge, o Render aguarda os checks do novo commit na `main` antes de iniciar
+o deploy automático. São controles separados: um protege o merge e o outro, a
+publicação automática.
+
+O Render considera todos os checks detectados, não apenas os exigidos pelo
+ruleset. Não inicia o deploy automático se nenhum check for detectado ou se algum
+falhar; resultados `success`, `neutral` e `skipped` são aceitos pela plataforma.
+Essa configuração não bloqueia deploys manuais.
+Veja a [documentação de integração com CI do Render](https://render.com/docs/deploys#integrating-with-ci).
+
+Os filtros de build continuam limitando os deploys aos arquivos relevantes de
+cada serviço. Alterações apenas no README não exigem uma nova publicação, embora
+a CI continue executando.
+
+Ao aplicar mudanças no Blueprint, confirme sua sincronização no painel do Render
+e verifique se os dois serviços exibem **Auto-Deploy: After CI Checks Pass**.
+Renomear os jobs dos workflows também exige atualizar os checks do ruleset no
+GitHub.
+
+---
+
 # ☁️ Produção no Render
 
 O projeto está publicado no Render. O `render.yaml` da raiz funciona como o
@@ -336,7 +382,7 @@ Endpoints de saúde:
 * ✅ Preparar a API e sua imagem Docker para produção
 * ✅ Preparar o frontend para produção, com build otimizado e configuração da URL da API
 * ✅ Provisionar o MongoDB e publicar o Blueprint no Render
-* ⏭️ Configurar integração e deploy contínuos
+* ✅ Configurar CI do backend, frontend e container da API, com deploy automático condicionado aos checks no Blueprint
 * Adicionar paginação e filtros nas consultas
 * Expandir a cobertura dos testes automatizados
 
