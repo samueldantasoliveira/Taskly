@@ -2,6 +2,7 @@
 using Taskly.Application;
 using Taskly.Domain.Entities;
 using System.Linq.Expressions;
+using System.ComponentModel;
 
 namespace Taskly.Infrastructure
 {
@@ -23,13 +24,34 @@ namespace Taskly.Infrastructure
             return await _context.TodoTasks.Find(BaseFilter(t => t.Id == id)).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<List<TodoTask>> GetByProjectIdAsync(
+        public async Task<PagedResult<TodoTask>> GetByProjectIdAsync(
             Guid projectId,
+            int page,
+            int pageSize,
             CancellationToken cancellationToken = default)
         {
-            return await _context.TodoTasks
-                .Find(BaseFilter(t => t.ProjectId == projectId))
+            var filter = BaseFilter(t => t.ProjectId == projectId); 
+            var sort = Builders<TodoTask>.Sort
+                .Descending(t => t.CreatedAt)
+                .Ascending(t => t.Id);
+
+            var skip = checked((page - 1) * pageSize);
+            List<TodoTask> tasks = await _context.TodoTasks
+                .Find(filter)
+                .Sort(sort)
+                .Skip(skip)
+                .Limit(pageSize)
                 .ToListAsync(cancellationToken);
+
+            var totalCount = await _context.TodoTasks
+                .CountDocumentsAsync(
+                    filter,
+                    cancellationToken: cancellationToken);
+
+            return new PagedResult<TodoTask>
+            {
+                Items = tasks, TotalCount = totalCount
+            };
         }
 
         public async Task<bool> UpdateAsync(TodoTask task, CancellationToken cancellationToken = default)

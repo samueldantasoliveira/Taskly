@@ -4,8 +4,10 @@ namespace Taskly.Application
 {
     public interface ITodoTaskRepository
     {
-        Task<List<TodoTask>> GetByProjectIdAsync(
+        Task<PagedResult<TodoTask>> GetByProjectIdAsync(
             Guid projectId,
+            int page,
+            int pageSize,
             CancellationToken cancellationToken = default);
         Task<TodoTask?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task AddAsync(TodoTask task, CancellationToken cancellationToken = default);

@@ -56,7 +56,9 @@ namespace Taskly.Controllers
         [HttpGet("project/{projectId}")]
         public async Task<IActionResult> GetByProjectId(
             Guid projectId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
@@ -64,6 +66,8 @@ namespace Taskly.Controllers
             var result = await _todoTaskService.GetByProjectIdAsync(
                 projectId,
                 authenticatedUserId,
+                page,
+                pageSize,
                 cancellationToken);
 
             if (!result.Success)
@@ -210,6 +214,13 @@ namespace Taskly.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden, error.Message);
             if (error == TodoTaskErrors.NotAssignedUser)
                 return Unauthorized(error.Message);
+
+            if (error == TodoTaskErrors.InvalidPage
+                || error == TodoTaskErrors.InvalidPageSize
+                || error == TodoTaskErrors.PaginationLimitExceeded)
+            {
+                return BadRequest(error.Message);
+            }
 
             return StatusCode(500, error.Message);
         }
