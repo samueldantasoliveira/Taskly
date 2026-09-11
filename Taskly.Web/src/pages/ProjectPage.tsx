@@ -44,6 +44,13 @@ const columns = [
 
 export function ProjectPage() {
   const { projectId = '' } = useParams()
+  return <ProjectBoard key={projectId} projectId={projectId} />
+}
+
+const pageSize = 20
+
+function ProjectBoard({ projectId }: { projectId: string }) {
+  const [page, setPage] = useState(1)
   const { user } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -59,7 +66,11 @@ export function ProjectPage() {
   const teamId = projectQuery.data?.teamId ?? ''
   const teamQuery = useQuery({ queryKey: queryKeys.team(teamId), queryFn: ({ signal }) => getTeam(teamId, signal), enabled: Boolean(teamId) })
   const membersQuery = useQuery({ queryKey: queryKeys.members(teamId), queryFn: ({ signal }) => getTeamMembers(teamId, signal), enabled: Boolean(teamId) })
-  const tasksQuery = useQuery({ queryKey: queryKeys.tasks(projectId), queryFn: ({ signal }) => getProjectTasks(projectId, signal), enabled: Boolean(projectId) })
+  const tasksQuery = useQuery({ queryKey: queryKeys.taskPage(projectId, page, pageSize), queryFn: ({ signal }) => getProjectTasks(projectId, page, pageSize, signal), enabled: Boolean(projectId) })
+  const totalPages = Math.max(1, Math.ceil((tasksQuery.data?.totalCount ?? 0) / pageSize))
+  // A deletion or concurrent update can remove the last page.
+  if (tasksQuery.isSuccess && page > totalPages) setPage(totalPages)
+
   const canManageProject = projectQuery.data?.ownerId === user?.id || teamQuery.data?.ownerId === user?.id
 
   useEffect(() => {
@@ -67,7 +78,7 @@ export function ProjectPage() {
   }, [projectForm, projectQuery.data])
 
   const refreshTasks = () => queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) })
-  const createMutation = useMutation({ mutationFn: (data: TaskFormData) => createTask({ title: data.title, description: data.description, projectId, assignedUserId: data.assignedUserId || null }), onSuccess: () => { refreshTasks(); showToast('Tarefa criada.'); taskForm.reset(); setModal(null) } })
+  const createMutation = useMutation({ mutationFn: (data: TaskFormData) => createTask({ title: data.title, description: data.description, projectId, assignedUserId: data.assignedUserId || null }), onSuccess: () => { refreshTasks(); setPage(1); setSearch(''); showToast('Tarefa criada.'); taskForm.reset(); setModal(null) } })
   const editTaskMutation = useMutation({
     mutationFn: async ({ task, data }: { task: TodoTask; data: TaskFormData }) => {
       await updateTask(task.id, { title: data.title, description: data.description })
@@ -93,8 +104,8 @@ export function ProjectPage() {
 
   const filteredTasks = useMemo(() => {
     const term = search.trim().toLowerCase()
-    if (!term) return tasksQuery.data ?? []
-    return (tasksQuery.data ?? []).filter((task) => task.title.toLowerCase().includes(term) || task.description?.toLowerCase().includes(term))
+    if (!term) return tasksQuery.data?.items ?? []
+    return (tasksQuery.data?.items ?? []).filter((task) => task.title.toLowerCase().includes(term) || task.description?.toLowerCase().includes(term))
   }, [search, tasksQuery.data])
 
   const openEditTask = (task: TodoTask) => {
@@ -118,13 +129,15 @@ export function ProjectPage() {
         <div className="project-hero__actions">{canManageProject && <Button variant="secondary" icon={<Pencil size={16} />} onClick={() => setModal('edit-project')}>Editar projeto</Button>}<Button icon={<Plus size={17} />} onClick={openCreateTask} disabled={!activeProject}>Nova tarefa</Button></div>
       </section>
 
-      <div className="board-toolbar"><div className="search-input"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar tarefas..." aria-label="Buscar tarefas" /></div><span>{filteredTasks.length} {filteredTasks.length === 1 ? 'tarefa' : 'tarefas'}</span></div>
+      <div className="board-toolbar"><div className="search-input"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar nesta página..." aria-label="Buscar tarefas nesta página" /></div><span aria-live="polite">{tasksQuery.data ? `${filteredTasks.length} nesta página · ${tasksQuery.data.totalCount} no projeto` : 'Carregando tarefas...'}</span></div>
 
+      <p className="pagination-hint">O quadro e a busca mostram apenas as tarefas da página atual.</p>
+      {tasksQuery.isSuccess && tasksQuery.data.items.length > 0 && filteredTasks.length === 0 && <EmptyState title="Nenhuma tarefa encontrada nesta página" description="Tente outro termo ou navegue para outra página." />}
       {tasksQuery.isPending && <PageLoader label="Montando o quadro..." />}
       {tasksQuery.isError && <ErrorState message={(tasksQuery.error as Error).message} onRetry={() => tasksQuery.refetch()} />}
-      {tasksQuery.data?.length === 0 && <EmptyState title="O quadro está vazio" description="Crie a primeira tarefa para dar forma ao trabalho deste projeto." action={<Button icon={<Plus size={16} />} onClick={openCreateTask} disabled={!activeProject}>Criar tarefa</Button>} />}
+      {tasksQuery.isSuccess && tasksQuery.data.totalCount === 0 && <EmptyState title="O quadro está vazio" description="Crie a primeira tarefa para dar forma ao trabalho deste projeto." action={<Button icon={<Plus size={16} />} onClick={openCreateTask} disabled={!activeProject}>Criar tarefa</Button>} />}
 
-      {Boolean(tasksQuery.data?.length) && <div className="kanban-board">
+      {Boolean(tasksQuery.data?.items.length) && <div className="kanban-board">
         {columns.map((column) => {
           const columnTasks = filteredTasks.filter((task) => task.status === column.status)
           const Icon = column.icon
@@ -147,6 +160,12 @@ export function ProjectPage() {
           </section>
         })}
       </div>}
+
+      <nav className="board-pagination" aria-label="Paginação de tarefas">
+        <Button variant="secondary" disabled={page === 1 || tasksQuery.isFetching} onClick={() => setPage((current) => current - 1)}>Anterior</Button>
+        <span aria-live="polite">Página {page}{tasksQuery.data ? ` de ${totalPages}` : ''}</span>
+        <Button variant="secondary" disabled={!tasksQuery.isSuccess || page >= totalPages || tasksQuery.isFetching} onClick={() => setPage((current) => current + 1)}>Próxima</Button>
+      </nav>
 
       <Modal open={modal === 'create' || modal === 'edit-task'} title={modal === 'create' ? 'Nova tarefa' : selectedTaskIsReadOnly ? 'Detalhes da tarefa' : 'Editar tarefa'} description={selectedTaskIsReadOnly ? 'Tarefas concluídas ou canceladas não podem mais ser alteradas.' : 'Mantenha o próximo passo claro e objetivo.'} onClose={() => setModal(null)}>
         <form onSubmit={taskForm.handleSubmit((data) => selectedTask ? !selectedTaskIsReadOnly && editTaskMutation.mutate({ task: selectedTask, data }) : createMutation.mutate(data))}>

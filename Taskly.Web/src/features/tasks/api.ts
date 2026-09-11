@@ -2,12 +2,14 @@ import { apiRequest, jsonBody } from '../../shared/api/client'
 import type {
   CreateTaskInput,
   Id,
+  PagedResult,
   TodoTask,
   UpdateTaskInput,
 } from '../../shared/types/api'
 
-export function getProjectTasks(projectId: Id, signal?: AbortSignal) {
-  return apiRequest<TodoTask[]>(`/api/todotask/project/${projectId}`, { signal })
+export function getProjectTasks(projectId: Id, page = 1, pageSize = 20, signal?: AbortSignal) {
+  const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+  return apiRequest<PagedResult<TodoTask>>(`/api/todotask/project/${projectId}?${query}`, { signal })
 }
 
 export function createTask(input: CreateTaskInput) {

@@ -7,4 +7,5 @@ export const queryKeys = {
   projects: (teamId: Id) => ['teams', teamId, 'projects'] as const,
   project: (id: Id) => ['projects', id] as const,
   tasks: (projectId: Id) => ['projects', projectId, 'tasks'] as const,
+  taskPage: (projectId: Id, page: number, pageSize: number) => ['projects', projectId, 'tasks', page, pageSize] as const,
 }
