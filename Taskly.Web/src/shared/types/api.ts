@@ -1,5 +1,10 @@
 export type Id = string
 
+export interface PagedResult<T> {
+  items: T[]
+  totalCount: number
+}
+
 export const TodoStatus = {
   Todo: 0,
   InProgress: 1,

@@ -121,43 +121,59 @@ namespace Taskly.Application
                 .Ok(todoTaskResponseDto);
         }
 
-        public async Task<StructuredOperationResult<List<TodoTaskResponseDto>>> GetByProjectIdAsync(
+        public async Task<StructuredOperationResult<PagedResult<TodoTaskResponseDto>>> GetByProjectIdAsync(
             Guid projectId,
             Guid authenticatedUserId,
+            int page,
+            int pageSize,
             CancellationToken cancellationToken = default)
         {
+            if(page<1)
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.InvalidPage);
+            if(pageSize<1 || pageSize>100)
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.InvalidPageSize);
+
+            var offset = ((long)page - 1) * pageSize;
+            if (offset > int.MaxValue)
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.PaginationLimitExceeded);
+
             var user = await _userRepository.GetByIdAsync(authenticatedUserId, cancellationToken);
             if (user == null)
-                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.UserNotFound);
 
             var project = await _projectRepository.GetByIdAsync(projectId, cancellationToken);
             if (project == null)
-                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.ProjectNotFound);
 
             if (project.Status == ProjectStatus.Inactive)
-                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.ProjectInactive);
 
             var team = await _teamRepository.GetByIdAsync(project.TeamId, cancellationToken);
             if (team == null)
-                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.TeamNotFound);
 
             if (!team.IsActive)
-                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.TeamInactive);
 
             if (!team.UserIds.Contains(authenticatedUserId))
-                return StructuredOperationResult<List<TodoTaskResponseDto>>
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.UserNotTeamMember);
 
-            var todoTasks = await _todoTaskRepository.GetByProjectIdAsync(
+            var pagedResult = await _todoTaskRepository.GetByProjectIdAsync(
                 projectId,
+                page,
+                pageSize,
                 cancellationToken);
 
-            var response = todoTasks
+            var todoTasksDto = pagedResult.Items
                 .Select(todoTask => new TodoTaskResponseDto
                 {
                     Id = todoTask.Id,
@@ -170,8 +186,14 @@ namespace Taskly.Application
                     UpdatedAt = todoTask.UpdatedAt
                 })
                 .ToList();
+            
+            var response = new PagedResult<TodoTaskResponseDto>
+            {
+                Items = todoTasksDto, 
+                TotalCount = pagedResult.TotalCount
+            };
 
-            return StructuredOperationResult<List<TodoTaskResponseDto>>
+            return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                 .Ok(response);
         }
 
