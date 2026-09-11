@@ -322,6 +322,51 @@ GitHub.
 
 ---
 
+# 🤝 Como contribuir
+
+Antes de começar, salve suas alterações em andamento e atualize a `main`:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git switch -c docs/nome-da-mudanca
+```
+
+Use um nome que descreva a alteração, com prefixos como `feature/`, `fix/`,
+`docs/` ou `ci/`. Faça mudanças com escopo pequeno e execute as verificações
+locais relevantes descritas em **Executar os testes e verificações**.
+
+Confira o diff e adicione apenas os arquivos da mudança. Por exemplo, para
+uma atualização de documentação:
+
+```bash
+git diff -- README.md
+git diff --check
+git add README.md
+git commit -m "docs: describe the change"
+git push -u origin docs/nome-da-mudanca
+```
+
+No GitHub, abra um Pull Request da sua branch para a `main`, descrevendo a
+mudança e como foi validada. Aguarde os três checks obrigatórios: backend,
+frontend e container da API. Se o PR precisar ser atualizado com a `main`,
+atualize a branch e aguarde a nova execução da CI antes do merge.
+
+Depois do merge, apague a branch remota pelo GitHub. Com o diretório de trabalho
+limpo, atualize sua cópia local e remova a branch concluída:
+
+```bash
+git switch main
+git pull --ff-only origin main
+git branch -d docs/nome-da-mudanca
+```
+
+Se o Git não reconhecer a branch como integrada, confira o método de merge do
+PR antes de forçar a exclusão. Não inclua senhas reais, tokens ou conexões de
+produção nos commits; use variáveis de ambiente para esses valores.
+
+---
+
 # ☁️ Produção no Render
 
 O projeto está publicado no Render. O `render.yaml` da raiz funciona como o
