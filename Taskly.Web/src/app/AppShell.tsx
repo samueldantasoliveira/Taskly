@@ -6,6 +6,7 @@ import { useAuth } from '../features/auth/auth-context'
 import { getTeams } from '../features/teams/api'
 import { Avatar } from '../shared/components/Avatar'
 import { Logo } from '../shared/components/Logo'
+import { ThemeToggle } from '../shared/components/ThemeToggle'
 import { queryKeys } from '../shared/lib/query-keys'
 
 function getPageTitle(pathname: string) {
@@ -61,6 +62,7 @@ export function AppShell() {
         <header className="topbar">
           <button className="icon-button topbar__menu" onClick={() => setMobileOpen(true)} aria-label="Abrir menu"><Menu size={21} /></button>
           <div><span className="eyebrow">Workspace</span><strong>{getPageTitle(location.pathname)}</strong></div>
+          <ThemeToggle />
           <Avatar name={user?.name ?? 'Usuário'} size="sm" />
         </header>
         <main className="page-container"><Outlet /></main>

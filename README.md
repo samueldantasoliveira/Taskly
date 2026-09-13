@@ -93,6 +93,7 @@ Taskly/
 | Soft Delete                         | Exclusão lógica utilizando `DeletedAt`                | ✅      |
 | Tratamento de Erros                 | Retornos padronizados com `StructuredOperationResult` | ✅      |
 | Interface Web Responsiva            | Fluxos de autenticação, equipes, projetos e perfil     | ✅      |
+| Temas Noturno e Claro               | Noturno por padrão, com alternância e preferência salva no navegador | ✅      |
 | Quadro Kanban                       | Criação, atribuição e mudança de estado das tarefas    | ✅      |
 
 ---

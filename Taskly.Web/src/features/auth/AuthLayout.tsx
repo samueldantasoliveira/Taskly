@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { CheckCircle2, Layers3, UsersRound } from 'lucide-react'
 import { Logo } from '../../shared/components/Logo'
+import { ThemeToggle } from '../../shared/components/ThemeToggle'
 
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -19,7 +20,10 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         </div>
         <p className="auth-showcase__footer">Seu trabalho merece um fluxo mais leve.</p>
       </section>
-      <section className="auth-panel">{children}</section>
+      <section className="auth-panel">
+        <div className="auth-panel__theme"><ThemeToggle /></div>
+        {children}
+      </section>
     </main>
   )
 }
