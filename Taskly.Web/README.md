@@ -47,6 +47,14 @@ npm run dev
 
 A interface estará disponível em `http://localhost:5173`, origem já liberada pelo CORS da API no ambiente de desenvolvimento.
 
+## Kanban e consultas
+
+O quadro permite buscar tarefas por título, filtrar por responsável e ordenar
+por data de criação ou título. As colunas `A fazer` e `Em andamento` carregam
+todo o trabalho ativo do projeto. As colunas `Concluídas` e `Canceladas`
+carregam inicialmente os 20 registros mais recentes e possuem paginação
+independente por meio do botão **Carregar mais**.
+
 ## Comandos
 
 | Comando | Finalidade |
