@@ -47,6 +47,11 @@ npm run dev
 
 A interface estará disponível em `http://localhost:5173`, origem já liberada pelo CORS da API no ambiente de desenvolvimento.
 
+O modo noturno é utilizado por padrão. O botão de tema fica disponível na tela
+de login e na área autenticada, permitindo alternar entre os modos noturno e
+claro. A preferência escolhida é salva no navegador e restaurada nos próximos
+acessos.
+
 ## Comandos
 
 | Comando | Finalidade |
