@@ -94,7 +94,7 @@ Taskly/
 | Tratamento de Erros                 | Retornos padronizados com `StructuredOperationResult` | ✅      |
 | Interface Web Responsiva            | Fluxos de autenticação, equipes, projetos e perfil     | ✅      |
 | Temas Noturno e Claro               | Noturno por padrão, com alternância e preferência salva no navegador | ✅      |
-| Quadro Kanban                       | Criação, atribuição e mudança de estado das tarefas    | ✅      |
+| Quadro Kanban                       | Filtros, ordenação e histórico incremental por status | ✅      |
 
 ---
 
@@ -429,7 +429,7 @@ Endpoints de saúde:
 * ✅ Preparar o frontend para produção, com build otimizado e configuração da URL da API
 * ✅ Provisionar o MongoDB e publicar o Blueprint no Render
 * ✅ Configurar CI do backend, frontend e container da API, com deploy automático condicionado aos checks no Blueprint
-* Adicionar paginação e filtros nas consultas
+* ✅ Adicionar paginação, filtros e ordenação às consultas de tarefas
 * Expandir a cobertura dos testes automatizados
 
 ---

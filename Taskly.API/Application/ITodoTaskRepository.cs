@@ -1,4 +1,5 @@
 ﻿using Taskly.Domain.Entities;
+using Taskly.Application.Queries;
 
 namespace Taskly.Application
 {
@@ -6,8 +7,7 @@ namespace Taskly.Application
     {
         Task<PagedResult<TodoTask>> GetByProjectIdAsync(
             Guid projectId,
-            int page,
-            int pageSize,
+            TodoTaskQuery query,
             CancellationToken cancellationToken = default);
         Task<TodoTask?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task AddAsync(TodoTask task, CancellationToken cancellationToken = default);

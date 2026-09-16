@@ -4,6 +4,7 @@ using Taskly.Application;
 using Taskly.Application.DTOs;
 using Taskly.Application.Results;
 using System.Security.Claims;
+using Taskly.Application.Queries;
 
 namespace Taskly.Controllers
 {
@@ -57,8 +58,7 @@ namespace Taskly.Controllers
         public async Task<IActionResult> GetByProjectId(
             Guid projectId,
             CancellationToken cancellationToken,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
+            [FromQuery] TodoTaskQuery query)
         {
             if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
                 return Unauthorized();
@@ -66,8 +66,7 @@ namespace Taskly.Controllers
             var result = await _todoTaskService.GetByProjectIdAsync(
                 projectId,
                 authenticatedUserId,
-                page,
-                pageSize,
+                query,
                 cancellationToken);
 
             if (!result.Success)
@@ -217,11 +216,13 @@ namespace Taskly.Controllers
 
             if (error == TodoTaskErrors.InvalidPage
                 || error == TodoTaskErrors.InvalidPageSize
-                || error == TodoTaskErrors.PaginationLimitExceeded)
+                || error == TodoTaskErrors.PaginationLimitExceeded
+                || error == TodoTaskErrors.InvalidStatusFilter
+                || error == TodoTaskErrors.InvalidSortBy
+                || error == TodoTaskErrors.InvalidSortDirection)
             {
                 return BadRequest(error.Message);
             }
-
             return StatusCode(500, error.Message);
         }
     }

@@ -52,6 +52,14 @@ de login e na área autenticada, permitindo alternar entre os modos noturno e
 claro. A preferência escolhida é salva no navegador e restaurada nos próximos
 acessos.
 
+## Kanban e consultas
+
+O quadro permite buscar tarefas por título, filtrar por responsável e ordenar
+por data de criação ou título. As colunas `A fazer` e `Em andamento` carregam
+todo o trabalho ativo do projeto. As colunas `Concluídas` e `Canceladas`
+carregam inicialmente os 20 registros mais recentes e possuem paginação
+independente por meio do botão **Carregar mais**.
+
 ## Comandos
 
 | Comando | Finalidade |

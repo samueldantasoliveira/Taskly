@@ -5,6 +5,8 @@ using Taskly.Application.DTOs;
 using Taskly.Domain;
 using Taskly.Domain.Entities;
 using Taskly.Infrastructure;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Taskly.IntegrationTests;
@@ -182,6 +184,172 @@ public class TodoTaskIntegrationTests : IClassFixture<TasklyApiFactory>
         var empty = await GetPageAsync(emptyProject.Id);
         Assert.Empty(empty.Items);
         Assert.Equal(0, empty.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_FiltersCanBeCombinedAndTotalCountUsesSameFilter()
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        var member = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        await AddMemberAsync(team.Id, member.User.Id);
+        var project = await _projectHelper.CreateProjectAsync(team.Id);
+        var date = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        var todo = new TodoTask("Alpha API", "Filters", project.Id, owner.User.Id)
+        {
+            CreatedAt = date.AddDays(1)
+        };
+        var inProgress = new TodoTask("Bravo API", "Filters", project.Id, member.User.Id)
+        {
+            CreatedAt = date.AddDays(3)
+        };
+        inProgress.Start();
+        var done = new TodoTask("Charlie Web", "Filters", project.Id, member.User.Id)
+        {
+            CreatedAt = date.AddDays(2)
+        };
+        done.Start();
+        done.Complete();
+        var cancelled = new TodoTask("Delta Archive", "Filters", project.Id, owner.User.Id)
+        {
+            CreatedAt = date.AddDays(4)
+        };
+        cancelled.Cancel();
+        var deleted = new TodoTask("Deleted API", "Excluded", project.Id, member.User.Id);
+        deleted.Delete();
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+        await context.TodoTasks.InsertManyAsync([todo, inProgress, done, cancelled, deleted]);
+
+        var byTitle = await GetPageAsync(project.Id, "?title=api&pageSize=100");
+        Assert.Equal(2, byTitle.TotalCount);
+        Assert.Equal(
+            [inProgress.Id, todo.Id],
+            byTitle.Items.Select(task => task.Id));
+
+        var byStatus = await GetPageAsync(project.Id, "?status=Done&pageSize=100");
+        Assert.Equal(1, byStatus.TotalCount);
+        Assert.Equal(done.Id, Assert.Single(byStatus.Items).Id);
+
+        var byAssignee = await GetPageAsync(
+            project.Id,
+            $"?assigneeId={member.User.Id}&pageSize=100");
+        Assert.Equal(2, byAssignee.TotalCount);
+        Assert.Equal(
+            [inProgress.Id, done.Id],
+            byAssignee.Items.Select(task => task.Id));
+
+        var combined = await GetPageAsync(
+            project.Id,
+            $"?title=api&status=InProgress&assigneeId={member.User.Id}&pageSize=100");
+        Assert.Equal(1, combined.TotalCount);
+        Assert.Equal(inProgress.Id, Assert.Single(combined.Items).Id);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_SortsBySupportedFieldsInBothDirections()
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        var project = await _projectHelper.CreateProjectAsync(team.Id);
+        var date = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        var alpha = new TodoTask("Alpha", "Sorting", project.Id, owner.User.Id)
+        {
+            CreatedAt = date.AddDays(1)
+        };
+        var bravo = new TodoTask("Bravo", "Sorting", project.Id, owner.User.Id)
+        {
+            CreatedAt = date.AddDays(3)
+        };
+        bravo.Start();
+        var charlie = new TodoTask("Charlie", "Sorting", project.Id, owner.User.Id)
+        {
+            CreatedAt = date.AddDays(2)
+        };
+        charlie.Start();
+        charlie.Complete();
+        var delta = new TodoTask("Delta", "Sorting", project.Id, owner.User.Id)
+        {
+            CreatedAt = date.AddDays(4)
+        };
+        delta.Cancel();
+
+        using var scope = _factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+        await context.TodoTasks.InsertManyAsync([alpha, bravo, charlie, delta]);
+
+        var titleAscending = await GetPageAsync(
+            project.Id,
+            "?sortBy=Title&sortDirection=Ascending&pageSize=100");
+        Assert.Equal(
+            ["Alpha", "Bravo", "Charlie", "Delta"],
+            titleAscending.Items.Select(task => task.Title));
+
+        var titleDescending = await GetPageAsync(
+            project.Id,
+            "?sortBy=Title&sortDirection=Descending&pageSize=100");
+        Assert.Equal(
+            ["Delta", "Charlie", "Bravo", "Alpha"],
+            titleDescending.Items.Select(task => task.Title));
+
+        var statusAscending = await GetPageAsync(
+            project.Id,
+            "?sortBy=Status&sortDirection=Ascending&pageSize=100");
+        Assert.Equal(
+            [TodoStatus.Todo, TodoStatus.InProgress, TodoStatus.Done, TodoStatus.Cancelled],
+            statusAscending.Items.Select(task => task.Status));
+
+        var statusDescending = await GetPageAsync(
+            project.Id,
+            "?sortBy=Status&sortDirection=Descending&pageSize=100");
+        Assert.Equal(
+            [TodoStatus.Cancelled, TodoStatus.Done, TodoStatus.InProgress, TodoStatus.Todo],
+            statusDescending.Items.Select(task => task.Status));
+
+        var createdAscending = await GetPageAsync(
+            project.Id,
+            "?sortBy=CreatedAt&sortDirection=Ascending&pageSize=100");
+        Assert.Equal(
+            [alpha.Id, charlie.Id, bravo.Id, delta.Id],
+            createdAscending.Items.Select(task => task.Id));
+
+        var createdDescending = await GetPageAsync(
+            project.Id,
+            "?sortBy=CreatedAt&sortDirection=Descending&pageSize=100");
+        Assert.Equal(
+            [delta.Id, bravo.Id, charlie.Id, alpha.Id],
+            createdDescending.Items.Select(task => task.Id));
+    }
+
+    [Theory]
+    [InlineData("status=999", "Status")]
+    [InlineData("sortBy=999", "SortBy")]
+    [InlineData("sortDirection=999", "SortDirection")]
+    public async Task GetByProjectId_InvalidEnum_ReturnsValidationProblem(
+        string query,
+        string field)
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        var project = await _projectHelper.CreateProjectAsync(team.Id);
+
+        var response = await _client.GetAsync(
+            $"/api/TodoTask/project/{project.Id}?{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content
+            .ReadFromJsonAsync<ValidationProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Equal(StatusCodes.Status400BadRequest, problem.Status);
+        Assert.Contains(
+            problem.Errors.Keys,
+            key => key.Contains(field, StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task<PagedResult<TodoTaskResponseDto>> GetPageAsync(Guid projectId, string query = "")
