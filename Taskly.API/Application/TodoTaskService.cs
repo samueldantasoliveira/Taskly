@@ -1,4 +1,5 @@
 ﻿using Taskly.Application.DTOs;
+using Taskly.Application.Queries;
 using Taskly.Application.Results;
 using Taskly.Domain;
 using Taskly.Domain.Entities;
@@ -124,18 +125,17 @@ namespace Taskly.Application
         public async Task<StructuredOperationResult<PagedResult<TodoTaskResponseDto>>> GetByProjectIdAsync(
             Guid projectId,
             Guid authenticatedUserId,
-            int page,
-            int pageSize,
+            TodoTaskQuery query,
             CancellationToken cancellationToken = default)
         {
-            if(page<1)
+            if(query.Page<1)
                 return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.InvalidPage);
-            if(pageSize<1 || pageSize>100)
+            if(query.PageSize<1 || query.PageSize>100)
                 return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.InvalidPageSize);
 
-            var offset = ((long)page - 1) * pageSize;
+            var offset = ((long)query.Page - 1) * query.PageSize;
             if (offset > int.MaxValue)
                 return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.PaginationLimitExceeded);
@@ -166,11 +166,30 @@ namespace Taskly.Application
             if (!team.UserIds.Contains(authenticatedUserId))
                 return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.UserNotTeamMember);
+            
+            if (query.Status.HasValue &&
+                !Enum.IsDefined(query.Status.Value))
+            {
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.InvalidStatusFilter);
+            }
+
+            if (!Enum.IsDefined(query.SortBy))
+            {
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.InvalidSortBy);
+            }
+
+            if (!Enum.IsDefined(query.SortDirection))
+            {
+                return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
+                    .Fail(TodoTaskErrors.InvalidSortDirection);
+            }
+
 
             var pagedResult = await _todoTaskRepository.GetByProjectIdAsync(
                 projectId,
-                page,
-                pageSize,
+                query,
                 cancellationToken);
 
             var todoTasksDto = pagedResult.Items

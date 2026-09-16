@@ -71,5 +71,20 @@ public static class TodoTaskErrors
         Error.Create(
           "TodoTask.PaginationLimitExceeded",
           "The requested page exceeds the supported pagination limit.");
+    public static readonly Error InvalidStatusFilter =
+      Error.Create(
+          "TodoTask.InvalidStatusFilter",
+          "Status filter is invalid.");
+
+    public static readonly Error InvalidSortBy =
+        Error.Create(
+            "TodoTask.InvalidSortBy",
+            "Sort field is invalid.");
+
+    public static readonly Error InvalidSortDirection =
+        Error.Create(
+            "TodoTask.InvalidSortDirection",
+            "Sort direction is invalid.");
+
 
 }

@@ -4,6 +4,7 @@ using Moq;
 using Taskly.Application.DTOs;
 using Taskly.Domain;
 using Taskly.Application.Results;
+using Taskly.Application.Queries;
 
 namespace Taskly.Tests;
 
@@ -2369,10 +2370,15 @@ public class TodoTaskServiceTests
     [Fact]
     public async Task GetByProjectId_UserNotFound_ReturnsFail()
     {
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
         var result = await _todoTaskService.GetByProjectIdAsync(
             Guid.NewGuid(),
             Guid.NewGuid(),
-            1, 20,
+            query,
             CancellationToken.None);
 
         Assert.False(result.Success);
@@ -2383,6 +2389,11 @@ public class TodoTaskServiceTests
     public async Task GetByProjectId_ProjectNotFound_ReturnsFail()
     {
         var user = new User("User Test", "user@test.com", "HashTest");
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
         _userRepositoryMock
             .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
@@ -2390,7 +2401,7 @@ public class TodoTaskServiceTests
         var result = await _todoTaskService.GetByProjectIdAsync(
             Guid.NewGuid(),
             user.Id,
-            1, 20,
+            query,
             CancellationToken.None);
 
         Assert.False(result.Success);
@@ -2408,6 +2419,12 @@ public class TodoTaskServiceTests
             ProjectStatus.Inactive,
             user.Id);
 
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
         _userRepositoryMock
             .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
@@ -2418,7 +2435,7 @@ public class TodoTaskServiceTests
         var result = await _todoTaskService.GetByProjectIdAsync(
             project.Id,
             user.Id,
-            1, 20,
+            query,
             CancellationToken.None);
 
         Assert.False(result.Success);
@@ -2435,6 +2452,12 @@ public class TodoTaskServiceTests
             Guid.NewGuid(),
             ProjectStatus.Active,
             user.Id);
+        
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
 
         _userRepositoryMock
             .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
@@ -2446,7 +2469,7 @@ public class TodoTaskServiceTests
         var result = await _todoTaskService.GetByProjectIdAsync(
             project.Id,
             user.Id,
-            1, 20,
+            query,
             CancellationToken.None);
 
         Assert.False(result.Success);
@@ -2466,12 +2489,18 @@ public class TodoTaskServiceTests
             ProjectStatus.Active,
             user.Id);
 
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
         SetupGetByProjectIdDependencies(user, project, team);
 
         var result = await _todoTaskService.GetByProjectIdAsync(
             project.Id,
             user.Id,
-            1, 20,
+            query,
             CancellationToken.None);
 
         Assert.False(result.Success);
@@ -2489,13 +2518,19 @@ public class TodoTaskServiceTests
             team.Id,
             ProjectStatus.Active,
             team.OwnerId);
+        
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
 
         SetupGetByProjectIdDependencies(user, project, team);
 
         var result = await _todoTaskService.GetByProjectIdAsync(
             project.Id,
             user.Id,
-            1, 20,
+            query,
             CancellationToken.None);
 
         Assert.False(result.Success);
@@ -2503,8 +2538,7 @@ public class TodoTaskServiceTests
         _todoTaskRepositoryMock.Verify(
             repository => repository.GetByProjectIdAsync(
                 It.IsAny<Guid>(),
-                It.IsAny<int>(),
-                It.IsAny<int>(),
+                It.IsAny<TodoTaskQuery>(),
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
@@ -2514,6 +2548,12 @@ public class TodoTaskServiceTests
     {
         var user = new User("User Test", "user@test.com", "HashTest");
         var team = new Team("Test team", user.Id);
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
         var project = new Project(
             "Test project",
             "Test description",
@@ -2527,14 +2567,14 @@ public class TodoTaskServiceTests
         _todoTaskRepositoryMock
             .Setup(repository => repository.GetByProjectIdAsync(
                 project.Id,
-                1, 20,
+                query,
                 cancellationToken))
             .ReturnsAsync(new PagedResult<TodoTask> { Items = [], TotalCount = 0 });
 
         var result = await _todoTaskService.GetByProjectIdAsync(
             project.Id,
             user.Id,
-            1, 20,
+            query,
             cancellationToken);
 
         Assert.True(result.Success);
@@ -2544,7 +2584,7 @@ public class TodoTaskServiceTests
         _todoTaskRepositoryMock.Verify(
             repository => repository.GetByProjectIdAsync(
                 project.Id,
-                1, 20,
+                query,
                 cancellationToken),
             Times.Once);
     }
@@ -2554,6 +2594,13 @@ public class TodoTaskServiceTests
     {
         var user = new User("User Test", "user@test.com", "HashTest");
         var team = new Team("Test team", user.Id);
+        
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
         var project = new Project(
             "Test project",
             "Test description",
@@ -2577,14 +2624,14 @@ public class TodoTaskServiceTests
         _todoTaskRepositoryMock
             .Setup(repository => repository.GetByProjectIdAsync(
                 project.Id,
-                1, 20,
+                query,
                 cancellationToken))
             .ReturnsAsync(new PagedResult<TodoTask> { Items = [firstTask, secondTask], TotalCount = 37 });
 
         var result = await _todoTaskService.GetByProjectIdAsync(
             project.Id,
             user.Id,
-            1, 20,
+            query,
             cancellationToken);
 
         Assert.True(result.Success);
@@ -2621,6 +2668,12 @@ public class TodoTaskServiceTests
     {
         var user = new User("User Test", "user@test.com", "HashTest");
         var team = new Team("Test team", user.Id);
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
         var project = new Project(
             "Test project",
             "Test description",
@@ -2640,13 +2693,13 @@ public class TodoTaskServiceTests
             .Setup(repository => repository.GetByIdAsync(team.Id, cancellationToken))
             .ReturnsAsync(team);
         _todoTaskRepositoryMock
-            .Setup(repository => repository.GetByProjectIdAsync(project.Id, 1, 20, cancellationToken))
+            .Setup(repository => repository.GetByProjectIdAsync(project.Id, query, cancellationToken))
             .ReturnsAsync(new PagedResult<TodoTask> { Items = [], TotalCount = 0 });
 
         await _todoTaskService.GetByProjectIdAsync(
             project.Id,
             user.Id,
-            1, 20,
+            query,
             cancellationToken);
 
         _userRepositoryMock.Verify(
@@ -2659,7 +2712,7 @@ public class TodoTaskServiceTests
             repository => repository.GetByIdAsync(team.Id, cancellationToken),
             Times.Once);
         _todoTaskRepositoryMock.Verify(
-            repository => repository.GetByProjectIdAsync(project.Id, 1, 20, cancellationToken),
+            repository => repository.GetByProjectIdAsync(project.Id, query, cancellationToken),
             Times.Once);
     }
 
@@ -2673,8 +2726,13 @@ public class TodoTaskServiceTests
     public async Task GetByProjectId_InvalidPagination_DoesNotQueryRepositories(
         int page, int pageSize, string errorCode)
     {
+        var query = new TodoTaskQuery
+        {
+            Page = page,
+            PageSize = pageSize
+        };
         var result = await _todoTaskService.GetByProjectIdAsync(
-            Guid.NewGuid(), Guid.NewGuid(), page, pageSize);
+            Guid.NewGuid(), Guid.NewGuid(), query);
 
         Assert.False(result.Success);
         Assert.Equal(errorCode, result.Error!.Code);
@@ -2695,20 +2753,121 @@ public class TodoTaskServiceTests
         var user = new User("User Test", "user@test.com", "HashTest");
         var team = new Team("Test team", user.Id);
         var project = new Project("Project", "Description", team.Id, ProjectStatus.Active, user.Id);
+        var query = new TodoTaskQuery
+        {
+            Page = page,
+            PageSize = pageSize
+        };
         using var source = new CancellationTokenSource();
         SetupGetByProjectIdDependencies(user, project, team);
         _todoTaskRepositoryMock
-            .Setup(repository => repository.GetByProjectIdAsync(project.Id, page, pageSize, source.Token))
+            .Setup(repository => repository.GetByProjectIdAsync(project.Id, query, source.Token))
             .ReturnsAsync(new PagedResult<TodoTask> { Items = [], TotalCount = 1 });
 
         var result = await _todoTaskService.GetByProjectIdAsync(
-            project.Id, user.Id, page, pageSize, source.Token);
+            project.Id, user.Id, query, source.Token);
 
         Assert.True(result.Success);
         Assert.Empty(result.Value!.Items);
         Assert.Equal(1, result.Value.TotalCount);
         _todoTaskRepositoryMock.Verify(repository => repository.GetByProjectIdAsync(
-            project.Id, page, pageSize, source.Token), Times.Once);
+            project.Id, query, source.Token), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("status", "TodoTask.InvalidStatusFilter")]
+    [InlineData("sortBy", "TodoTask.InvalidSortBy")]
+    [InlineData("sortDirection", "TodoTask.InvalidSortDirection")]
+    public async Task GetByProjectId_InvalidQueryEnum_ReturnsFail(
+        string invalidField,
+        string errorCode)
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        var project = new Project(
+            "Project",
+            "Description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+        var query = invalidField switch
+        {
+            "status" => new TodoTaskQuery { Status = (TodoStatus)999 },
+            "sortBy" => new TodoTaskQuery { SortBy = (TodoTaskSortBy)999 },
+            _ => new TodoTaskQuery
+            {
+                SortDirection = (TodoTaskSortDirection)999
+            }
+        };
+        SetupGetByProjectIdDependencies(user, project, team);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query);
+
+        Assert.False(result.Success);
+        Assert.Equal(errorCode, result.Error!.Code);
+        _todoTaskRepositoryMock.Verify(
+            repository => repository.GetByProjectIdAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<TodoTaskQuery>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_ValidQuery_ForwardsAllCriteriaToRepository()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        var project = new Project(
+            "Project",
+            "Description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+        var query = new TodoTaskQuery
+        {
+            Page = 2,
+            PageSize = 15,
+            Title = "api",
+            Status = TodoStatus.Done,
+            AssigneeId = user.Id,
+            SortBy = TodoTaskSortBy.Title,
+            SortDirection = TodoTaskSortDirection.Ascending
+        };
+        SetupGetByProjectIdDependencies(user, project, team);
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByProjectIdAsync(
+                project.Id,
+                It.IsAny<TodoTaskQuery>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PagedResult<TodoTask>
+            {
+                Items = [],
+                TotalCount = 0
+            });
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query);
+
+        Assert.True(result.Success);
+        _todoTaskRepositoryMock.Verify(
+            repository => repository.GetByProjectIdAsync(
+                project.Id,
+                It.Is<TodoTaskQuery>(received =>
+                    received.Page == 2 &&
+                    received.PageSize == 15 &&
+                    received.Title == "api" &&
+                    received.Status == TodoStatus.Done &&
+                    received.AssigneeId == user.Id &&
+                    received.SortBy == TodoTaskSortBy.Title &&
+                    received.SortDirection == TodoTaskSortDirection.Ascending),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     private void SetupGetByProjectIdDependencies(

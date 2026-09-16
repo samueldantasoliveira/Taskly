@@ -2,7 +2,9 @@
 using Taskly.Application;
 using Taskly.Domain.Entities;
 using System.Linq.Expressions;
-using System.ComponentModel;
+using Taskly.Application.Queries;
+using MongoDB.Bson;
+using System.Text.RegularExpressions;
 
 namespace Taskly.Infrastructure
 {
@@ -26,21 +28,77 @@ namespace Taskly.Infrastructure
 
         public async Task<PagedResult<TodoTask>> GetByProjectIdAsync(
             Guid projectId,
-            int page,
-            int pageSize,
+            TodoTaskQuery query,
             CancellationToken cancellationToken = default)
         {
-            var filter = BaseFilter(t => t.ProjectId == projectId); 
-            var sort = Builders<TodoTask>.Sort
-                .Descending(t => t.CreatedAt)
-                .Ascending(t => t.Id);
+            var filters = new List<FilterDefinition<TodoTask>>
+            {
+                BaseFilter(t => t.ProjectId == projectId)
+            };
 
-            var skip = checked((page - 1) * pageSize);
+            if (query.Status.HasValue)
+            {
+                filters.Add(
+                    Builders<TodoTask>.Filter.Eq(
+                        t => t.Status,
+                        query.Status.Value
+                    )
+                );
+            }
+
+            if (query.AssigneeId.HasValue)
+            {
+                filters.Add(
+                    Builders<TodoTask>.Filter.Eq(
+                        t => t.AssignedUserId,
+                        query.AssigneeId.Value
+                    )
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Title))
+            {
+                filters.Add(
+                    Builders<TodoTask>.Filter.Regex(
+                        task => task.Title,
+                        new BsonRegularExpression(
+                            Regex.Escape(query.Title.Trim()),
+                            "i")));
+            }
+
+            
+            var sortBuilder = Builders<TodoTask>.Sort;
+
+            var primarySort = query.SortBy switch
+            {
+                TodoTaskSortBy.Title =>
+                    query.SortDirection == TodoTaskSortDirection.Ascending
+                        ? sortBuilder.Ascending(task => task.Title)
+                        : sortBuilder.Descending(task => task.Title),
+
+                TodoTaskSortBy.Status =>
+                    query.SortDirection == TodoTaskSortDirection.Ascending
+                        ? sortBuilder.Ascending(task => task.Status)
+                        : sortBuilder.Descending(task => task.Status),
+
+                _ =>
+                    query.SortDirection == TodoTaskSortDirection.Ascending
+                        ? sortBuilder.Ascending(task => task.CreatedAt)
+                        : sortBuilder.Descending(task => task.CreatedAt)
+            };
+
+            var sort = sortBuilder.Combine(
+                primarySort,
+                sortBuilder.Ascending(task => task.Id)
+            );
+
+            var filter = Builders<TodoTask>.Filter.And(filters);
+            var skip = checked((query.Page - 1) * query.PageSize);
             List<TodoTask> tasks = await _context.TodoTasks
                 .Find(filter)
                 .Sort(sort)
                 .Skip(skip)
-                .Limit(pageSize)
+                .Limit(query.PageSize)
                 .ToListAsync(cancellationToken);
 
             var totalCount = await _context.TodoTasks
