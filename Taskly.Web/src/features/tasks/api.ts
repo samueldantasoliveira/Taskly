@@ -4,12 +4,55 @@ import type {
   Id,
   PagedResult,
   TodoTask,
+  TodoStatus,
   UpdateTaskInput,
 } from '../../shared/types/api'
 
-export function getProjectTasks(projectId: Id, page = 1, pageSize = 20, signal?: AbortSignal) {
-  const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+export type TodoTaskSortBy = 'CreatedAt' | 'Title' | 'Status'
+export type TodoTaskSortDirection = 'Ascending' | 'Descending'
+
+export interface ProjectTaskQuery {
+  page?: number
+  pageSize?: number
+  title?: string
+  status?: TodoStatus
+  assigneeId?: Id
+  sortBy?: TodoTaskSortBy
+  sortDirection?: TodoTaskSortDirection
+}
+
+export function getProjectTasks(projectId: Id, options: ProjectTaskQuery = {}, signal?: AbortSignal) {
+  const query = new URLSearchParams({
+    page: String(options.page ?? 1),
+    pageSize: String(options.pageSize ?? 20),
+  })
+  if (options.title) query.set('title', options.title)
+  if (options.status !== undefined) query.set('status', String(options.status))
+  if (options.assigneeId) query.set('assigneeId', options.assigneeId)
+  if (options.sortBy) query.set('sortBy', options.sortBy)
+  if (options.sortDirection) query.set('sortDirection', options.sortDirection)
   return apiRequest<PagedResult<TodoTask>>(`/api/todotask/project/${projectId}?${query}`, { signal })
+}
+
+export async function getAllProjectTasks(
+  projectId: Id,
+  options: Omit<ProjectTaskQuery, 'page' | 'pageSize'>,
+  signal?: AbortSignal,
+) {
+  const pageSize = 100
+  const items: TodoTask[] = []
+  let page = 1
+  let totalCount = 0
+
+  do {
+    const result = await getProjectTasks(projectId, { ...options, page, pageSize }, signal)
+    totalCount = result.totalCount
+    items.push(...result.items)
+    if (result.items.length === 0) break
+    page += 1
+  } while (items.length < totalCount)
+
+  return { items, totalCount }
 }
 
 export function createTask(input: CreateTaskInput) {
