@@ -1,0 +1,53 @@
+import { defineConfig, devices } from '@playwright/test'
+
+const frontendUrl = 'http://127.0.0.1:4173'
+const apiUrl = 'http://127.0.0.1:5220'
+
+export default defineConfig({
+  testDir: './tests',
+  fullyParallel: false,
+  workers: process.env.CI ? 1 : undefined,
+  retries: process.env.CI ? 2 : 0,
+  reporter: [
+    ['list'],
+    ['html', { open: 'never' }],
+  ],
+  use: {
+    baseURL: frontendUrl,
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+  webServer: [
+    {
+      name: 'API',
+      command: 'dotnet run --no-launch-profile --project ../Taskly.API/Taskly.API.csproj',
+      url: `${apiUrl}/health/ready`,
+      timeout: 120_000,
+      reuseExistingServer: !process.env.CI,
+      env: {
+        ASPNETCORE_ENVIRONMENT: 'Development',
+        ASPNETCORE_URLS: apiUrl,
+        MongoDb__ConnectionString: 'mongodb://127.0.0.1:27018',
+        MongoDb__DatabaseName: 'TasklyE2E',
+        Cors__AllowedOrigins__0: frontendUrl,
+      },
+    },
+    {
+      name: 'Frontend',
+      command: 'npm run dev -- --host 127.0.0.1 --port 4173 --strictPort',
+      cwd: '../Taskly.Web',
+      url: frontendUrl,
+      timeout: 120_000,
+      reuseExistingServer: !process.env.CI,
+      env: {
+        VITE_API_URL: apiUrl,
+      },
+    },
+  ],
+})

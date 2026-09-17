@@ -1,0 +1,79 @@
+name: E2E CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: E2E - fluxos principais
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: Taskly.E2ETests
+
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27018:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'quit(db.adminCommand({ ping: 1 }).ok ? 0 : 1)'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v6
+
+      - name: Preparar .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: Taskly.E2ETests/.nvmrc
+          cache: npm
+          cache-dependency-path: |
+            Taskly.Web/package-lock.json
+            Taskly.E2ETests/package-lock.json
+
+      - name: Restaurar dependências da API
+        run: dotnet restore ../Taskly.API/Taskly.API.csproj
+
+      - name: Instalar dependências do frontend
+        working-directory: Taskly.Web
+        run: npm ci
+
+      - name: Instalar dependências dos testes E2E
+        run: npm ci
+
+      - name: Instalar Chromium e dependências do sistema
+        run: npx playwright install --with-deps chromium
+
+      - name: Verificar tipos dos testes
+        run: npm run typecheck
+
+      - name: Executar testes E2E
+        run: npm test
+
+      - name: Publicar relatório e evidências dos testes
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            Taskly.E2ETests/playwright-report/
+            Taskly.E2ETests/test-results/
+          retention-days: 7
+          if-no-files-found: ignore

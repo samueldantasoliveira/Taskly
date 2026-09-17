@@ -5,6 +5,11 @@ obj/
 *.suo
 *.db
 
+# End-to-end tests
+Taskly.E2ETests/node_modules/
+Taskly.E2ETests/playwright-report/
+Taskly.E2ETests/test-results/
+
 # Visual Studio
 .vscode/
 *.vs/
