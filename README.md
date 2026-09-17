@@ -5,6 +5,7 @@
 [![Backend CI](https://github.com/samueldantasoliveira/Taskly/actions/workflows/backend-ci.yml/badge.svg?branch=main)](https://github.com/samueldantasoliveira/Taskly/actions/workflows/backend-ci.yml?query=branch%3Amain)
 [![Frontend CI](https://github.com/samueldantasoliveira/Taskly/actions/workflows/frontend-ci.yml/badge.svg?branch=main)](https://github.com/samueldantasoliveira/Taskly/actions/workflows/frontend-ci.yml?query=branch%3Amain)
 [![API Container CI](https://github.com/samueldantasoliveira/Taskly/actions/workflows/api-container-ci.yml/badge.svg?branch=main)](https://github.com/samueldantasoliveira/Taskly/actions/workflows/api-container-ci.yml?query=branch%3Amain)
+[![E2E CI](https://github.com/samueldantasoliveira/Taskly/actions/workflows/e2e-ci.yml/badge.svg?branch=main)](https://github.com/samueldantasoliveira/Taskly/actions/workflows/e2e-ci.yml?query=branch%3Amain)
 
 # 🗂️ Taskly
 
@@ -42,6 +43,7 @@ O projeto foi criado com foco em organização de código, separação de respon
 * TanStack Query
 * React Hook Form e Zod
 * Vitest e Testing Library
+* Playwright (testes E2E com Chromium)
 
 ---
 
@@ -62,6 +64,9 @@ Taskly/
  │   └── Domain/
  │
  ├── Taskly.IntegrationTests/
+ │
+ ├── Taskly.E2ETests/
+ │   └── tests/
  │
  └── Taskly.Web/
      └── src/
@@ -109,6 +114,7 @@ Taskly/
 | Validação de Dados     | Regras de validação para entidades e operações                    | ✅      |
 | Testes Unitários       | Cobertura de regras de negócio com xUnit e Moq                    | ✅      |
 | Testes de Integração   | Testes HTTP utilizando `WebApplicationFactory`                    | ✅      |
+| Testes E2E            | Fluxos no Chromium com frontend, API e MongoDB reais              | ✅      |
 | Result Pattern         | Retornos padronizados utilizando `StructuredOperationResult`      | ✅      |
 
 ---
@@ -179,7 +185,7 @@ O arquivo `compose.yaml` constrói a imagem da API e inicia três containers:
 | ------- | ----- | --- | ----- |
 | `api` | `5219` | API ASP.NET Core em um container .NET 10 | Sem dados locais |
 | `mongodb` | `27017` | Execução local da API | Persistentes no volume `mongodb-data` |
-| `mongodb-test` | `27018` | Testes de integração | Descartáveis em memória |
+| `mongodb-test` | `27018` | Testes de integração e E2E | Descartáveis em memória |
 
 Com Docker:
 
@@ -252,6 +258,57 @@ VITE_API_URL=https://taskly-api-samueldantasoliveira.onrender.com npm run build
 
 Os testes unitários e de integração são executados a partir da solução principal.
 
+#### Testes de ponta a ponta (E2E)
+
+A suíte em `Taskly.E2ETests` utiliza Playwright e Chromium, com frontend, API
+e MongoDB reais. Os seis cenários cobrem:
+
+* Cadastro com login automático.
+* Login com sessão mantida após recarregar a página.
+* Criação de equipe, projeto e tarefa pelo navegador.
+* Atribuição, início e conclusão de uma tarefa.
+* Filtros combinados por título e responsável, incluindo limpeza dos filtros.
+* Carregamento independente dos históricos de concluídas e canceladas.
+
+Cada cenário prepara seus próprios dados e não depende da execução dos demais.
+Os helpers criam dados pela API real; as ações do fluxo testado acontecem no navegador.
+
+Partindo da raiz do repositório, inicie o MongoDB de teste e instale as dependências:
+
+```bash
+docker compose up -d --wait mongodb-test
+# Alternativa com Podman:
+# podman-compose up -d mongodb-test
+
+npm ci --prefix Taskly.Web
+cd Taskly.E2ETests
+nvm use
+npm ci
+npx playwright install --with-deps chromium
+npm run typecheck
+npm test
+```
+
+O Playwright inicia a API em `http://127.0.0.1:5220` e o frontend em
+`http://127.0.0.1:4173`, aguardando ambos ficarem disponíveis. A API utiliza
+o banco `TasklyE2E` no MongoDB da porta `27018`. Reserve essas portas para o E2E.
+Os dados desse banco não são apagados ao final de cada teste; usuários exclusivos
+evitam conflitos entre execuções, e o armazenamento do container é temporário.
+
+Dentro de `Taskly.E2ETests`, também é possível acompanhar e depurar os testes:
+
+```bash
+npm run test:ui       # Interface para executar e inspecionar os testes
+npm run test:headed   # Executar com o navegador visível
+npx playwright test tests/task-creation.spec.ts --debug
+npm run report       # Abrir o relatório da última execução
+```
+
+Relatórios, screenshots e traces ficam em `playwright-report/` e `test-results/`,
+ignorados pelo Git. Screenshots e traces são preservados quando um teste falha.
+
+Volte à raiz antes dos comandos de encerramento abaixo.
+
 Para remover os containers ao terminar:
 
 ```bash
@@ -281,7 +338,7 @@ O Swagger é habilitado somente quando `ASPNETCORE_ENVIRONMENT` está como
 
 # 🔄 CI/CD
 
-O GitHub Actions executa três workflows em Pull Requests destinados à `main`
+O GitHub Actions executa quatro workflows em Pull Requests destinados à `main`
 e em pushes nessa branch. Os badges no topo mostram os resultados na `main`.
 
 | Workflow | Validação |
@@ -289,6 +346,11 @@ e em pushes nessa branch. Os badges no topo mostram os resultados na `main`.
 | [Backend CI](.github/workflows/backend-ci.yml) | Restore, build em Release, testes unitários e de integração com MongoDB temporário |
 | [Frontend CI](.github/workflows/frontend-ci.yml) | Instalação pelo lockfile, lint, testes e build do frontend |
 | [API Container CI](.github/workflows/api-container-ci.yml) | Build do Dockerfile e inicialização da API em Production com MongoDB e chave JWT temporários, verificando `/health/ready` |
+| [E2E CI](.github/workflows/e2e-ci.yml) | Verificação TypeScript e testes Playwright no Chromium, com frontend, API e MongoDB reais |
+
+O E2E roda com um worker e até duas novas tentativas por teste que falhar. O
+workflow publica o artefato `e2e-results` com relatórios e evidências disponíveis,
+mantidos por sete dias na execução do GitHub Actions.
 
 O fluxo de contribuição e publicação é:
 
@@ -300,8 +362,10 @@ Branch de trabalho → PR → Checks aprovados → Merge na main
                                     Deploy automático no Render
 ```
 
-O ruleset da `main`, configurado no GitHub, exige PR e os três checks antes do
-merge. O `render.yaml` define `autoDeployTrigger: checksPass` nos dois serviços:
+O ruleset da `main`, configurado no GitHub, exige PR e os checks configurados antes do
+merge. Após a primeira execução do E2E, adicione `E2E - fluxos principais` aos
+checks obrigatórios do ruleset; criar o workflow não altera essa configuração.
+O `render.yaml` define `autoDeployTrigger: checksPass` nos dois serviços:
 após o merge, o Render aguarda os checks do novo commit na `main` antes de iniciar
 o deploy automático. São controles separados: um protege o merge e o outro, a
 publicação automática.
@@ -349,8 +413,8 @@ git push -u origin docs/nome-da-mudanca
 ```
 
 No GitHub, abra um Pull Request da sua branch para a `main`, descrevendo a
-mudança e como foi validada. Aguarde os três checks obrigatórios: backend,
-frontend e container da API. Se o PR precisar ser atualizado com a `main`,
+mudança e como foi validada. Aguarde a aprovação dos checks de backend,
+frontend, container da API e E2E. Se o PR precisar ser atualizado com a `main`,
 atualize a branch e aguarde a nova execução da CI antes do merge.
 
 Depois do merge, apague a branch remota pelo GitHub. Com o diretório de trabalho
@@ -430,6 +494,7 @@ Endpoints de saúde:
 * ✅ Provisionar o MongoDB e publicar o Blueprint no Render
 * ✅ Configurar CI do backend, frontend e container da API, com deploy automático condicionado aos checks no Blueprint
 * ✅ Adicionar paginação, filtros e ordenação às consultas de tarefas
+* ✅ Adicionar testes E2E dos fluxos principais com Playwright e workflow no GitHub Actions
 * Expandir a cobertura dos testes automatizados
 
 ---
