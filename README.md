@@ -484,6 +484,34 @@ Endpoints de saúde:
 | `/health/ready` | Conexão real com o MongoDB por meio de `ping` |
 | `/health` | Alias compatível para o readiness |
 
+### Recuperar um deploy com problema
+
+1. **Identificar a falha:** no painel do Render, abra o serviço afetado
+   (`taskly-api-samueldantasoliveira` ou `taskly-web-samueldantasoliveira`).
+   Confira os logs do deploy e, para erros durante o uso da API, a aba **Logs**.
+   Consulte também o [health check da API](https://taskly-api-samueldantasoliveira.onrender.com/health/ready).
+   No plano gratuito, aguarde a inicialização após um período sem atividade.
+2. **Voltar à versão anterior:** na página **Deploys** do serviço, escolha um
+   deploy bem-sucedido e conhecido como funcional, clique em **Rollback** e
+   confirme em **Rollback to this deploy**. Só é possível usar versões cujos
+   artefatos ainda estejam disponíveis no Render. API e frontend são serviços
+   separados; verifique a compatibilidade entre as versões.
+3. **Corrigir o código:** o rollback no painel desativa os deploys automáticos
+   desse serviço. Corrija o problema ou reverta a alteração por uma nova PR
+   para `main` e aguarde os checks. O rollback do Render não altera o Git.
+   Após o merge da correção, reative **Auto-Deploy: After CI Checks Pass** em
+   **Settings**. Confirme que o commit corrigido foi publicado; se necessário,
+   use **Manual Deploy → Deploy latest commit** somente após os checks passarem.
+4. **Validar a recuperação:** confirme HTTP `200` no `/health/ready`, faça login
+   no frontend e abra um projeto para conferir o Kanban. Revise os logs da API
+   para verificar se a falha deixou de ocorrer.
+
+O rollback da aplicação **não restaura os dados do MongoDB**. Problemas de dados
+ou de variáveis de ambiente precisam ser tratados separadamente.
+
+Referências: [logs no Render](https://render.com/docs/logging) e
+[rollback e reativação dos deploys automáticos](https://render.com/docs/rollbacks).
+
 ---
 
 # 📚 Próximos Passos
