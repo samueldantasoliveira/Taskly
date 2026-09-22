@@ -210,7 +210,7 @@ podman compose ps
 A API containerizada usa o endereço interno `mongodb:27017`. A porta `5219` da máquina é encaminhada para a porta `8080` do container. Para escolher outras portas locais, defina `TASKLY_API_PORT`, `TASKLY_MONGO_PORT` e `TASKLY_MONGO_TEST_PORT`, por exemplo:
 
 ```bash
-TASKLY_API_PORT=5220 TASKLY_MONGO_PORT=27019 docker compose up --build -d
+TASKLY_API_PORT=5230 TASKLY_MONGO_PORT=27019 docker compose up --build -d
 ```
 
 As configurações executadas diretamente na máquina continuam apontando para `localhost:27017`, e os testes de integração usam `localhost:27018`.
@@ -245,6 +245,18 @@ npm run dev
 ```
 
 A aplicação estará em `http://localhost:5173` e a API em `http://localhost:5219`.
+
+#### Endereços locais padrão
+
+| Ambiente | Frontend | API | MongoDB |
+| -------- | -------- | --- | ------- |
+| Desenvolvimento | `http://localhost:5173` | `http://localhost:5219` | `localhost:27017` |
+| E2E | `http://127.0.0.1:4173` | `http://127.0.0.1:5220` | `127.0.0.1:27018` (banco `TasklyE2E`) |
+
+O Playwright inicia o frontend e a API do E2E automaticamente; o MongoDB de teste
+deve estar disponível antes da execução. Os testes de integração também usam
+a porta `27018`, com bancos próprios. Reserve `4173` e `5220` para o E2E ao
+escolher portas alternativas para o desenvolvimento.
 
 ### 5. Executar os testes e verificações
 
