@@ -40,6 +40,13 @@ namespace Taskly.Domain.Entities
             UpdatedAt = now;
         }
 
+        public void TransferOwnership(Guid userId)
+        {
+            if (userId == Guid.Empty) throw new ArgumentException("Owner is required.", nameof(userId));
+            OwnerId = userId;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
         public void Update(string? name, string? description, ProjectStatus? status, Guid? teamId)
         {
             if (name != null)

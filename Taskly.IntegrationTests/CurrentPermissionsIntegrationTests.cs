@@ -130,7 +130,7 @@ public class CurrentPermissionsIntegrationTests : IClassFixture<TasklyApiFactory
         var database = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
         var task = await database.TodoTasks.Find(t => t.Id == context.Task.Id).SingleAsync();
         Assert.Equal(context.Task.Title, task.Title);
-        Assert.Equal(context.Member.User.Id, task.AssignedUserId);
+        Assert.Null(task.AssignedUserId);
         Assert.Null(task.DeletedAt);
     }
 
@@ -153,7 +153,7 @@ public class CurrentPermissionsIntegrationTests : IClassFixture<TasklyApiFactory
     }
 
     [Fact]
-    public async Task ReaddedMember_CanStartPreviouslyAssignedTaskWithOriginalToken()
+    public async Task ReaddedMember_CanStartReassignedTaskWithOriginalToken()
     {
         var context = await CreateContextAsync();
         await ChangeAccessAsync(context, "removed");
@@ -165,6 +165,8 @@ public class CurrentPermissionsIntegrationTests : IClassFixture<TasklyApiFactory
         (await _client.PostAsync(
             $"/api/team/{context.Team.Id}/add-member?userId={context.Member.User.Id}", null))
             .EnsureSuccessStatusCode();
+        (await _client.PostAsJsonAsync($"/api/todotask/{context.Task.Id}/assign",
+            new { UserId = context.Member.User.Id })).EnsureSuccessStatusCode();
         SetToken(context.Member.Token);
         var allowed = await _client.PostAsync($"/api/todotask/{context.Task.Id}/start", null);
         Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);

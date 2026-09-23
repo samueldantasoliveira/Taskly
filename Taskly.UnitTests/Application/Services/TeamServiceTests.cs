@@ -17,7 +17,7 @@ public class TeamServiceTests
     {
         _teamRepositoryMock = new Mock<ITeamRepository>();
         _userRepositoryMock = new Mock<IUserRepository>();
-        _teamService = new TeamService(_teamRepositoryMock.Object, _userRepositoryMock.Object);
+        _teamService = new TeamService(_teamRepositoryMock.Object, _userRepositoryMock.Object, Mock.Of<IUserResponsibilities>());
     }
 
     [Fact]

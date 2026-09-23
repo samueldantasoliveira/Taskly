@@ -247,6 +247,7 @@ public class TeamIntegrationTests : IClassFixture<TasklyApiFactory>
         var owner = await _userHelper.CreateUserAndLoginAsync();
         SetBearerToken(owner.Token);
         var team = await _teamHelper.CreateTeamAsync();
+        (await _client.DeleteAsync($"/api/team/{team.Id}")).EnsureSuccessStatusCode();
         var deleteResponse = await _client.DeleteAsync(
             $"/api/user/{owner.User.Id}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);

@@ -52,6 +52,14 @@ namespace Taskly.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
+        public void TransferOwnership(Guid userId)
+        {
+            if (!UserIds.Contains(userId))
+                throw new UserNotMemberException("The new owner must be a team member.");
+            OwnerId = userId;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
         public void RemoveMember(Guid userId)
         {
             if (userId == OwnerId)
