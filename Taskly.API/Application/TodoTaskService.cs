@@ -297,8 +297,9 @@ namespace Taskly.Application
             var task = await _todoTaskRepository.GetByIdAsync(taskId, cancellationToken);
             if(task == null)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
-            if(task.AssignedUserId == null || task.AssignedUserId != authenticatedUserId)
-                return StructuredOperationResult.Fail(TodoTaskErrors.NotAssignedUser);
+            var permissionError = await CanChangeStatusAsync(task, authenticatedUserId, cancellationToken);
+            if (permissionError != null)
+                return StructuredOperationResult.Fail(permissionError);
             task.Start();
 
             var result = await _todoTaskRepository.UpdateAsync(task, cancellationToken);
@@ -312,8 +313,9 @@ namespace Taskly.Application
             var task = await _todoTaskRepository.GetByIdAsync(taskId, cancellationToken);
             if(task == null)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
-            if(task.AssignedUserId == null || task.AssignedUserId != authenticatedUserId)
-                return StructuredOperationResult.Fail(TodoTaskErrors.NotAssignedUser);
+            var permissionError = await CanChangeStatusAsync(task, authenticatedUserId, cancellationToken);
+            if (permissionError != null)
+                return StructuredOperationResult.Fail(permissionError);
             task.Complete();
 
             var result = await _todoTaskRepository.UpdateAsync(task, cancellationToken);
@@ -327,8 +329,9 @@ namespace Taskly.Application
             var task = await _todoTaskRepository.GetByIdAsync(taskId, cancellationToken);
             if(task == null)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
-            if(task.AssignedUserId == null || task.AssignedUserId != authenticatedUserId)
-                return StructuredOperationResult.Fail(TodoTaskErrors.NotAssignedUser);
+            var permissionError = await CanChangeStatusAsync(task, authenticatedUserId, cancellationToken);
+            if (permissionError != null)
+                return StructuredOperationResult.Fail(permissionError);
             task.Cancel();
 
             var result = await _todoTaskRepository.UpdateAsync(task, cancellationToken);
@@ -336,6 +339,29 @@ namespace Taskly.Application
                 return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
 
             return StructuredOperationResult.Ok();
+        }
+
+        private async Task<Error?> CanChangeStatusAsync(
+            TodoTask task, Guid authenticatedUserId, CancellationToken cancellationToken)
+        {
+            if (task.AssignedUserId != authenticatedUserId)
+                return TodoTaskErrors.NotAssignedUser;
+
+            var project = await _projectRepository.GetByIdAsync(task.ProjectId, cancellationToken);
+            if (project == null)
+                return TodoTaskErrors.ProjectNotFound;
+            if (project.Status == ProjectStatus.Inactive)
+                return TodoTaskErrors.ProjectInactive;
+
+            var team = await _teamRepository.GetByIdAsync(project.TeamId, cancellationToken);
+            if (team == null)
+                return TodoTaskErrors.TeamNotFound;
+            if (!team.UserIds.Contains(authenticatedUserId))
+                return TodoTaskErrors.UserNotTeamMember;
+            if (!team.IsActive)
+                return TodoTaskErrors.TeamInactive;
+
+            return null;
         }
 
         public async Task<StructuredOperationResult> AssignUserAsync(Guid taskId, Guid? userId, Guid authenticatedUserId, CancellationToken cancellationToken = default)

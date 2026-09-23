@@ -174,16 +174,17 @@ namespace Taskly.Application
             if(project == null)
                 return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.NotFound);
 
-            if (project.OwnerId == authenticatedUserId)
-                return null;
-                
             var team = await _teamRepository.GetByIdAsync(project.TeamId, cancellationToken);
-
             if (team == null)
                 return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamNotFound);
 
+            if (!team.UserIds.Contains(authenticatedUserId))
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.UserNotTeamMember);
 
-            if(team.OwnerId != authenticatedUserId)
+            if (!team.IsActive)
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamInactive);
+
+            if (project.OwnerId != authenticatedUserId && team.OwnerId != authenticatedUserId)
                 return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.NotAuthorized);
 
             return null;

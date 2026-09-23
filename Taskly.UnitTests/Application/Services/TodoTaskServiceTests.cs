@@ -893,11 +893,12 @@ public class TodoTaskServiceTests
     {
         // Arrange
         var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
 
         var todoTask = new TodoTask(
             "Task",
             "Description",
-            Guid.NewGuid(),
+            projectId,
             authenticatedUserId);
 
         _todoTaskRepositoryMock
@@ -928,11 +929,12 @@ public class TodoTaskServiceTests
     {
         // Arrange
         var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
 
         var todoTask = new TodoTask(
             "Task",
             "Description",
-            Guid.NewGuid(),
+            projectId,
             authenticatedUserId);
 
         _todoTaskRepositoryMock
@@ -1030,11 +1032,12 @@ public class TodoTaskServiceTests
     {
         // Arrange
         var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
 
         var todoTask = new TodoTask(
             "Task",
             "Description",
-            Guid.NewGuid(),
+            projectId,
             authenticatedUserId);
 
         todoTask.Start();
@@ -1067,11 +1070,12 @@ public class TodoTaskServiceTests
     {
         // Arrange
         var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
 
         var todoTask = new TodoTask(
             "Task",
             "Description",
-            Guid.NewGuid(),
+            projectId,
             authenticatedUserId);
 
         todoTask.Start();
@@ -1171,11 +1175,12 @@ public class TodoTaskServiceTests
     {
         // Arrange
         var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
 
         var todoTask = new TodoTask(
             "Task",
             "Description",
-            Guid.NewGuid(),
+            projectId,
             authenticatedUserId);
 
         _todoTaskRepositoryMock
@@ -1206,11 +1211,12 @@ public class TodoTaskServiceTests
     {
         // Arrange
         var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
 
         var todoTask = new TodoTask(
             "Task",
             "Description",
-            Guid.NewGuid(),
+            projectId,
             authenticatedUserId);
 
         _todoTaskRepositoryMock
@@ -1230,6 +1236,17 @@ public class TodoTaskServiceTests
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
         Assert.Equal(TodoTaskErrors.NoChangesDetected, result.Error);
+    }
+
+    private Guid SetUpActiveProject(Guid memberId)
+    {
+        var team = new Team("Team", memberId);
+        var project = new Project("Project", "Description", team.Id, ProjectStatus.Active, memberId);
+        _projectRepositoryMock.Setup(r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _teamRepositoryMock.Setup(r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+        return project.Id;
     }
 
    [Fact]
