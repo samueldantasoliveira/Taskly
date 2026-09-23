@@ -86,6 +86,12 @@ namespace Taskly.Infrastructure
                     .Ascending(task => task.Status).Ascending(task => task.DueDate),
                 new CreateIndexOptions { Name = "ix_todo_tasks_project_status_due_date" });
             await TodoTasks.Indexes.CreateOneAsync(boardIndex, cancellationToken: cancellationToken);
+            var myWorkIndex = new CreateIndexModel<TodoTask>(
+                Builders<TodoTask>.IndexKeys.Ascending(task => task.AssignedUserId)
+                    .Ascending(task => task.Status).Descending(task => task.Priority)
+                    .Ascending(task => task.DueDate),
+                new CreateIndexOptions { Name = "ix_todo_tasks_assignee_status_priority_due_date" });
+            await TodoTasks.Indexes.CreateOneAsync(myWorkIndex, cancellationToken: cancellationToken);
         }
     }
 }

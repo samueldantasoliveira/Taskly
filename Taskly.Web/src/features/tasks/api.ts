@@ -2,6 +2,7 @@ import { apiRequest, jsonBody } from '../../shared/api/client'
 import type {
   CreateTaskInput,
   Id,
+  MyWorkDashboard,
   PagedResult,
   TodoTask,
   TodoStatus,
@@ -32,6 +33,10 @@ export function getProjectTasks(projectId: Id, options: ProjectTaskQuery = {}, s
   if (options.sortBy) query.set('sortBy', options.sortBy)
   if (options.sortDirection) query.set('sortDirection', options.sortDirection)
   return apiRequest<PagedResult<TodoTask>>(`/api/todotask/project/${projectId}?${query}`, { signal })
+}
+
+export function getMyWork(signal?: AbortSignal) {
+  return apiRequest<MyWorkDashboard>('/api/todotask/my-work', { signal })
 }
 
 export async function getAllProjectTasks(
