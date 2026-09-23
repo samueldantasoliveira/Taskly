@@ -21,7 +21,9 @@ public class LoginService
         string password,
         CancellationToken cancellationToken = default)
     {
-        var normalizedEmail = email.ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrEmpty(password) || password.Length > 128)
+            return StructuredOperationResult<LoginResponseDto>.Fail(UserErrors.InvalidCredentials);
+        var normalizedEmail = email.Trim().ToLowerInvariant();
         var user = await _userRespository.GetByEmailAsync(normalizedEmail, cancellationToken);
         if (user == null)
             return StructuredOperationResult<LoginResponseDto>.Fail(UserErrors.InvalidCredentials);

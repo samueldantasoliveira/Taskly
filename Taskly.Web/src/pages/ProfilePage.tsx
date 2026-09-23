@@ -17,7 +17,7 @@ import { useState } from 'react'
 const schema = z.object({
   name: z.string().trim().min(2, 'Informe seu nome.'),
   email: z.string().trim().email('Informe um e-mail válido.'),
-  password: z.string().refine((value) => !value || value.length >= 6, 'Use pelo menos 6 caracteres.'),
+  password: z.string().max(128, 'Use no máximo 128 caracteres.').refine((value) => !value || (value.length >= 6 && value.trim().length > 0), 'Use pelo menos 6 caracteres e não apenas espaços.'),
 })
 type FormData = z.infer<typeof schema>
 
@@ -29,7 +29,17 @@ export function ProfilePage() {
   const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { name: user?.name ?? '', email: user?.email ?? '', password: '' } })
   const updateMutation = useMutation({
     mutationFn: (data: FormData) => updateUser(user!.id, { name: data.name, email: data.email, ...(data.password ? { password: data.password } : {}) }),
-    onSuccess: (updated) => { updateSessionUser(updated); form.reset({ name: updated.name, email: updated.email, password: '' }); showToast('Perfil atualizado.') },
+    onSuccess: (updated, submitted) => {
+      if (submitted.password) {
+        signOut()
+        navigate('/login')
+        showToast('Senha alterada. Entre novamente com a nova senha.')
+        return
+      }
+      updateSessionUser(updated)
+      form.reset({ name: updated.name, email: updated.email, password: '' })
+      showToast('Perfil atualizado.')
+    },
   })
   const deleteMutation = useMutation({ mutationFn: () => deleteUser(user!.id), onSuccess: () => { signOut(); navigate('/register'); showToast('Sua conta foi excluída.') }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível excluir a conta.', 'error') })
 

@@ -112,6 +112,9 @@ equipe existente e ativa, além de ser membro e dono do projeto ou da equipe.
 
 # 🏗️ Arquitetura e Boas Práticas
 
+Consulte as [regras de segurança e integridade](docs/security-and-data.md) para
+entender a validade das sessões e os limites de autenticação.
+
 | Implementação          | Descrição                                                         | Status |
 | ---------------------- | ----------------------------------------------------------------- | ------ |
 | Arquitetura em Camadas | Separação entre Controllers, Application, Domain e Infrastructure | ✅      |
@@ -280,10 +283,11 @@ Os testes unitários e de integração são executados a partir da solução pri
 #### Testes de ponta a ponta (E2E)
 
 A suíte em `Taskly.E2ETests` utiliza Playwright e Chromium, com frontend, API
-e MongoDB reais. Os seis cenários cobrem:
+e MongoDB reais. Os sete cenários cobrem:
 
 * Cadastro com login automático.
 * Login com sessão mantida após recarregar a página.
+* Troca de senha com encerramento da sessão e novo login.
 * Criação de equipe, projeto e tarefa pelo navegador.
 * Atribuição, início e conclusão de uma tarefa.
 * Filtros combinados por título e responsável, incluindo limpeza dos filtros.

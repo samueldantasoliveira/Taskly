@@ -14,7 +14,7 @@ import { Field, Input } from '../shared/components/Field'
 const schema = z.object({
   name: z.string().trim().min(2, 'Informe seu nome.'),
   email: z.string().trim().email('Informe um e-mail válido.'),
-  password: z.string().min(6, 'Use pelo menos 6 caracteres.'),
+  password: z.string().min(6, 'Use pelo menos 6 caracteres.').max(128, 'Use no máximo 128 caracteres.').refine((value) => value.trim().length > 0, 'Informe uma senha.'),
 })
 
 type FormData = z.infer<typeof schema>

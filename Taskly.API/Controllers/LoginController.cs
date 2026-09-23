@@ -16,6 +16,7 @@ public class LoginController : ControllerBase
     }
 
     [HttpPost]
+    [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("login")]
     public async Task<IActionResult> Login(LoginDto loginDto, CancellationToken cancellationToken)
     {
         var result = await _loginService.LoginAsync(

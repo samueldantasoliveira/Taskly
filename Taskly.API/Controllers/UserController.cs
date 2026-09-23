@@ -20,6 +20,7 @@ namespace Taskly.Controllers
         }
 
         [HttpPost]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("registration")]
         public async Task<IActionResult> Create(CreateUserDto userDto, CancellationToken cancellationToken)
         {
             var result = await _userService.AddUserAsync(userDto, cancellationToken);

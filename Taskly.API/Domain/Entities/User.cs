@@ -17,6 +17,8 @@ namespace Taskly.Domain.Entities
         // Stores the password hash along with all parameters needed for verification:
         // algorithm$iterations$saltBase64$hashBase64
         public string PasswordHash { get; private set; } = null!;
+        // Default supports documents created before session versioning.
+        public string SessionVersion { get; private set; } = "0";
 
         protected User() { }
         public User(string name, string email, string passwordHash)
@@ -32,6 +34,7 @@ namespace Taskly.Domain.Entities
             Name = name;
             Email = email.ToLowerInvariant();
             PasswordHash = passwordHash;
+            SessionVersion = Guid.NewGuid().ToString("N");
             var now = DateTime.UtcNow;
             CreatedAt = now;
             UpdatedAt = now;
@@ -62,6 +65,7 @@ namespace Taskly.Domain.Entities
                     throw new InvalidUserPasswordException("Password cannot be empty.");
 
                 PasswordHash = passwordHash;
+                SessionVersion = Guid.NewGuid().ToString("N");
             }
 
             if(name != null || email != null || passwordHash != null)

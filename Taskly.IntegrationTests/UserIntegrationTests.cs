@@ -124,7 +124,7 @@ public class UserIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
-    public async Task GetCurrentUser_DeletedUser_ReturnsNotFound()
+    public async Task GetCurrentUser_DeletedUser_ReturnsUnauthorized()
     {
         var login = await _userHelper.CreateUserAndLoginAsync();
         SetBearerToken(login.Token);
@@ -134,7 +134,7 @@ public class UserIntegrationTests : IClassFixture<TasklyApiFactory>
 
         var response = await _client.GetAsync("/api/user/me");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
@@ -204,6 +204,10 @@ public class UserIntegrationTests : IClassFixture<TasklyApiFactory>
         var deleteResponse = await _client.DeleteAsync(
             $"/api/user/{login.User.Id}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        _client.DefaultRequestHeaders.Authorization = null;
+        var otherUser = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(otherUser.Token);
 
         var response = await _client.GetAsync(
             $"/api/user/search?email={Uri.EscapeDataString(login.User.Email)}");
