@@ -19,7 +19,7 @@ namespace Taskly.Application
 
         public async Task<StructuredOperationResult<TeamResponseDto>> AddTeamAsync(CreateTeamDto teamDto, Guid userId, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(teamDto.Name))
+            if (!IsValidName(teamDto.Name))
                 return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.InvalidName);
                 
             var team = new Team(teamDto.Name, userId);
@@ -47,6 +47,8 @@ namespace Taskly.Application
                 return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.NotOwner);
 
             ConcurrencyConflictException.Check(updateTeamDto.Version, team.Version);
+            if (updateTeamDto.Name != null && !IsValidName(updateTeamDto.Name))
+                return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.InvalidName);
             if (updateTeamDto.OwnerId is Guid ownerId)
             {
                 if (!team.UserIds.Contains(ownerId))
@@ -249,6 +251,8 @@ namespace Taskly.Application
 
             return StructuredOperationResult<List<TeamResponseDto>>.Ok(response);
         }
+
+        private static bool IsValidName(string? value) => !string.IsNullOrWhiteSpace(value) && value.Trim().Length is >= 2 and <= 100;
 
     }
 }

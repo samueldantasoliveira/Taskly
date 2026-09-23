@@ -107,6 +107,8 @@ namespace Taskly.Controllers
         {
             if (error == ProjectErrors.InvalidName)
                 return BadRequest(error.Message);
+            if (error == ProjectErrors.InvalidDescription || error == ProjectErrors.InvalidStatus)
+                return BadRequest(error.Message);
             if (error == ProjectErrors.TeamInactive)
                 return BadRequest(error.Message);
             if (error == ProjectErrors.NotFound)
@@ -119,6 +121,8 @@ namespace Taskly.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden, error.Message);
             if (error == ProjectErrors.NotAuthorized)
                 return StatusCode(StatusCodes.Status403Forbidden, error.Message);
+            if (error == ProjectErrors.OwnerNotInDestinationTeam || error == ProjectErrors.AssigneesNotInDestinationTeam)
+                return Conflict(error.Message);
 
             return StatusCode(500, error.Message);
         }

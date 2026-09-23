@@ -26,6 +26,12 @@ namespace Taskly.Infrastructure
             return await _context.TodoTasks.Find(BaseFilter(t => t.Id == id)).FirstOrDefaultAsync(cancellationToken);
         }
 
+        public async Task<List<Guid>> GetAssignedUserIdsByProjectIdAsync(Guid projectId, CancellationToken cancellationToken = default)
+        {
+            return await _context.TodoTasks.Find(BaseFilter(t => t.ProjectId == projectId && t.AssignedUserId != null))
+                .Project(task => task.AssignedUserId!.Value).ToListAsync(cancellationToken);
+        }
+
         public async Task<PagedResult<TodoTask>> GetByProjectIdAsync(
             Guid projectId,
             TodoTaskQuery query,

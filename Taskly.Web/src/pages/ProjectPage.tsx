@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Check, Circle, CircleStop, Clock3, MoreHorizontal, Pencil, Play, Plus, RotateCcw, Search, Trash2, UserRound } from 'lucide-react'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router'
 import { z } from 'zod'
 import { useAuth } from '../features/auth/auth-context'
@@ -19,7 +19,7 @@ import {
   updateTask,
   type ProjectTaskQuery,
 } from '../features/tasks/api'
-import { getTeam, getTeamMembers } from '../features/teams/api'
+import { getTeam, getTeamMembers, getTeams } from '../features/teams/api'
 import { ApiError } from '../shared/api/client'
 import { Avatar } from '../shared/components/Avatar'
 import { Button } from '../shared/components/Button'
@@ -41,6 +41,7 @@ type TaskFormData = z.infer<typeof taskSchema>
 
 const projectSchema = z.object({
   ownerId: z.string().uuid(),
+  teamId: z.string().uuid(),
   name: z.string().trim().min(2, 'Informe um nome.'),
   description: z.string().trim().min(1, 'Informe uma descrição.'),
   status: z.number(),
@@ -89,6 +90,9 @@ function ProjectBoard({ projectId }: { projectId: string }) {
   const teamId = projectQuery.data?.teamId ?? ''
   const teamQuery = useQuery({ queryKey: queryKeys.team(teamId), queryFn: ({ signal }) => getTeam(teamId, signal), enabled: Boolean(teamId) })
   const membersQuery = useQuery({ queryKey: queryKeys.members(teamId), queryFn: ({ signal }) => getTeamMembers(teamId, signal), enabled: Boolean(teamId) })
+  const teamsQuery = useQuery({ queryKey: queryKeys.teams, queryFn: ({ signal }) => getTeams(signal) })
+  const selectedTeamId = useWatch({ control: projectForm.control, name: 'teamId' }) || teamId
+  const destinationMembersQuery = useQuery({ queryKey: queryKeys.members(selectedTeamId), queryFn: ({ signal }) => getTeamMembers(selectedTeamId, signal), enabled: Boolean(selectedTeamId) })
   const taskFilters = useMemo(() => ({
     title: deferredTitle || undefined,
     assigneeId: assigneeId || undefined,
@@ -173,7 +177,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
   const hasFilters = Boolean(deferredTitle || assigneeId)
 
   useEffect(() => {
-    if (projectQuery.data) projectForm.reset({ name: projectQuery.data.name, description: projectQuery.data.description, status: projectQuery.data.status, ownerId: projectQuery.data.ownerId })
+    if (projectQuery.data) projectForm.reset({ name: projectQuery.data.name, description: projectQuery.data.description, status: projectQuery.data.status, ownerId: projectQuery.data.ownerId, teamId: projectQuery.data.teamId })
   }, [projectForm, projectQuery.data])
 
   const refreshTasks = () => queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) })
@@ -205,7 +209,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
     onSuccess: () => { refreshTasks(); showToast('Status da tarefa atualizado.') },
     onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível alterar a tarefa.', 'error'),
   })
-  const editProjectMutation = useMutation({ mutationFn: (data: ProjectFormData) => updateProject(projectId, { ...data, version: projectQuery.data?.version, status: data.status as ProjectStatus }), onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.project(projectId) }); queryClient.invalidateQueries({ queryKey: queryKeys.projects(teamId) }); showToast('Projeto atualizado.'); setModal(null) }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível atualizar o projeto.', 'error') })
+  const editProjectMutation = useMutation({ mutationFn: (data: ProjectFormData) => updateProject(projectId, { ...data, version: projectQuery.data?.version, status: data.status as ProjectStatus }), onSuccess: (updated) => { queryClient.invalidateQueries({ queryKey: queryKeys.project(projectId) }); queryClient.invalidateQueries({ queryKey: queryKeys.projects(teamId) }); queryClient.invalidateQueries({ queryKey: queryKeys.projects(updated.teamId) }); showToast('Projeto atualizado.'); setModal(null); if (updated.teamId !== teamId) navigate(`/teams/${updated.teamId}`) }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível atualizar o projeto.', 'error') })
   const deleteMutation = useMutation({
     mutationFn: () => deleteTarget === 'project' ? deleteProject(projectId) : deleteTarget ? deleteTask(deleteTarget.id) : Promise.resolve(),
     onSuccess: () => {
@@ -337,7 +341,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
       </Modal>
 
       <Modal open={modal === 'edit-project'} title="Editar projeto" onClose={() => setModal(null)}>
-        <form onSubmit={projectForm.handleSubmit((data) => editProjectMutation.mutate(data))}><Field label="Nome" htmlFor="edit-project-name" error={projectForm.formState.errors.name?.message}><Input id="edit-project-name" {...projectForm.register('name')} /></Field><Field label="Descrição" htmlFor="edit-project-description" error={projectForm.formState.errors.description?.message}><Textarea id="edit-project-description" rows={4} {...projectForm.register('description')} /></Field><Field label="Proprietário do projeto" htmlFor="project-owner"><select id="project-owner" className="input" {...projectForm.register('ownerId')}>{!membersQuery.data?.some(member => member.id === projectQuery.data?.ownerId) && <option value={projectQuery.data?.ownerId}>Proprietário anterior (selecione um membro)</option>}{membersQuery.data?.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select></Field><Field label="Status" htmlFor="project-status"><select id="project-status" className="input" {...projectForm.register('status', { valueAsNumber: true })}><option value={ProjectStatus.Active}>Ativo</option><option value={ProjectStatus.Inactive}>Inativo</option><option value={ProjectStatus.Completed}>Concluído</option><option value={ProjectStatus.PendingApproval}>Aguardando aprovação</option></select></Field><div className="modal__actions modal__actions--split"><Button type="button" variant="danger" icon={<Trash2 size={15} />} onClick={() => { setModal(null); setDeleteTarget('project') }}>Excluir projeto</Button><div><Button type="button" variant="secondary" onClick={() => setModal(null)}>Cancelar</Button><Button type="submit" loading={editProjectMutation.isPending}>Salvar</Button></div></div></form>
+        <form onSubmit={projectForm.handleSubmit((data) => editProjectMutation.mutate(data))}><Field label="Nome" htmlFor="edit-project-name" error={projectForm.formState.errors.name?.message}><Input id="edit-project-name" maxLength={100} {...projectForm.register('name')} /></Field><Field label="Descrição" htmlFor="edit-project-description" error={projectForm.formState.errors.description?.message}><Textarea id="edit-project-description" rows={4} maxLength={500} {...projectForm.register('description')} /></Field><Field label="Equipe" htmlFor="project-team"><select id="project-team" className="input" {...projectForm.register('teamId')}><option value={teamId}>{teamQuery.data?.name ?? 'Equipe atual'}</option>{teamsQuery.data?.filter(team => team.id !== teamId).map(team => <option key={team.id} value={team.id}>{team.name}</option>)}</select><small>Para mover, o proprietário e todos os responsáveis precisam pertencer à equipe de destino.</small></Field><Field label="Proprietário do projeto" htmlFor="project-owner"><select id="project-owner" className="input" {...projectForm.register('ownerId')}><option value="">Selecione o proprietário</option>{destinationMembersQuery.data?.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select></Field><Field label="Status" htmlFor="project-status"><select id="project-status" className="input" {...projectForm.register('status', { valueAsNumber: true })}><option value={ProjectStatus.Active}>Ativo</option><option value={ProjectStatus.Inactive}>Inativo</option><option value={ProjectStatus.Completed}>Concluído</option><option value={ProjectStatus.PendingApproval}>Aguardando aprovação</option></select></Field><div className="modal__actions modal__actions--split"><Button type="button" variant="danger" icon={<Trash2 size={15} />} onClick={() => { setModal(null); setDeleteTarget('project') }}>Excluir projeto</Button><div><Button type="button" variant="secondary" onClick={() => setModal(null)}>Cancelar</Button><Button type="submit" loading={editProjectMutation.isPending}>Salvar</Button></div></div></form>
       </Modal>
 
       <ConfirmDialog open={Boolean(deleteTarget)} title={deleteTarget === 'project' ? 'Excluir este projeto?' : 'Excluir esta tarefa?'} description="Esta ação é permanente e não poderá ser desfeita." loading={deleteMutation.isPending} onClose={() => setDeleteTarget(null)} onConfirm={() => deleteMutation.mutate()} />
