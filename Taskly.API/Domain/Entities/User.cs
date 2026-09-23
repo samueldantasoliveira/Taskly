@@ -20,7 +20,8 @@ namespace Taskly.Domain.Entities
         // Stores the password hash along with all parameters needed for verification:
         // algorithm$iterations$saltBase64$hashBase64
         public string PasswordHash { get; private set; } = null!;
-        // Default supports documents created before session versioning.
+        // Explicit BSON default keeps legacy documents stable across reads.
+        [BsonDefaultValue("0")]
         public string SessionVersion { get; private set; } = "0";
 
         protected User() { }

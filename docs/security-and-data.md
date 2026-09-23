@@ -6,6 +6,10 @@ Cada requisição autenticada verifica a conta ativa e a versão da sessão no M
 Trocar a senha invalida todos os tokens anteriores; excluir a conta impede seu uso.
 Tokens anteriores à implantação deste recurso não possuem versão e exigirão novo login.
 Documentos de usuários antigos continuam compatíveis e recebem nova versão ao trocar a senha.
+Na leitura do MongoDB, o valor padrão BSON explícito mantém a versão `"0"`
+quando o campo está ausente, sem alterar a versão a cada leitura ou modificar o banco.
+Após o hotfix de compatibilidade, contas antigas devem fazer novo login; não é
+necessário recriar a conta ou executar uma migração manual.
 Uma falha do banco não autoriza o acesso e deve ser tratada como indisponibilidade.
 
 Cadastro e troca de senha aceitam de 6 a 128 caracteres, sem senhas compostas apenas
