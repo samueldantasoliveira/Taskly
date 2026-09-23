@@ -101,6 +101,11 @@ Taskly/
 | Temas Noturno e Claro               | Noturno por padrão, com alternância e preferência salva no navegador | ✅      |
 | Quadro Kanban                       | Filtros, ordenação e histórico incremental por status | ✅      |
 
+O frontend preserva a sessão em falhas temporárias da API e permite tentar novamente.
+Se a edição da tarefa for salva, mas a atribuição falhar, informa o resultado parcial
+e atualiza o quadro. Os modais mantêm a navegação por Tab dentro do diálogo e
+devolvem o foco ao fechar.
+
 As permissões consideram a participação atual na equipe: membros removidos ou
 que saíram perdem o acesso aos projetos e tarefas, mesmo usando um token emitido
 antes da mudança. Ser dono do projeto ou responsável pela tarefa não ignora essa
@@ -285,11 +290,12 @@ Os testes unitários e de integração são executados a partir da solução pri
 #### Testes de ponta a ponta (E2E)
 
 A suíte em `Taskly.E2ETests` utiliza Playwright e Chromium, com frontend, API
-e MongoDB reais. Os sete cenários cobrem:
+e MongoDB reais. Os oito cenários cobrem:
 
 * Cadastro com login automático.
 * Login com sessão mantida após recarregar a página.
 * Troca de senha com encerramento da sessão e novo login.
+* Transferência de propriedade de projeto e equipe pela interface.
 * Criação de equipe, projeto e tarefa pelo navegador.
 * Atribuição, início e conclusão de uma tarefa.
 * Filtros combinados por título e responsável, incluindo limpeza dos filtros.

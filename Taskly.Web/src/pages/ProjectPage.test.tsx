@@ -91,6 +91,40 @@ function setup(initialTasks: TodoTask[]) {
 }
 
 describe('ProjectPage task queries', () => {
+  it('informa salvamento parcial e usa a versão salva ao tentar novamente', async () => {
+    const item = task(0, TodoStatus.Todo, { title: 'Original', version: 1 })
+    const { user, state } = setup([item])
+    const versions: unknown[] = []
+    let assignmentFails = true
+    server.use(
+      http.put(`${base}/todotask/:id`, async ({ request }) => {
+        const body = await request.json() as { title: string, description: string, version: number }
+        versions.push(body.version)
+        state.tasks[0] = { ...state.tasks[0], ...body, version: body.version + 1 }
+        return HttpResponse.json(state.tasks[0])
+      }),
+      http.post(`${base}/todotask/:id/assign`, () => {
+        if (assignmentFails) return HttpResponse.json({ message: 'Indisponível' }, { status: 503 })
+        state.tasks[0] = { ...state.tasks[0], assignedUserId: 'member-1' }
+        return HttpResponse.json(state.tasks[0])
+      }),
+    )
+    await user.click(await screen.findByRole('button', { name: 'Editar Original' }))
+    const dialog = within(screen.getByRole('dialog'))
+    await user.clear(dialog.getByLabelText('Título'))
+    await user.type(dialog.getByLabelText('Título'), 'Título salvo')
+    await user.selectOptions(dialog.getByLabelText('Responsável'), 'member-1')
+    await user.click(dialog.getByRole('button', { name: 'Salvar' }))
+    expect(await dialog.findByText(/Título e descrição foram salvos/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Título salvo' })).toBeInTheDocument()
+    assignmentFails = false
+    await waitFor(() => expect(dialog.getByRole('button', { name: 'Salvar' })).not.toBeDisabled())
+    await user.click(dialog.getByRole('button', { name: 'Salvar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(versions).toEqual([1, 2])
+    expect(state.tasks[0].assignedUserId).toBe('member-1')
+  })
+
   it('mostra as tarefas ativas e pagina os históricos de forma independente', async () => {
     const tasks = [
       ...Array.from({ length: 2 }, (_, index) => task(index, TodoStatus.Todo)),
