@@ -20,6 +20,10 @@ Taskly.E2ETests/test-results/
 *.log
 
 # Secrets
+backups/
+*.archive.gz
+backup.yml
+restore.yml
 appsettings.*.json
 !Taskly.API/appsettings.Development.json
 !Taskly.API/appsettings.Testing.json

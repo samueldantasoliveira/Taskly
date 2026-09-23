@@ -113,7 +113,9 @@ equipe existente e ativa, além de ser membro e dono do projeto ou da equipe.
 # 🏗️ Arquitetura e Boas Práticas
 
 Consulte as [regras de segurança e integridade](docs/security-and-data.md) para
-entender a validade das sessões e os limites de autenticação.
+entender sessões, limites de autenticação, concorrência e transferência de propriedade.
+O [guia de operação](docs/operations.md) reúne diagnóstico por request ID, ensaio
+de recuperação e os passos pendentes para ativar backups e alertas de produção.
 
 | Implementação          | Descrição                                                         | Status |
 | ---------------------- | ----------------------------------------------------------------- | ------ |
