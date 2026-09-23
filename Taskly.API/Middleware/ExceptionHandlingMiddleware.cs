@@ -3,14 +3,19 @@ using Taskly.Domain.Exceptions;
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next)
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
+        _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
+        var traceId = context.TraceIdentifier;
+        context.Response.Headers["X-Request-ID"] = traceId;
+        using var scope = _logger.BeginScope(new Dictionary<string, object> { ["RequestId"] = traceId });
         try
         {
             await _next(context);
@@ -79,10 +84,12 @@ public class ExceptionHandlingMiddleware
             context.Response.StatusCode = StatusCodes.Status409Conflict;
             await context.Response.WriteAsJsonAsync(new { message = exception.Message }, context.RequestAborted);
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Unhandled request failure. RequestId: {RequestId}", traceId);
+            if (context.Response.HasStarted) throw;
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            await context.Response.WriteAsync("An unexpected error occurred.", context.RequestAborted);
+            await context.Response.WriteAsJsonAsync(new { message = "An unexpected error occurred.", traceId }, context.RequestAborted);
         }
     }
 }

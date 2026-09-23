@@ -1,0 +1,17 @@
+name: Recovery Drill
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/recovery-drill.sh
+      - .github/workflows/recovery-drill.yml
+permissions:
+  contents: read
+jobs:
+  recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - run: bash scripts/recovery-drill.sh
