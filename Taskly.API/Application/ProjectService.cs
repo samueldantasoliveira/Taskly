@@ -10,18 +10,22 @@ namespace Taskly.Application
         private readonly IProjectRepository _projectRepository;
         private readonly ITeamRepository _teamRepository;
         private readonly IUserRepository _userRepository;
+        private readonly ITodoTaskRepository _todoTaskRepository;
 
-        public ProjectService(IProjectRepository projectRepository, ITeamRepository teamRepository, IUserRepository userRepository)
+        public ProjectService(IProjectRepository projectRepository, ITeamRepository teamRepository, IUserRepository userRepository, ITodoTaskRepository todoTaskRepository)
         {
             _projectRepository = projectRepository;
             _teamRepository = teamRepository;
             _userRepository = userRepository;
+            _todoTaskRepository = todoTaskRepository;
         }
 
         public async Task<StructuredOperationResult<ProjectResponseDto>> AddProjectAsync(CreateProjectDto createProjectDto, Guid authenticatedUserId, CancellationToken cancellationToken = default)
         {
-            if (String.IsNullOrWhiteSpace(createProjectDto.Name))
+            if (!IsValidName(createProjectDto.Name))
                 return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.InvalidName);
+            if (!IsValidDescription(createProjectDto.Description))
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.InvalidDescription);
 
             var team = await _teamRepository.GetByIdAsync(createProjectDto.TeamId, cancellationToken);
 
@@ -94,26 +98,42 @@ namespace Taskly.Application
                 return permission;
 
             ConcurrencyConflictException.Check(updateProjectDto.Version, project!.Version);
+            if (updateProjectDto.Name != null && !IsValidName(updateProjectDto.Name))
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.InvalidName);
+            if (updateProjectDto.Description != null && !IsValidDescription(updateProjectDto.Description))
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.InvalidDescription);
+            if (updateProjectDto.Status.HasValue && !Enum.IsDefined(updateProjectDto.Status.Value))
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.InvalidStatus);
+
+            var destinationTeam = updateProjectDto.TeamId.HasValue && updateProjectDto.TeamId != project.TeamId
+                ? await _teamRepository.GetByIdAsync(updateProjectDto.TeamId.Value, cancellationToken)
+                : null;
+            if (destinationTeam != null)
+            {
+                if (!destinationTeam.IsActive)
+                    return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamInactive);
+                if (!destinationTeam.UserIds.Contains(authenticatedUserId))
+                    return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.NotAuthorized);
+                var nextOwner = updateProjectDto.OwnerId ?? project.OwnerId;
+                if (!destinationTeam.UserIds.Contains(nextOwner))
+                    return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.OwnerNotInDestinationTeam);
+                var assignees = await _todoTaskRepository.GetAssignedUserIdsByProjectIdAsync(project.Id, cancellationToken);
+                if (assignees.Any(id => !destinationTeam.UserIds.Contains(id)))
+                    return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.AssigneesNotInDestinationTeam);
+            }
+            else if (updateProjectDto.TeamId.HasValue)
+            {
+                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamNotFound);
+            }
+
             if (updateProjectDto.OwnerId is Guid ownerId)
             {
-                var ownerTeam = await _teamRepository.GetByIdAsync(updateProjectDto.TeamId ?? project.TeamId, cancellationToken);
+                var ownerTeam = destinationTeam ?? await _teamRepository.GetByIdAsync(project.TeamId, cancellationToken);
                 if (ownerTeam == null || !ownerTeam.UserIds.Contains(ownerId))
                     return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.UserNotTeamMember);
                 if (await _userRepository.GetByIdAsync(ownerId, cancellationToken) == null)
                     return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.OwnerNotFound);
                 project.TransferOwnership(ownerId);
-            }
-
-            if(updateProjectDto.TeamId!= null)
-            {
-                var newTeam = await _teamRepository.GetByIdAsync(updateProjectDto.TeamId.Value, cancellationToken);
-                if(newTeam == null)
-                    return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamNotFound);
-                if (!newTeam.IsActive)
-                    return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamInactive);
-
-                if(!newTeam.UserIds.Contains(authenticatedUserId))
-                    return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.NotAuthorized);
             }
             
 
@@ -204,6 +224,9 @@ namespace Taskly.Application
 
             return null;
         }
+
+        private static bool IsValidName(string? value) => !string.IsNullOrWhiteSpace(value) && value.Trim().Length is >= 2 and <= 100;
+        private static bool IsValidDescription(string? value) => !string.IsNullOrWhiteSpace(value) && value.Trim().Length <= 500;
 
 
     }

@@ -13,16 +13,19 @@ public class ProjectServiceTests
     public readonly Mock<IProjectRepository> _projectRepositoryMock;
     public readonly Mock<ITeamRepository> _teamRepositoryMock;
     public readonly Mock<IUserRepository> _userRepositoryMock;
+    public readonly Mock<ITodoTaskRepository> _todoTaskRepositoryMock;
     public readonly ProjectService _projectService;
     public ProjectServiceTests()
     {
         _projectRepositoryMock = new Mock<IProjectRepository>();
         _teamRepositoryMock = new Mock<ITeamRepository>();
         _userRepositoryMock = new Mock<IUserRepository>();
+        _todoTaskRepositoryMock = new Mock<ITodoTaskRepository>();
         _projectService = new ProjectService(
             _projectRepositoryMock.Object,
             _teamRepositoryMock.Object,
-            _userRepositoryMock.Object);
+            _userRepositoryMock.Object,
+            _todoTaskRepositoryMock.Object);
     }
 
     [Fact]
