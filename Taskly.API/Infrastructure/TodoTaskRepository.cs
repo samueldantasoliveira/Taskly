@@ -114,11 +114,14 @@ namespace Taskly.Infrastructure
 
         public async Task<bool> UpdateAsync(TodoTask task, CancellationToken cancellationToken = default)
         {
+            var filter = BaseFilter(t => t.Id == task.Id);
+            var versionedFilter = ConcurrencyGuard.WithVersion(filter, task.Version);
+            task.AdvanceVersion();
             var result = await _context.TodoTasks.ReplaceOneAsync(
-                BaseFilter(t => t.Id == task.Id), 
+                versionedFilter,
                 task,
                 cancellationToken: cancellationToken);
-            return result.ModifiedCount > 0;
+            return await ConcurrencyGuard.CheckWrite(_context.TodoTasks, filter, result.MatchedCount, cancellationToken);
         }
 
         private FilterDefinition<TodoTask> BaseFilter(Expression<Func<TodoTask, bool>> filter)

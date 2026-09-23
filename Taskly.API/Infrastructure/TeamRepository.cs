@@ -50,11 +50,14 @@ namespace Taskly.Infrastructure
 
         public async Task<bool> UpdateAsync(Team updatedTeam, CancellationToken cancellationToken = default)
         {
+            var filter = BaseFilter(t => t.Id == updatedTeam.Id);
+            var versionedFilter = ConcurrencyGuard.WithVersion(filter, updatedTeam.Version);
+            updatedTeam.AdvanceVersion();
             var result = await _context.Teams.ReplaceOneAsync(
-                BaseFilter(t => t.Id == updatedTeam.Id), 
+                versionedFilter,
                 updatedTeam,
                 cancellationToken: cancellationToken);
-            return result.ModifiedCount > 0;
+            return await ConcurrencyGuard.CheckWrite(_context.Teams, filter, result.MatchedCount, cancellationToken);
         }
             
 

@@ -40,6 +40,7 @@ public class LoginService
                 User = new UserResponseDto
                 {
                     Id = user.Id,
+                    Version = user.Version,
                     Name = user.Name,
                     Email = user.Email
                 }

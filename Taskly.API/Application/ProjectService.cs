@@ -43,6 +43,7 @@ namespace Taskly.Application
             var projectResponseDto = new ProjectResponseDto
             {
                 Id = project.Id,
+                Version = project.Version,
                 Name = project.Name,
                 Description = project.Description,
                 OwnerId = project.OwnerId,
@@ -73,6 +74,7 @@ namespace Taskly.Application
             var projectResponseDto = new ProjectResponseDto
             {
                 Id = project.Id,
+                Version = project.Version,
                 Name = project.Name,
                 Description = project.Description,
                 OwnerId = project.OwnerId,
@@ -90,6 +92,8 @@ namespace Taskly.Application
 
             if (permission != null)
                 return permission;
+
+            ConcurrencyConflictException.Check(updateProjectDto.Version, project!.Version);
 
             if(updateProjectDto.TeamId!= null)
             {
@@ -113,6 +117,7 @@ namespace Taskly.Application
             var projectResponseDto = new ProjectResponseDto
             {
                 Id = project.Id,
+                Version = project.Version,
                 Name = project.Name,
                 Description = project.Description,
                 OwnerId = project.OwnerId,
@@ -158,6 +163,7 @@ namespace Taskly.Application
                 .Select(project => new ProjectResponseDto
                 {
                     Id = project.Id,
+                    Version = project.Version,
                     Name = project.Name,
                     Description = project.Description,
                     OwnerId = project.OwnerId,

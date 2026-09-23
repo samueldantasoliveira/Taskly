@@ -24,6 +24,7 @@ export const ProjectStatus = {
 export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus]
 
 export interface User {
+  version?: number
   id: Id
   name: string
   email: string
@@ -36,6 +37,7 @@ export interface LoginResponse {
 }
 
 export interface Team {
+  version?: number
   id: Id
   name: string
   isActive: boolean
@@ -48,6 +50,7 @@ export interface TeamMember extends User {
 }
 
 export interface Project {
+  version?: number
   id: Id
   name: string
   description: string
@@ -57,6 +60,7 @@ export interface Project {
 }
 
 export interface TodoTask {
+  version?: number
   id: Id
   title: string
   description: string | null
@@ -81,6 +85,7 @@ export interface CreateTeamInput {
 }
 
 export interface UpdateTeamInput {
+  version?: number
   name?: string
   isActive?: boolean
 }
@@ -92,6 +97,7 @@ export interface CreateProjectInput {
 }
 
 export interface UpdateProjectInput {
+  version?: number
   name?: string
   description?: string
   status?: ProjectStatus
@@ -106,11 +112,13 @@ export interface CreateTaskInput {
 }
 
 export interface UpdateTaskInput {
+  version?: number
   title: string
   description: string
 }
 
 export interface UpdateUserInput {
+  version?: number
   name?: string
   email?: string
   password?: string

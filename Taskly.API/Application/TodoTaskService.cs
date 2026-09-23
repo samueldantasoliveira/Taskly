@@ -62,6 +62,7 @@ namespace Taskly.Application
             var todoTaskResponseDto = new TodoTaskResponseDto
             {
                 Id = todoTask.Id,
+                Version = todoTask.Version,
                 Title = todoTask.Title,
                 Description = todoTask.Description,
                 ProjectId = todoTask.ProjectId,
@@ -109,6 +110,7 @@ namespace Taskly.Application
             var todoTaskResponseDto = new TodoTaskResponseDto
             {
                 Id = todoTask.Id,
+                Version = todoTask.Version,
                 Title = todoTask.Title,
                 Description = todoTask.Description,
                 ProjectId = todoTask.ProjectId,
@@ -196,6 +198,7 @@ namespace Taskly.Application
                 .Select(todoTask => new TodoTaskResponseDto
                 {
                     Id = todoTask.Id,
+                    Version = todoTask.Version,
                     Title = todoTask.Title,
                     Description = todoTask.Description,
                     Status = todoTask.Status,
@@ -240,6 +243,7 @@ namespace Taskly.Application
             if (!team.UserIds.Contains(authenticatedUserId))
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.UserNotTeamMember);
 
+            ConcurrencyConflictException.Check(dto.Version, todoTask.Version);
             todoTask.Update(dto.Title, dto.Description);
             
 
@@ -251,6 +255,7 @@ namespace Taskly.Application
             var todoTaskResponseDto = new TodoTaskResponseDto
             {
                 Id = todoTask.Id,
+                Version = todoTask.Version,
                 Title = todoTask.Title,
                 Description = todoTask.Description,
                 ProjectId = todoTask.ProjectId,

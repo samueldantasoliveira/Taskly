@@ -20,3 +20,19 @@ No Render, cabeçalhos encaminhados só são seguros enquanto a API estiver aces
 exclusivamente pelo proxy confiável da plataforma. Testes isolados usam limites maiores.
 
 Recuperação de senha por e-mail e confirmação de e-mail ainda não estão implementadas.
+
+## Concorrência
+
+Usuários, equipes, projetos e tarefas possuem `Version`. O repositório grava apenas
+se a versão lida ainda for atual e incrementa a versão no mesmo comando MongoDB.
+Conflitos retornam 409, sem sobrescrever a primeira gravação. Documentos antigos
+sem o campo são tratados como versão zero.
+
+As respostas e DTOs de edição incluem `version`; o frontend envia a versão exibida.
+Clientes antigos que não enviam a versão continuam compatíveis, mas somente ficam
+protegidos contra concorrência durante a operação do servidor. Para detectar uma
+edição de tela desatualizada, envie sempre a versão recebida. Após 409, recarregue e
+revise os dados antes de reenviar; não repita a escrita automaticamente.
+
+Esse controle é por documento. Ele não substitui transações ou coordenação para
+regras envolvendo várias coleções, nem implementa restauração de registros excluídos.

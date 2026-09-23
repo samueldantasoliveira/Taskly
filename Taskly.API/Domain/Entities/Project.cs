@@ -5,6 +5,9 @@ namespace Taskly.Domain.Entities
 {
     public class Project
     {
+        public long Version { get; private set; }
+        internal void AdvanceVersion() => Version++;
+
         [BsonRepresentation(BsonType.String)]
         public Guid Id { get; private set; }
         public string Name { get; private set; } = null!;

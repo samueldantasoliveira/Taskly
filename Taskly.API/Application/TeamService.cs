@@ -27,6 +27,7 @@ namespace Taskly.Application
             var teamResponseDto = new TeamResponseDto
             {
                 Id = team.Id,
+                Version = team.Version,
                 Name = team.Name,
                 IsActive = team.IsActive,
                 OwnerId = team.OwnerId,
@@ -43,6 +44,7 @@ namespace Taskly.Application
             if (team.OwnerId != authenticatedUserId)
                 return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.NotOwner);
 
+            ConcurrencyConflictException.Check(updateTeamDto.Version, team.Version);
             team.Update(updateTeamDto.Name, updateTeamDto.IsActive);
 
             var updated = await _teamRepository.UpdateAsync(team, cancellationToken);
@@ -52,6 +54,7 @@ namespace Taskly.Application
             var teamResponseDto = new TeamResponseDto
             {
                 Id = team.Id,
+                Version = team.Version,
                 Name = team.Name,
                 IsActive = team.IsActive,
                 OwnerId = team.OwnerId,
@@ -152,6 +155,7 @@ namespace Taskly.Application
             var teamResponseDto = new TeamResponseDto
             {
                 Id = team.Id,
+                Version = team.Version,
                 Name = team.Name,
                 IsActive = team.IsActive,
                 OwnerId = team.OwnerId,
@@ -223,6 +227,7 @@ namespace Taskly.Application
                 .Select(team => new TeamResponseDto
                 {
                     Id = team.Id,
+                    Version = team.Version,
                     Name = team.Name,
                     IsActive = team.IsActive,
                     OwnerId = team.OwnerId,
