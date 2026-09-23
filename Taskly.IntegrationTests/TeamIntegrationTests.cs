@@ -242,7 +242,7 @@ public class TeamIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
-    public async Task GetTeamMembers_NoValidMembers_ReturnsEmptyList()
+    public async Task GetTeamMembers_DeletedAccountCannotUseOldToken()
     {
         var owner = await _userHelper.CreateUserAndLoginAsync();
         SetBearerToken(owner.Token);
@@ -254,11 +254,7 @@ public class TeamIntegrationTests : IClassFixture<TasklyApiFactory>
         var response = await _client.GetAsync(
             $"/api/team/{team.Id}/members");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var members = await response.Content
-            .ReadFromJsonAsync<List<TeamMemberResponseDto>>();
-        Assert.NotNull(members);
-        Assert.Empty(members);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     private void SetBearerToken(string token)

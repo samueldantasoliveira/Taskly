@@ -63,6 +63,7 @@ namespace Taskly.Infrastructure
                 .Set(u => u.Name, user.Name)
                 .Set(u => u.Email, user.Email)
                 .Set(u => u.PasswordHash, user.PasswordHash)
+                .Set(u => u.SessionVersion, user.SessionVersion)
                 .Set(u => u.UpdatedAt, DateTime.UtcNow);
 
             var result = await _context.Users.UpdateOneAsync(

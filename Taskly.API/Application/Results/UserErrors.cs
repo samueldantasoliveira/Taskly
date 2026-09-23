@@ -9,7 +9,7 @@ public static class UserErrors
         Error.Create("User.InvalidName", "Name is invalid");
 
     public readonly static Error InvalidPassword =
-        Error.Create("User.InvalidPassword", "Password is invalid");
+        Error.Create("User.InvalidPassword", "Password must contain between 6 and 128 characters and cannot be blank.");
     public readonly static Error InvalidEmail =
         Error.Create("User.InvalidEmail", "Email is invalid");
     public readonly static Error EmailAlreadyExists =

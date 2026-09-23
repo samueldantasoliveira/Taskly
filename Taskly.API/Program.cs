@@ -114,6 +114,13 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = AuthenticationSecurity.ValidateSession,
+            OnAuthenticationFailed = context => context.Exception is MongoException or TimeoutException or OperationCanceledException
+                ? Task.FromException(context.Exception)
+                : Task.CompletedTask
+        };
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -131,6 +138,7 @@ builder.Services
 
 // Controller
 builder.Services.AddControllers();
+builder.Services.AddAuthenticationLimits();
 
 //Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -263,6 +271,7 @@ app.UseRouting();
 app.UseCors(corsPolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 

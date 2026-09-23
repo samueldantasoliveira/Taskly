@@ -229,7 +229,7 @@ public class UserServiceTests
     public async Task UpdateUser_ShouldNotCheckEmailUniqueness_WhenEmailIsTheSame()
     {
         //Arrange
-        var updateDto = new UpdateUserDto {Name = "Name Test", Email = "EMAIL@TEST.COM", Password = "Test"};
+        var updateDto = new UpdateUserDto {Name = "Name Test", Email = "EMAIL@TEST.COM", Password = "Test123!"};
         var user = new User("Name Test2", "email@test.com", "HashTest");
         _userRepositoryMock
             .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -243,7 +243,7 @@ public class UserServiceTests
         var result = await _userService.UpdateUserAsync(user.Id, updateDto);
 
         //Assert
-        Assert.True(result.Success);
+        Assert.True(result.Success, result.Error?.Code);
         Assert.NotNull(result.Value);
         Assert.Equal("email@test.com", result.Value.Email);
         _userRepositoryMock.Verify(
@@ -256,7 +256,7 @@ public class UserServiceTests
     public async Task UpdateUser_ValidInput_CallsRepositoryUpdateAsync()
     {
         //Arrange
-        var updateDto = new UpdateUserDto {Name = "Name Test", Email = "EMAIL@TEST.COM", Password = "Test"};
+        var updateDto = new UpdateUserDto {Name = "Name Test", Email = "EMAIL@TEST.COM", Password = "Test123!"};
         var user = new User("Name Test2", "email2@test.com", "HashTest");
 
         _userRepositoryMock
@@ -271,7 +271,7 @@ public class UserServiceTests
         var result = await _userService.UpdateUserAsync(user.Id, updateDto);
 
         //Assert
-        Assert.True(result.Success);
+        Assert.True(result.Success, result.Error?.Code);
         Assert.NotNull(result.Value);
         Assert.NotEqual("HashTest", user.PasswordHash);
         Assert.Equal(updateDto.Name, result.Value.Name);

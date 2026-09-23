@@ -15,7 +15,7 @@ namespace Taskly.Application
 
         public async Task<StructuredOperationResult<UserResponseDto>> AddUserAsync(CreateUserDto userDto, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(userDto.Password))
+            if (!PasswordPolicy.IsValid(userDto.Password))
                 return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.InvalidPassword);
             cancellationToken.ThrowIfCancellationRequested();
             var hash = PasswordHasher.HashPassword(userDto.Password);
@@ -115,7 +115,7 @@ namespace Taskly.Application
             string? passwordHash = null;
             if (userDto.Password != null)
             {
-                if (string.IsNullOrWhiteSpace(userDto.Password))
+                if (!PasswordPolicy.IsValid(userDto.Password))
                     return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.InvalidPassword);
                 cancellationToken.ThrowIfCancellationRequested();
                 passwordHash = PasswordHasher.HashPassword(userDto.Password);
