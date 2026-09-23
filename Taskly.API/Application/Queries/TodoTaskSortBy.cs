@@ -4,5 +4,7 @@ namespace Taskly.Application.Queries;
   {
       CreatedAt,
       Title,
-      Status
+      Status,
+      Priority,
+      DueDate
   }

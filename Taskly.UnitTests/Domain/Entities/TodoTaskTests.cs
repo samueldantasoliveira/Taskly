@@ -8,6 +8,19 @@ namespace Taskly.Tests;
 public class TodoTaskTests
 {
     [Fact]
+    public void Task_PreservesPriorityAndNormalizesDueDate_WhenCreatedAndUpdated()
+    {
+        var task = new TodoTask("Test task", "Description", Guid.NewGuid(), null,
+            TaskPriority.High, new DateTime(2026, 12, 4, 18, 30, 0, DateTimeKind.Local));
+
+        Assert.Equal(TaskPriority.High, task.Priority);
+        Assert.Equal(new DateTime(2026, 12, 4, 0, 0, 0, DateTimeKind.Utc), task.DueDate);
+        task.Update("Test task", "Description", TaskPriority.Low, null);
+        Assert.Equal(TaskPriority.Low, task.Priority);
+        Assert.Null(task.DueDate);
+    }
+
+    [Fact]
     public void Start_ShouldChangeStatusToInProgress_WhenTaskIsTodo()
     {
         // Arrange
@@ -658,4 +671,3 @@ public class TodoTaskTests
 
     
 }
-

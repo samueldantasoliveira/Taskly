@@ -6,7 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '../features/auth/auth-context'
 import { ToastContext } from '../shared/components/toast-context'
-import { TodoStatus, type TodoTask } from '../shared/types/api'
+import { TaskPriority, TodoStatus, type TodoTask } from '../shared/types/api'
 import { server } from '../test/setup'
 import { ProjectPage } from './ProjectPage'
 
@@ -18,6 +18,8 @@ function task(index: number, status: TodoTask['status'], overrides: Partial<Todo
     title: `Tarefa ${status}-${index}`,
     description: null,
     status,
+    priority: TaskPriority.Medium,
+    dueDate: null,
     projectId: 'project-1',
     assignedUserId: null,
     createdAt: new Date(Date.UTC(2026, 0, index + 1)).toISOString(),

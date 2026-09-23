@@ -9,6 +9,7 @@ test('proprietário transfere projeto e equipe pela interface', async ({ page, r
   await page.goto(`/projects/${context.projectId}`)
   await page.getByRole('button', { name: 'Editar projeto' }).click()
   const projectDialog = page.getByRole('dialog', { name: 'Editar projeto' })
+  await projectDialog.getByLabel('Equipe').selectOption(context.teamId)
   await projectDialog.getByLabel('Proprietário do projeto').selectOption(member.id)
   await projectDialog.getByRole('button', { name: 'Salvar', exact: true }).click()
   await expect(projectDialog).not.toBeVisible()

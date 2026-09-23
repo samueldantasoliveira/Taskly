@@ -14,6 +14,9 @@ namespace Taskly.Domain.Entities
         public string Title { get; private set; }
         public string? Description { get; private set; }
         public TodoStatus Status { get; private set; }
+        [BsonDefaultValue(TaskPriority.Medium)]
+        public TaskPriority Priority { get; private set; } = TaskPriority.Medium;
+        public DateTime? DueDate { get; private set; }
 
         [BsonRepresentation(BsonType.String)]
         public Guid ProjectId { get; set; }
@@ -25,23 +28,30 @@ namespace Taskly.Domain.Entities
         public DateTime UpdatedAt { get; private set; }
         public DateTime? DeletedAt { get; private set; }
 
-        public TodoTask(string title, string description, Guid projectId, Guid? assignedUserId)
+        public TodoTask(string title, string description, Guid projectId, Guid? assignedUserId,
+            TaskPriority priority = TaskPriority.Medium, DateTime? dueDate = null)
         {
             Title = title;
             Description = description;
             Status = TodoStatus.Todo;
             ProjectId = projectId;
             AssignedUserId = assignedUserId;
+            Priority = priority;
+            DueDate = NormalizeDueDate(dueDate);
 
             var now = DateTime.UtcNow;
             CreatedAt = now;
             UpdatedAt = now;
         }
 
-        public void Update(string? title, string? description)
+        public void Update(string? title, string? description) => Update(title, description, Priority, DueDate);
+
+        public void Update(string? title, string? description, TaskPriority priority, DateTime? dueDate)
         {
             var oldTitle = Title;
             var oldDescription = Description;
+            var oldPriority = Priority;
+            var oldDueDate = DueDate;
 
             if(Status == TodoStatus.Cancelled || Status == TodoStatus.Done)
             {
@@ -53,10 +63,16 @@ namespace Taskly.Domain.Entities
                 Title = title;
             if(description != null)
                 Description = description;
+            Priority = priority;
+            DueDate = NormalizeDueDate(dueDate);
 
-            if(oldTitle != Title || oldDescription != Description)
+            if(oldTitle != Title || oldDescription != Description || oldPriority != Priority || oldDueDate != DueDate)
                 UpdatedAt = DateTime.UtcNow;
         }
+
+        private static DateTime? NormalizeDueDate(DateTime? value) => value is null
+            ? null
+            : DateTime.SpecifyKind(value.Value.Date, DateTimeKind.Utc);
 
         public void Delete()
         {

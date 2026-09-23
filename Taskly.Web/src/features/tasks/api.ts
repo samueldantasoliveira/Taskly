@@ -8,7 +8,7 @@ import type {
   UpdateTaskInput,
 } from '../../shared/types/api'
 
-export type TodoTaskSortBy = 'CreatedAt' | 'Title' | 'Status'
+export type TodoTaskSortBy = 'CreatedAt' | 'Title' | 'Status' | 'Priority' | 'DueDate'
 export type TodoTaskSortDirection = 'Ascending' | 'Descending'
 
 export interface ProjectTaskQuery {

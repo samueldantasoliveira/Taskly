@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { TodoStatus, type TodoTask } from '../../shared/types/api'
+import { TaskPriority, TodoStatus, type TodoTask } from '../../shared/types/api'
 import { server } from '../../test/setup'
 import { getAllProjectTasks } from './api'
 
@@ -13,6 +13,8 @@ describe('tasks API', () => {
       title: `Tarefa ${index}`,
       description: null,
       status: TodoStatus.Todo,
+      priority: TaskPriority.Medium,
+      dueDate: null,
       projectId: 'project-1',
       assignedUserId: null,
       createdAt: '2026-01-01T00:00:00Z',

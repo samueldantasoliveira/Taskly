@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Check, Circle, CircleStop, Clock3, MoreHorizontal, Pencil, Play, Plus, RotateCcw, Search, Trash2, UserRound } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Check, Circle, CircleStop, Clock3, Flag, MoreHorizontal, Pencil, Play, Plus, RotateCcw, Search, Trash2, UserRound } from 'lucide-react'
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -30,12 +30,14 @@ import { Modal } from '../shared/components/Modal'
 import { ProjectStatusBadge, TaskStatusBadge } from '../shared/components/StatusBadge'
 import { useToast } from '../shared/components/toast-context'
 import { queryKeys } from '../shared/lib/query-keys'
-import { ProjectStatus, TodoStatus, type TodoTask } from '../shared/types/api'
+import { ProjectStatus, TaskPriority, TodoStatus, type TodoTask } from '../shared/types/api'
 
 const taskSchema = z.object({
   title: z.string().trim().min(1, 'Informe um título.').max(100),
   description: z.string().trim().max(500),
   assignedUserId: z.string(),
+  priority: z.coerce.number().int().min(TaskPriority.Low).max(TaskPriority.High),
+  dueDate: z.string(),
 })
 type TaskFormData = z.infer<typeof taskSchema>
 
@@ -62,6 +64,8 @@ const sortOptions = {
   oldest: { sortBy: 'CreatedAt', sortDirection: 'Ascending' },
   titleAscending: { sortBy: 'Title', sortDirection: 'Ascending' },
   titleDescending: { sortBy: 'Title', sortDirection: 'Descending' },
+  priority: { sortBy: 'Priority', sortDirection: 'Descending' },
+  dueDate: { sortBy: 'DueDate', sortDirection: 'Ascending' },
 } as const satisfies Record<string, Pick<ProjectTaskQuery, 'sortBy' | 'sortDirection'>>
 
 type SortOption = keyof typeof sortOptions
@@ -83,7 +87,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
   const [assigneeId, setAssigneeId] = useState('')
   const [sortOption, setSortOption] = useState<SortOption>('recent')
   const deferredTitle = useDeferredValue(titleFilter.trim())
-  const taskForm = useForm<TaskFormData>({ resolver: zodResolver(taskSchema), defaultValues: { title: '', description: '', assignedUserId: '' } })
+  const taskForm = useForm<TaskFormData>({ resolver: zodResolver(taskSchema), defaultValues: { title: '', description: '', assignedUserId: '', priority: TaskPriority.Medium, dueDate: '' } })
   const projectForm = useForm<ProjectFormData>({ resolver: zodResolver(projectSchema) })
 
   const projectQuery = useQuery({ queryKey: queryKeys.project(projectId), queryFn: ({ signal }) => getProject(projectId, signal), enabled: Boolean(projectId) })
@@ -186,10 +190,10 @@ function ProjectBoard({ projectId }: { projectId: string }) {
     setAssigneeId('')
     setSortOption('recent')
   }
-  const createMutation = useMutation({ mutationFn: (data: TaskFormData) => createTask({ title: data.title, description: data.description, projectId, assignedUserId: data.assignedUserId || null }), onSuccess: () => { resetTaskView(); refreshTasks(); showToast('Tarefa criada.'); taskForm.reset(); setModal(null) } })
+  const createMutation = useMutation({ mutationFn: (data: TaskFormData) => createTask({ title: data.title, description: data.description, projectId, assignedUserId: data.assignedUserId || null, priority: data.priority as TaskPriority, dueDate: data.dueDate || null }), onSuccess: () => { resetTaskView(); refreshTasks(); showToast('Tarefa criada.'); taskForm.reset(); setModal(null) } })
   const editTaskMutation = useMutation({
     mutationFn: async ({ task, data }: { task: TodoTask; data: TaskFormData }) => {
-      const updated = await updateTask(task.id, { version: task.version, title: data.title, description: data.description })
+      const updated = await updateTask(task.id, { version: task.version, title: data.title, description: data.description, priority: data.priority as TaskPriority, dueDate: data.dueDate || null })
       const nextAssigned = data.assignedUserId || null
       if (nextAssigned !== task.assignedUserId) {
         try {
@@ -221,10 +225,10 @@ function ProjectBoard({ projectId }: { projectId: string }) {
 
   const openEditTask = (task: TodoTask) => {
     setSelectedTask(task)
-    taskForm.reset({ title: task.title, description: task.description ?? '', assignedUserId: task.assignedUserId ?? '' })
+    taskForm.reset({ title: task.title, description: task.description ?? '', assignedUserId: task.assignedUserId ?? '', priority: task.priority, dueDate: task.dueDate?.slice(0, 10) ?? '' })
     setModal('edit-task')
   }
-  const openCreateTask = () => { setSelectedTask(null); taskForm.reset({ title: '', description: '', assignedUserId: '' }); setModal('create') }
+  const openCreateTask = () => { setSelectedTask(null); taskForm.reset({ title: '', description: '', assignedUserId: '', priority: TaskPriority.Medium, dueDate: '' }); setModal('create') }
 
   if (projectQuery.isPending) return <PageLoader label="Abrindo o projeto..." />
   if (projectQuery.isError) return <ErrorState message={(projectQuery.error as Error).message} onRetry={() => projectQuery.refetch()} />
@@ -273,6 +277,8 @@ function ProjectBoard({ projectId }: { projectId: string }) {
             <option value="oldest">Mais antigas</option>
             <option value="titleAscending">Título: A–Z</option>
             <option value="titleDescending">Título: Z–A</option>
+            <option value="priority">Maior prioridade</option>
+            <option value="dueDate">Prazo mais próximo</option>
           </select>
           <Button
             variant="ghost"
@@ -308,6 +314,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
                 return <article className="task-card" key={task.id}>
                   <div className="task-card__top"><TaskStatusBadge status={task.status} /><button className="icon-button" onClick={() => openEditTask(task)} aria-label={`${task.status === TodoStatus.Done || task.status === TodoStatus.Cancelled ? 'Ver' : 'Editar'} ${task.title}`}><MoreHorizontal size={18} /></button></div>
                   <h3>{task.title}</h3><p>{task.description || 'Sem descrição.'}</p>
+                  <div className="task-card__metadata"><span className={`priority priority--${task.priority}`}><Flag size={12} />{task.priority === TaskPriority.High ? 'Alta' : task.priority === TaskPriority.Medium ? 'Média' : 'Baixa'}</span>{task.dueDate && <span className={new Date(`${task.dueDate.slice(0, 10)}T00:00:00`).getTime() < new Date(new Date().toDateString()).getTime() && task.status < TodoStatus.Done ? 'due-date due-date--overdue' : 'due-date'}><CalendarDays size={12} />{new Date(`${task.dueDate.slice(0, 10)}T00:00:00`).toLocaleDateString('pt-BR')}</span>}</div>
                   <div className="task-card__assignee">{assignedMember ? <><Avatar name={assignedMember.name} size="sm" /><span>{assignedMember.name}</span></> : <><span className="unassigned"><UserRound size={14} /></span><span>Sem responsável</span></>}</div>
                   {isAssigned && task.status === TodoStatus.Todo && <div className="task-card__actions"><Button size="sm" variant="ghost" onClick={() => actionMutation.mutate({ taskId: task.id, action: 'cancel' })}>Cancelar</Button><Button size="sm" variant="secondary" icon={<Play size={14} />} loading={actionMutation.isPending && actionMutation.variables?.taskId === task.id} onClick={() => actionMutation.mutate({ taskId: task.id, action: 'start' })}>Iniciar</Button></div>}
                   {isAssigned && task.status === TodoStatus.InProgress && <div className="task-card__actions"><Button size="sm" variant="ghost" onClick={() => actionMutation.mutate({ taskId: task.id, action: 'cancel' })}>Cancelar</Button><Button size="sm" icon={<Check size={14} />} onClick={() => actionMutation.mutate({ taskId: task.id, action: 'complete' })}>Concluir</Button></div>}
@@ -334,6 +341,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
         <form onSubmit={taskForm.handleSubmit((data) => selectedTask ? !selectedTaskIsReadOnly && editTaskMutation.mutate({ task: selectedTask, data }) : createMutation.mutate(data))}>
           <Field label="Título" htmlFor="task-title" error={taskForm.formState.errors.title?.message}><Input id="task-title" autoFocus maxLength={100} disabled={selectedTaskIsReadOnly} placeholder="O que precisa ser feito?" {...taskForm.register('title')} /></Field>
           <Field label="Descrição" htmlFor="task-description" error={taskForm.formState.errors.description?.message}><Textarea id="task-description" rows={4} maxLength={500} disabled={selectedTaskIsReadOnly} placeholder="Adicione contexto e critérios de conclusão." {...taskForm.register('description')} /></Field>
+          <Field label="Prioridade" htmlFor="task-priority"><select id="task-priority" className="input" disabled={selectedTaskIsReadOnly} {...taskForm.register('priority')}><option value={TaskPriority.Low}>Baixa</option><option value={TaskPriority.Medium}>Média</option><option value={TaskPriority.High}>Alta</option></select></Field><Field label="Prazo" htmlFor="task-due-date"><Input id="task-due-date" type="date" disabled={selectedTaskIsReadOnly} {...taskForm.register('dueDate')} /></Field>
           <Field label="Responsável" htmlFor="task-assignee"><select id="task-assignee" className="input" disabled={selectedTaskIsReadOnly} {...taskForm.register('assignedUserId')}><option value="">Sem responsável</option>{membersQuery.data?.map((member) => <option value={member.id} key={member.id}>{member.name}</option>)}</select></Field>
           {(createMutation.isError || editTaskMutation.isError) && <div className="form-alert">{((createMutation.error || editTaskMutation.error) as Error).message}</div>}
           <div className="modal__actions modal__actions--split">{selectedTask ? <Button type="button" variant="danger" icon={<Trash2 size={15} />} onClick={() => { setModal(null); setDeleteTarget(selectedTask) }}>Excluir</Button> : <span />}<div><Button type="button" variant="secondary" onClick={() => setModal(null)}>{selectedTaskIsReadOnly ? 'Fechar' : 'Cancelar'}</Button>{!selectedTaskIsReadOnly && <Button type="submit" loading={createMutation.isPending || editTaskMutation.isPending}>{selectedTask ? 'Salvar' : 'Criar tarefa'}</Button>}</div></div>

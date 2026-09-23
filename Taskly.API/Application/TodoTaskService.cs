@@ -24,6 +24,8 @@ namespace Taskly.Application
         {
             if (String.IsNullOrEmpty(todoTaskDto.Title))
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.InvalidTitle);
+            if (!Enum.IsDefined(todoTaskDto.Priority))
+                return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.InvalidPriority);
 
             var project = await _projectRepository.GetByIdAsync(todoTaskDto.ProjectId, cancellationToken);
             if (project == null)
@@ -55,7 +57,9 @@ namespace Taskly.Application
                 title: todoTaskDto.Title,
                 description: todoTaskDto.Description,
                 projectId: todoTaskDto.ProjectId,
-                assignedUserId: todoTaskDto.AssignedUserId
+                assignedUserId: todoTaskDto.AssignedUserId,
+                priority: todoTaskDto.Priority,
+                dueDate: todoTaskDto.DueDate
             );
             await _todoTaskRepository.AddAsync(todoTask, cancellationToken);
 
@@ -68,6 +72,8 @@ namespace Taskly.Application
                 ProjectId = todoTask.ProjectId,
                 AssignedUserId = todoTask.AssignedUserId,
                 Status = todoTask.Status,
+                Priority = todoTask.Priority,
+                DueDate = todoTask.DueDate,
                 CreatedAt = todoTask.CreatedAt,
                 UpdatedAt = todoTask.UpdatedAt
             };
@@ -116,6 +122,8 @@ namespace Taskly.Application
                 ProjectId = todoTask.ProjectId,
                 AssignedUserId = todoTask.AssignedUserId,
                 Status = todoTask.Status,
+                Priority = todoTask.Priority,
+                DueDate = todoTask.DueDate,
                 CreatedAt = todoTask.CreatedAt,
                 UpdatedAt = todoTask.UpdatedAt
             };
@@ -202,6 +210,8 @@ namespace Taskly.Application
                     Title = todoTask.Title,
                     Description = todoTask.Description,
                     Status = todoTask.Status,
+                    Priority = todoTask.Priority,
+                    DueDate = todoTask.DueDate,
                     ProjectId = todoTask.ProjectId,
                     AssignedUserId = todoTask.AssignedUserId,
                     CreatedAt = todoTask.CreatedAt,
@@ -244,7 +254,9 @@ namespace Taskly.Application
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.UserNotTeamMember);
 
             ConcurrencyConflictException.Check(dto.Version, todoTask.Version);
-            todoTask.Update(dto.Title, dto.Description);
+            if (!Enum.IsDefined(dto.Priority))
+                return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.InvalidPriority);
+            todoTask.Update(dto.Title, dto.Description, dto.Priority, dto.DueDate);
             
 
             var modified = await _todoTaskRepository.UpdateAsync(todoTask, cancellationToken);
@@ -261,6 +273,8 @@ namespace Taskly.Application
                 ProjectId = todoTask.ProjectId,
                 AssignedUserId = todoTask.AssignedUserId,
                 Status = todoTask.Status,
+                Priority = todoTask.Priority,
+                DueDate = todoTask.DueDate,
                 CreatedAt = todoTask.CreatedAt,
                 UpdatedAt = todoTask.UpdatedAt
             };

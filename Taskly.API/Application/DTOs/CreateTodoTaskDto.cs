@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Taskly.Domain;
 
 namespace Taskly.Application.DTOs
 {
@@ -13,6 +14,8 @@ namespace Taskly.Application.DTOs
         public Guid ProjectId { get; set; }
 
         public Guid? AssignedUserId { get; set; }
+        public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+        public DateTime? DueDate { get; set; }
         
     }
 }

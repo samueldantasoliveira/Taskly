@@ -11,5 +11,7 @@ public class UpdateTodoTaskDto
         public required string Title { get; set; }
         [StringLength(500)]
         public required string Description { get; set; }
+        public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+        public DateTime? DueDate { get; set; }
     }
 }

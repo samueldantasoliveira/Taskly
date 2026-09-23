@@ -201,6 +201,8 @@ namespace Taskly.Controllers
                 return NotFound(error.Message);
             if (error == TodoTaskErrors.InvalidTitle)
                 return BadRequest(error.Message);
+            if (error == TodoTaskErrors.InvalidPriority)
+                return BadRequest(error.Message);
             if (error == TodoTaskErrors.NoChangesDetected)
                 return Ok(error.Message);
             if (error == TodoTaskErrors.TeamNotFound)

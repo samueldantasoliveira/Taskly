@@ -21,6 +21,8 @@ public static class TodoTaskErrors
         Error.Create(
             "TodoTask.InvalidTitle", 
             "Title is invalid");
+    public static readonly Error InvalidPriority =
+        Error.Create("TodoTask.InvalidPriority", "Task priority is invalid.");
 
     public static readonly Error NotFound =
         Error.Create(

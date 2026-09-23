@@ -9,6 +9,8 @@ public class TodoTaskResponseDto
     public string Title { get; init; } = null!;
     public string? Description { get; init; }
     public TodoStatus Status { get; init; }
+    public TaskPriority Priority { get; init; }
+    public DateTime? DueDate { get; init; }
     public Guid ProjectId { get; init; }
     public Guid? AssignedUserId { get; init; }
     public DateTime CreatedAt { get; init; }

@@ -87,6 +87,16 @@ namespace Taskly.Infrastructure
                         ? sortBuilder.Ascending(task => task.Status)
                         : sortBuilder.Descending(task => task.Status),
 
+                TodoTaskSortBy.Priority =>
+                    query.SortDirection == TodoTaskSortDirection.Ascending
+                        ? sortBuilder.Ascending(task => task.Priority)
+                        : sortBuilder.Descending(task => task.Priority),
+
+                TodoTaskSortBy.DueDate =>
+                    query.SortDirection == TodoTaskSortDirection.Ascending
+                        ? sortBuilder.Ascending(task => task.DueDate)
+                        : sortBuilder.Descending(task => task.DueDate),
+
                 _ =>
                     query.SortDirection == TodoTaskSortDirection.Ascending
                         ? sortBuilder.Ascending(task => task.CreatedAt)
