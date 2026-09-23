@@ -40,6 +40,7 @@ const taskSchema = z.object({
 type TaskFormData = z.infer<typeof taskSchema>
 
 const projectSchema = z.object({
+  ownerId: z.string().uuid(),
   name: z.string().trim().min(2, 'Informe um nome.'),
   description: z.string().trim().min(1, 'Informe uma descrição.'),
   status: z.number(),
@@ -172,7 +173,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
   const hasFilters = Boolean(deferredTitle || assigneeId)
 
   useEffect(() => {
-    if (projectQuery.data) projectForm.reset({ name: projectQuery.data.name, description: projectQuery.data.description, status: projectQuery.data.status })
+    if (projectQuery.data) projectForm.reset({ name: projectQuery.data.name, description: projectQuery.data.description, status: projectQuery.data.status, ownerId: projectQuery.data.ownerId })
   }, [projectForm, projectQuery.data])
 
   const refreshTasks = () => queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) })
@@ -327,7 +328,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
       </Modal>
 
       <Modal open={modal === 'edit-project'} title="Editar projeto" onClose={() => setModal(null)}>
-        <form onSubmit={projectForm.handleSubmit((data) => editProjectMutation.mutate(data))}><Field label="Nome" htmlFor="edit-project-name" error={projectForm.formState.errors.name?.message}><Input id="edit-project-name" {...projectForm.register('name')} /></Field><Field label="Descrição" htmlFor="edit-project-description" error={projectForm.formState.errors.description?.message}><Textarea id="edit-project-description" rows={4} {...projectForm.register('description')} /></Field><Field label="Status" htmlFor="project-status"><select id="project-status" className="input" {...projectForm.register('status', { valueAsNumber: true })}><option value={ProjectStatus.Active}>Ativo</option><option value={ProjectStatus.Inactive}>Inativo</option><option value={ProjectStatus.Completed}>Concluído</option><option value={ProjectStatus.PendingApproval}>Aguardando aprovação</option></select></Field><div className="modal__actions modal__actions--split"><Button type="button" variant="danger" icon={<Trash2 size={15} />} onClick={() => { setModal(null); setDeleteTarget('project') }}>Excluir projeto</Button><div><Button type="button" variant="secondary" onClick={() => setModal(null)}>Cancelar</Button><Button type="submit" loading={editProjectMutation.isPending}>Salvar</Button></div></div></form>
+        <form onSubmit={projectForm.handleSubmit((data) => editProjectMutation.mutate(data))}><Field label="Nome" htmlFor="edit-project-name" error={projectForm.formState.errors.name?.message}><Input id="edit-project-name" {...projectForm.register('name')} /></Field><Field label="Descrição" htmlFor="edit-project-description" error={projectForm.formState.errors.description?.message}><Textarea id="edit-project-description" rows={4} {...projectForm.register('description')} /></Field><Field label="Proprietário do projeto" htmlFor="project-owner"><select id="project-owner" className="input" {...projectForm.register('ownerId')}>{!membersQuery.data?.some(member => member.id === projectQuery.data?.ownerId) && <option value={projectQuery.data?.ownerId}>Proprietário anterior (selecione um membro)</option>}{membersQuery.data?.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select></Field><Field label="Status" htmlFor="project-status"><select id="project-status" className="input" {...projectForm.register('status', { valueAsNumber: true })}><option value={ProjectStatus.Active}>Ativo</option><option value={ProjectStatus.Inactive}>Inativo</option><option value={ProjectStatus.Completed}>Concluído</option><option value={ProjectStatus.PendingApproval}>Aguardando aprovação</option></select></Field><div className="modal__actions modal__actions--split"><Button type="button" variant="danger" icon={<Trash2 size={15} />} onClick={() => { setModal(null); setDeleteTarget('project') }}>Excluir projeto</Button><div><Button type="button" variant="secondary" onClick={() => setModal(null)}>Cancelar</Button><Button type="submit" loading={editProjectMutation.isPending}>Salvar</Button></div></div></form>
       </Modal>
 
       <ConfirmDialog open={Boolean(deleteTarget)} title={deleteTarget === 'project' ? 'Excluir este projeto?' : 'Excluir esta tarefa?'} description="Esta ação é permanente e não poderá ser desfeita." loading={deleteMutation.isPending} onClose={() => setDeleteTarget(null)} onConfirm={() => deleteMutation.mutate()} />

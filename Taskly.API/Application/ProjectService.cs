@@ -94,6 +94,15 @@ namespace Taskly.Application
                 return permission;
 
             ConcurrencyConflictException.Check(updateProjectDto.Version, project!.Version);
+            if (updateProjectDto.OwnerId is Guid ownerId)
+            {
+                var ownerTeam = await _teamRepository.GetByIdAsync(updateProjectDto.TeamId ?? project.TeamId, cancellationToken);
+                if (ownerTeam == null || !ownerTeam.UserIds.Contains(ownerId))
+                    return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.UserNotTeamMember);
+                if (await _userRepository.GetByIdAsync(ownerId, cancellationToken) == null)
+                    return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.OwnerNotFound);
+                project.TransferOwnership(ownerId);
+            }
 
             if(updateProjectDto.TeamId!= null)
             {

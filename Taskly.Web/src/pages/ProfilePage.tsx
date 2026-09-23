@@ -57,7 +57,7 @@ export function ProfilePage() {
           <div className="settings-card__actions"><Button type="submit" icon={<Save size={17} />} loading={updateMutation.isPending}>Salvar alterações</Button></div>
         </form>
       </section>
-      <section className="settings-card settings-card--danger"><div className="settings-card__heading"><div><h2>Excluir conta</h2><p>Remove seu acesso e seus dados permanentemente.</p></div><Trash2 size={20} /></div><Button variant="danger" onClick={() => setConfirmDelete(true)}>Excluir minha conta</Button></section>
+      <section className="settings-card settings-card--danger"><div className="settings-card__heading"><div><h2>Excluir conta</h2><p>Desativa sua conta. Antes, transfira ou exclua equipes e projetos e libere suas tarefas ativas.</p></div><Trash2 size={20} /></div><Button variant="danger" onClick={() => setConfirmDelete(true)}>Excluir minha conta</Button></section>
       <ConfirmDialog open={confirmDelete} title="Excluir sua conta?" description="Esta ação não poderá ser desfeita. Você perderá acesso às suas equipes e projetos." confirmLabel="Excluir minha conta" loading={deleteMutation.isPending} onClose={() => setConfirmDelete(false)} onConfirm={() => deleteMutation.mutate()} />
     </div>
   )

@@ -8,9 +8,11 @@ namespace Taskly.Application
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        public UserService(IUserRepository repository)
+        private readonly IUserResponsibilities _responsibilities;
+        public UserService(IUserRepository repository, IUserResponsibilities responsibilities)
         {
             _userRepository = repository;
+            _responsibilities = responsibilities;
         }
 
         public async Task<StructuredOperationResult<UserResponseDto>> AddUserAsync(CreateUserDto userDto, CancellationToken cancellationToken = default)
@@ -38,6 +40,8 @@ namespace Taskly.Application
 
         public async Task<bool> DeleteUserAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            if (await _responsibilities.HasPendingAsync(id, cancellationToken))
+                throw new PendingResponsibilitiesException();
             return await _userRepository.DeleteAsync(id, cancellationToken);
         }
 

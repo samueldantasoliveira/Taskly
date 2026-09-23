@@ -14,7 +14,7 @@ public class UserServiceTests
     public UserServiceTests()
     {
         _userRepositoryMock = new Mock<IUserRepository>();
-        _userService = new UserService(_userRepositoryMock.Object);
+        _userService = new UserService(_userRepositoryMock.Object, Mock.Of<IUserResponsibilities>());
     }
 
     [Fact]

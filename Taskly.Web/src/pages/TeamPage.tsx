@@ -21,7 +21,7 @@ import { useToast } from '../shared/components/toast-context'
 import { queryKeys } from '../shared/lib/query-keys'
 import type { User } from '../shared/types/api'
 
-const teamSchema = z.object({ name: z.string().trim().min(2, 'Informe um nome.') })
+const teamSchema = z.object({ name: z.string().trim().min(2, 'Informe um nome.'), ownerId: z.string().uuid() })
 const projectSchema = z.object({ name: z.string().trim().min(2, 'Informe um nome.'), description: z.string().trim().min(1, 'Informe uma descrição.').max(500) })
 const searchSchema = z.object({ email: z.string().trim().email('Informe um e-mail válido.') })
 
@@ -43,7 +43,7 @@ export function TeamPage() {
   const projectsQuery = useQuery({ queryKey: queryKeys.projects(teamId), queryFn: ({ signal }) => getTeamProjects(teamId, signal), enabled: Boolean(teamId) })
   const isOwner = teamQuery.data?.ownerId === user?.id
 
-  useEffect(() => { if (teamQuery.data) teamForm.reset({ name: teamQuery.data.name }) }, [teamForm, teamQuery.data])
+  useEffect(() => { if (teamQuery.data) teamForm.reset({ name: teamQuery.data.name, ownerId: teamQuery.data.ownerId }) }, [teamForm, teamQuery.data])
 
   const refreshTeam = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.team(teamId) })
@@ -103,7 +103,7 @@ export function TeamPage() {
       </Modal>
 
       <Modal open={modal === 'edit'} title="Editar equipe" onClose={() => setModal(null)}>
-        <form onSubmit={teamForm.handleSubmit((data) => editTeamMutation.mutate(data))}><Field label="Nome" htmlFor="edit-team-name" error={teamForm.formState.errors.name?.message}><Input id="edit-team-name" {...teamForm.register('name')} /></Field><label className="toggle-row"><span><strong>Equipe ativa</strong><small>Projetos e tarefas dependem deste estado.</small></span><input type="checkbox" checked={team.isActive} disabled={statusMutation.isPending} onChange={(event) => statusMutation.mutate(event.target.checked)} /></label><div className="modal__actions modal__actions--split"><Button type="button" variant="danger" icon={<Trash2 size={16} />} onClick={() => { setModal(null); setConfirmAction('delete') }}>Excluir equipe</Button><div><Button type="button" variant="secondary" onClick={() => setModal(null)}>Cancelar</Button><Button type="submit" loading={editTeamMutation.isPending}>Salvar</Button></div></div></form>
+        <form onSubmit={teamForm.handleSubmit((data) => editTeamMutation.mutate(data))}><Field label="Nome" htmlFor="edit-team-name" error={teamForm.formState.errors.name?.message}><Input id="edit-team-name" {...teamForm.register('name')} /></Field><Field label="Proprietário da equipe" htmlFor="team-owner"><select id="team-owner" className="input" {...teamForm.register('ownerId')}>{membersQuery.data?.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}</select><small>Ao transferir, você perde as permissões de proprietário.</small></Field><label className="toggle-row"><span><strong>Equipe ativa</strong><small>Projetos e tarefas dependem deste estado.</small></span><input type="checkbox" checked={team.isActive} disabled={statusMutation.isPending} onChange={(event) => statusMutation.mutate(event.target.checked)} /></label><div className="modal__actions modal__actions--split"><Button type="button" variant="danger" icon={<Trash2 size={16} />} onClick={() => { setModal(null); setConfirmAction('delete') }}>Excluir equipe</Button><div><Button type="button" variant="secondary" onClick={() => setModal(null)}>Cancelar</Button><Button type="submit" loading={editTeamMutation.isPending}>Salvar</Button></div></div></form>
       </Modal>
 
       <Modal open={modal === 'members'} title="Gerenciar membros" description="Busque uma pessoa pelo e-mail cadastrado." onClose={() => { setModal(null); setFoundUser(null) }} size="lg">

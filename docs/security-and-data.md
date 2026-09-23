@@ -36,3 +36,22 @@ revise os dados antes de reenviar; não repita a escrita automaticamente.
 
 Esse controle é por documento. Ele não substitui transações ou coordenação para
 regras envolvendo várias coleções, nem implementa restauração de registros excluídos.
+
+## Saída e responsabilidades
+
+O proprietário pode transferir a equipe ou projeto para outro membro existente pela
+tela de edição. Transferir a equipe mantém o antigo proprietário como membro; ele
+pode sair depois. O proprietário da equipe também pode recuperar a propriedade de
+projetos de membros que saíram.
+
+Remover um membro ou sair da equipe revoga o acesso imediatamente. Depois, as tarefas
+Todo/InProgress desse membro na equipe ficam sem responsável, mantendo seu status;
+Done/Cancelled preservam o histórico. A exclusão da conta retorna 409 enquanto
+houver equipes, projetos ou tarefas ativas sob sua responsabilidade, desconsiderando
+recursos cujos projetos/equipes foram excluídos. A exclusão é lógica, não apagamento
+físico de todos os dados pessoais.
+
+Limitação: verificações de responsabilidade e alterações em coleções diferentes não
+são uma transação. Se houver falha após remover o membro, o acesso continua revogado,
+mas pode ser necessário liberar manualmente suas atribuições. Operações simultâneas
+entre coleções ainda exigem coordenação; não há garantia global de serialização.

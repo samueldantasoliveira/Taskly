@@ -9,10 +9,12 @@ namespace Taskly.Application
         private readonly ITeamRepository _teamRepository;
         private readonly IUserRepository _userRepository;
 
-        public TeamService(ITeamRepository teamRepository, IUserRepository userService)
+        private readonly IUserResponsibilities _responsibilities;
+        public TeamService(ITeamRepository teamRepository, IUserRepository userService, IUserResponsibilities responsibilities)
         {
             _teamRepository = teamRepository;
             _userRepository = userService;
+            _responsibilities = responsibilities;
         }
 
         public async Task<StructuredOperationResult<TeamResponseDto>> AddTeamAsync(CreateTeamDto teamDto, Guid userId, CancellationToken cancellationToken = default)
@@ -45,6 +47,14 @@ namespace Taskly.Application
                 return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.NotOwner);
 
             ConcurrencyConflictException.Check(updateTeamDto.Version, team.Version);
+            if (updateTeamDto.OwnerId is Guid ownerId)
+            {
+                if (!team.UserIds.Contains(ownerId))
+                    return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.UserNotMember);
+                if (await _userRepository.GetByIdAsync(ownerId, cancellationToken) == null)
+                    return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.UserNotFound);
+                team.TransferOwnership(ownerId);
+            }
             team.Update(updateTeamDto.Name, updateTeamDto.IsActive);
 
             var updated = await _teamRepository.UpdateAsync(team, cancellationToken);
@@ -114,6 +124,7 @@ namespace Taskly.Application
             if (!removed)
                 return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.NotFound);
 
+            await _responsibilities.ReleaseActiveTasksAsync(teamId, userId, cancellationToken);
             return StructuredOperationResult<RemoveMemberResponseDto>.Ok(
                 new RemoveMemberResponseDto
                 {
@@ -140,6 +151,7 @@ namespace Taskly.Application
             if (!removed)
                 return StructuredOperationResult.Fail(TeamErrors.NotFound);
 
+            await _responsibilities.ReleaseActiveTasksAsync(teamId, authenticatedUserId, cancellationToken);
             return StructuredOperationResult.Ok();
         }
 

@@ -85,6 +85,7 @@ export interface CreateTeamInput {
 }
 
 export interface UpdateTeamInput {
+  ownerId?: string
   version?: number
   name?: string
   isActive?: boolean
@@ -97,6 +98,7 @@ export interface CreateProjectInput {
 }
 
 export interface UpdateProjectInput {
+  ownerId?: string
   version?: number
   name?: string
   description?: string
