@@ -212,7 +212,7 @@ namespace Taskly.Controllers
             if (error == TodoTaskErrors.AssignedUserNotTeamMember)
                 return StatusCode(StatusCodes.Status403Forbidden, error.Message);
             if (error == TodoTaskErrors.NotAssignedUser)
-                return Unauthorized(error.Message);
+                return StatusCode(StatusCodes.Status403Forbidden, error.Message);
 
             if (error == TodoTaskErrors.InvalidPage
                 || error == TodoTaskErrors.InvalidPageSize

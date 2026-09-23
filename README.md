@@ -101,6 +101,13 @@ Taskly/
 | Temas Noturno e Claro               | Noturno por padrão, com alternância e preferência salva no navegador | ✅      |
 | Quadro Kanban                       | Filtros, ordenação e histórico incremental por status | ✅      |
 
+As permissões consideram a participação atual na equipe: membros removidos ou
+que saíram perdem o acesso aos projetos e tarefas, mesmo usando um token emitido
+antes da mudança. Ser dono do projeto ou responsável pela tarefa não ignora essa
+verificação. Alterar o status de uma tarefa também exige projeto não excluído
+nem inativo e equipe existente e ativa. Editar, mover ou excluir um projeto exige
+equipe existente e ativa, além de ser membro e dono do projeto ou da equipe.
+
 ---
 
 # 🏗️ Arquitetura e Boas Práticas

@@ -393,6 +393,10 @@ public class ProjectServiceTests
 
         var oldTeam = new Team("Old Team", ownerId);
 
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(oldTeam.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(oldTeam);
+
         var project = new Project(
             "Project",
             "Description",
@@ -432,6 +436,10 @@ public class ProjectServiceTests
         var ownerId = Guid.NewGuid();
 
         var oldTeam = new Team("Old Team", ownerId);
+
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(oldTeam.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(oldTeam);
 
         var newTeam = new Team("Team Test", Guid.NewGuid());
         newTeam.Update(null, false);
@@ -545,7 +553,7 @@ public class ProjectServiceTests
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal(ProjectErrors.NotAuthorized, result.Error);
+        Assert.Equal(ProjectErrors.UserNotTeamMember, result.Error);
     }
 
     [Fact]
@@ -641,6 +649,11 @@ public class ProjectServiceTests
         var projectOwnerId = Guid.NewGuid();
 
         var team = new Team("Team Test", teamOwnerId);
+        team.AddMember(projectOwnerId);
+
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
 
         var project = new Project(
             "Project Test",
@@ -678,7 +691,7 @@ public class ProjectServiceTests
 
         _teamRepositoryMock.Verify(
             t => t.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Once);
     }
 
     [Fact]
@@ -713,7 +726,7 @@ public class ProjectServiceTests
         // Assert
         Assert.False(result.Success);
         Assert.NotNull(result.Error);
-        Assert.Equal(ProjectErrors.NotAuthorized, result.Error);
+        Assert.Equal(ProjectErrors.UserNotTeamMember, result.Error);
     }
 
     [Fact]
@@ -783,6 +796,11 @@ public class ProjectServiceTests
         var projectOwnerId = Guid.NewGuid();
 
         var team = new Team("Team Test", teamOwnerId);
+        team.AddMember(projectOwnerId);
+
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
 
         var project = new Project(
             "Project Test",
@@ -799,9 +817,6 @@ public class ProjectServiceTests
             .Setup(r => r.DeleteAsync(project.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        // Não precisa buscar o time, pois o dono do projeto
-        // já passa na primeira validação de CanManageProject.
-
         // Act
         var result = await _projectService.DeleteProjectAsync(
             project.Id,
@@ -816,7 +831,7 @@ public class ProjectServiceTests
 
         _teamRepositoryMock.Verify(
             t => t.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Once);
     }
 
     [Fact]
