@@ -29,6 +29,29 @@ public class TodoTaskIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
+    public async Task TodoTask_PersistsPriorityAndDueDate_AndSupportsDueDateSorting()
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        var project = await _projectHelper.CreateProjectAsync(team.Id);
+        var response = await _client.PostAsJsonAsync("/api/todotask", new
+        {
+            Title = "Important", Description = "Has a date", ProjectId = project.Id,
+            AssignedUserId = owner.User.Id, Priority = TaskPriority.High, DueDate = "2026-04-10"
+        });
+        response.EnsureSuccessStatusCode();
+        var task = (await response.Content.ReadFromJsonAsync<TodoTaskResponseDto>())!;
+        Assert.Equal(TaskPriority.High, task.Priority);
+        Assert.Equal(new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc), task.DueDate);
+
+        var page = await GetPageAsync(project.Id, "?sortBy=DueDate&sortDirection=Ascending");
+        Assert.Equal(task.Id, Assert.Single(page.Items).Id);
+        var invalid = await _client.PostAsJsonAsync("/api/todotask", new { Title = "Invalid", Description = "", ProjectId = project.Id, Priority = 99 });
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+    }
+
+    [Fact]
     public async Task TodoTaskLifecycle_AssignedUserCanStartAndCompleteTask()
     {
         var owner = await _userHelper.CreateUserAndLoginAsync();

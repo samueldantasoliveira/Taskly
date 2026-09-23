@@ -105,11 +105,12 @@ namespace Taskly.Application
             if (updateProjectDto.Status.HasValue && !Enum.IsDefined(updateProjectDto.Status.Value))
                 return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.InvalidStatus);
 
-            var destinationTeam = updateProjectDto.TeamId.HasValue && updateProjectDto.TeamId != project.TeamId
-                ? await _teamRepository.GetByIdAsync(updateProjectDto.TeamId.Value, cancellationToken)
-                : null;
-            if (destinationTeam != null)
+            Team? destinationTeam = null;
+            if (updateProjectDto.TeamId.HasValue && updateProjectDto.TeamId.Value != project.TeamId)
             {
+                destinationTeam = await _teamRepository.GetByIdAsync(updateProjectDto.TeamId.Value, cancellationToken);
+                if (destinationTeam == null)
+                    return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamNotFound);
                 if (!destinationTeam.IsActive)
                     return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamInactive);
                 if (!destinationTeam.UserIds.Contains(authenticatedUserId))
@@ -120,10 +121,6 @@ namespace Taskly.Application
                 var assignees = await _todoTaskRepository.GetAssignedUserIdsByProjectIdAsync(project.Id, cancellationToken);
                 if (assignees.Any(id => !destinationTeam.UserIds.Contains(id)))
                     return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.AssigneesNotInDestinationTeam);
-            }
-            else if (updateProjectDto.TeamId.HasValue)
-            {
-                return StructuredOperationResult<ProjectResponseDto>.Fail(ProjectErrors.TeamNotFound);
             }
 
             if (updateProjectDto.OwnerId is Guid ownerId)

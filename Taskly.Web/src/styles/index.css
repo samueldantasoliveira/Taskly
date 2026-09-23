@@ -343,6 +343,9 @@ h1, h2, h3 { letter-spacing: -.025em; }
 .task-card__top .icon-button { width: 29px; height: 29px; }
 .task-card h3 { margin: 10px 0 6px; font-size: 13px; line-height: 1.4; }
 .task-card > p { display: -webkit-box; overflow: hidden; min-height: 34px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.task-card__metadata { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.priority, .due-date { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px; color: var(--muted); background: var(--well); border-radius: 5px; font-size: 10px; font-weight: 700; }
+.priority--2 { color: #b42318; background: #fef3f2; }.priority--1 { color: #9a6700; background: #fffaeb; }.priority--0 { color: #027a48; background: #ecfdf3; }.due-date--overdue { color: #b42318; background: #fef3f2; }
 .task-card__assignee { display: flex; align-items: center; gap: 7px; margin: 13px 0 10px; padding-top: 10px; color: var(--muted); border-top: 1px solid var(--line); font-size: 10px; }
 .unassigned { display: grid; place-items: center; width: 30px; height: 30px; background: var(--line); border-radius: 50%; }
 .task-card__actions { display: flex; justify-content: flex-end; gap: 5px; }

@@ -99,7 +99,7 @@ Taskly/
 | Tratamento de Erros                 | Retornos padronizados com `StructuredOperationResult` | ✅      |
 | Interface Web Responsiva            | Fluxos de autenticação, equipes, projetos e perfil     | ✅      |
 | Temas Noturno e Claro               | Noturno por padrão, com alternância e preferência salva no navegador | ✅      |
-| Quadro Kanban                       | Filtros, ordenação e histórico incremental por status | ✅      |
+| Quadro Kanban                       | Filtros, ordenação, prioridades, prazos e histórico incremental por status | ✅      |
 
 O frontend preserva a sessão em falhas temporárias da API e permite tentar novamente.
 Se a edição da tarefa for salva, mas a atribuição falhar, informa o resultado parcial
@@ -112,6 +112,8 @@ antes da mudança. Ser dono do projeto ou responsável pela tarefa não ignora e
 verificação. Alterar o status de uma tarefa também exige projeto não excluído
 nem inativo e equipe existente e ativa. Editar, mover ou excluir um projeto exige
 equipe existente e ativa, além de ser membro e dono do projeto ou da equipe.
+Ao mover um projeto, o destino precisa conter o novo proprietário e todos os
+responsáveis das tarefas, evitando atribuições sem acesso à equipe.
 
 ---
 

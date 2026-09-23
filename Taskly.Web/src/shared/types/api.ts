@@ -14,6 +14,14 @@ export const TodoStatus = {
 
 export type TodoStatus = (typeof TodoStatus)[keyof typeof TodoStatus]
 
+export const TaskPriority = {
+  Low: 0,
+  Medium: 1,
+  High: 2,
+} as const
+
+export type TaskPriority = (typeof TaskPriority)[keyof typeof TaskPriority]
+
 export const ProjectStatus = {
   Active: 0,
   Inactive: 1,
@@ -65,6 +73,8 @@ export interface TodoTask {
   title: string
   description: string | null
   status: TodoStatus
+  priority: TaskPriority
+  dueDate: string | null
   projectId: Id
   assignedUserId: Id | null
   createdAt: string
@@ -111,12 +121,16 @@ export interface CreateTaskInput {
   description: string
   projectId: Id
   assignedUserId?: Id | null
+  priority?: TaskPriority
+  dueDate?: string | null
 }
 
 export interface UpdateTaskInput {
   version?: number
   title: string
   description: string
+  priority: TaskPriority
+  dueDate?: string | null
 }
 
 export interface UpdateUserInput {
