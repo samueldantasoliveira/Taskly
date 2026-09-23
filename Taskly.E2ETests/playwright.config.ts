@@ -35,6 +35,9 @@ export default defineConfig({
         ASPNETCORE_URLS: apiUrl,
         MongoDb__ConnectionString: 'mongodb://127.0.0.1:27018',
         MongoDb__DatabaseName: 'TasklyE2E',
+        // Rate limiting itself is covered by isolated API integration tests.
+        AuthenticationLimits__LoginPerMinute: '10000',
+        AuthenticationLimits__RegistrationPerMinute: '10000',
         Cors__AllowedOrigins__0: frontendUrl,
       },
     },

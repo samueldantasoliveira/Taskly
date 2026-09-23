@@ -47,6 +47,7 @@ export function TeamPage() {
 
   const refreshTeam = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.team(teamId) })
+    queryClient.invalidateQueries({ queryKey: queryKeys.members(teamId) })
     queryClient.invalidateQueries({ queryKey: queryKeys.teams })
   }
   const createProjectMutation = useMutation({ mutationFn: (data: z.infer<typeof projectSchema>) => createProject({ ...data, teamId }), onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.projects(teamId) }); showToast('Projeto criado.'); projectForm.reset(); setModal(null) } })

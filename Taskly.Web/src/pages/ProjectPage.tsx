@@ -185,10 +185,19 @@ function ProjectBoard({ projectId }: { projectId: string }) {
   const createMutation = useMutation({ mutationFn: (data: TaskFormData) => createTask({ title: data.title, description: data.description, projectId, assignedUserId: data.assignedUserId || null }), onSuccess: () => { resetTaskView(); refreshTasks(); showToast('Tarefa criada.'); taskForm.reset(); setModal(null) } })
   const editTaskMutation = useMutation({
     mutationFn: async ({ task, data }: { task: TodoTask; data: TaskFormData }) => {
-      await updateTask(task.id, { version: task.version, title: data.title, description: data.description })
+      const updated = await updateTask(task.id, { version: task.version, title: data.title, description: data.description })
       const nextAssigned = data.assignedUserId || null
-      if (nextAssigned !== task.assignedUserId) await assignTask(task.id, nextAssigned)
+      if (nextAssigned !== task.assignedUserId) {
+        try {
+          await assignTask(task.id, nextAssigned)
+        } catch (error) {
+          // Preserve the saved version so retrying does not submit a stale edit.
+          setSelectedTask(updated)
+          throw new Error(`Título e descrição foram salvos, mas a alteração do responsável não foi confirmada. Confira os dados antes de tentar novamente. ${error instanceof Error ? error.message : ''}`)
+        }
+      }
     },
+    onSettled: refreshTasks,
     onSuccess: () => { refreshTasks(); showToast('Tarefa atualizada.'); setModal(null); setSelectedTask(null) },
   })
   const actionMutation = useMutation({
