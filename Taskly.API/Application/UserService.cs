@@ -29,6 +29,7 @@ namespace Taskly.Application
 
             var userResponse = new UserResponseDto{
                 Id = user.Id,
+                Version = user.Version,
                 Name = user.Name,
                 Email = user.Email
             };
@@ -50,6 +51,7 @@ namespace Taskly.Application
 
             var userResponseDto = new UserResponseDto{
                 Id = user.Id,
+                Version = user.Version,
                 Name = user.Name,
                 Email = user.Email
             };
@@ -79,6 +81,7 @@ namespace Taskly.Application
             return StructuredOperationResult<UserResponseDto>.Ok(new UserResponseDto
             {
                 Id = user.Id,
+                Version = user.Version,
                 Name = user.Name,
                 Email = user.Email
             });
@@ -92,6 +95,7 @@ namespace Taskly.Application
 
             var userResponseDto = new UserResponseDto{
                 Id = user.Id,
+                Version = user.Version,
                 Name = user.Name,
                 Email = user.Email
             };
@@ -121,6 +125,7 @@ namespace Taskly.Application
                 passwordHash = PasswordHasher.HashPassword(userDto.Password);
             }
 
+            ConcurrencyConflictException.Check(userDto.Version, user.Version);
             user.Update(userDto.Name, normalizedEmail, passwordHash);
 
             var updated = await _userRepository.UpdateAsync(user, cancellationToken);
@@ -130,6 +135,7 @@ namespace Taskly.Application
 
             var userResponse = new UserResponseDto{
                 Id = user.Id,
+                Version = user.Version,
                 Name = user.Name,
                 Email = user.Email
             };

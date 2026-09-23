@@ -4,6 +4,7 @@ namespace Taskly.Application.DTOs;
 
 public class ProjectResponseDto
 {
+    public long Version { get; set; }
     public Guid Id { get; init; }
     public string Name { get; init; } = null!;
     public string Description { get; init; } = null!;

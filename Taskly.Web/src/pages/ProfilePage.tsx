@@ -28,7 +28,7 @@ export function ProfilePage() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { name: user?.name ?? '', email: user?.email ?? '', password: '' } })
   const updateMutation = useMutation({
-    mutationFn: (data: FormData) => updateUser(user!.id, { name: data.name, email: data.email, ...(data.password ? { password: data.password } : {}) }),
+    mutationFn: (data: FormData) => updateUser(user!.id, { version: user!.version, name: data.name, email: data.email, ...(data.password ? { password: data.password } : {}) }),
     onSuccess: (updated, submitted) => {
       if (submitted.password) {
         signOut()

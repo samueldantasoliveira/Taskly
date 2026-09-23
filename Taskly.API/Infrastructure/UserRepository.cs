@@ -59,7 +59,10 @@ namespace Taskly.Infrastructure
 
         public async Task<bool> UpdateAsync(User user, CancellationToken cancellationToken = default)
         {
+            var filter = BaseFilter(u => u.Id == user.Id);
+            var versionedFilter = ConcurrencyGuard.WithVersion(filter, user.Version);
             var update = Builders<User>.Update
+                .Inc(u => u.Version, 1)
                 .Set(u => u.Name, user.Name)
                 .Set(u => u.Email, user.Email)
                 .Set(u => u.PasswordHash, user.PasswordHash)
@@ -67,14 +70,14 @@ namespace Taskly.Infrastructure
                 .Set(u => u.UpdatedAt, DateTime.UtcNow);
 
             var result = await _context.Users.UpdateOneAsync(
-                u => u.Id == user.Id 
-                && u.DeletedAt == null,
-                //&& u.UpdatedAt == user.UpdatedAt,
+                versionedFilter,
                 update,
                 cancellationToken: cancellationToken
             );
             
-            return result.MatchedCount == 1;
+            var updated = await ConcurrencyGuard.CheckWrite(_context.Users, filter, result.MatchedCount, cancellationToken);
+            if (updated) user.AdvanceVersion();
+            return updated;
         }       
         private FilterDefinition<User> BaseFilter(Expression<Func<User, bool>> filter)
         {

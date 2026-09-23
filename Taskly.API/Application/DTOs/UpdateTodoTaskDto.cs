@@ -3,8 +3,9 @@ using Taskly.Domain;
 
 namespace Taskly.Application.DTOs
 {
-    public class UpdateTodoTaskDto
+public class UpdateTodoTaskDto
     {
+        public long? Version { get; set; }
         [Required]
         [StringLength(100)]
         public required string Title { get; set; }

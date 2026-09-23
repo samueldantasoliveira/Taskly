@@ -47,7 +47,10 @@ namespace Taskly.Infrastructure
 
         public async Task<bool> UpdateAsync(Project project, CancellationToken cancellationToken = default)
          {
+            var filter = BaseFilter(p => p.Id == project.Id);
+            var versionedFilter = ConcurrencyGuard.WithVersion(filter, project.Version);
             var update = Builders<Project>.Update
+                .Inc(p => p.Version, 1)
                 .Set(p => p.Name, project.Name)
                 .Set(p => p.Description, project.Description)
                 .Set(p => p.OwnerId, project.OwnerId)
@@ -56,12 +59,13 @@ namespace Taskly.Infrastructure
                 .Set(p => p.UpdatedAt, DateTime.UtcNow);
 
             var result = await _context.Projects.UpdateOneAsync(
-                p => p.Id == project.Id
-                && p.DeletedAt == null,
+                versionedFilter,
                 update,
                 cancellationToken: cancellationToken
             );
-            return result.MatchedCount == 1;
+            var updated = await ConcurrencyGuard.CheckWrite(_context.Projects, filter, result.MatchedCount, cancellationToken);
+            if (updated) project.AdvanceVersion();
+            return updated;
         }
 
         private FilterDefinition<Project> BaseFilter(Expression<Func<Project, bool>> filter)

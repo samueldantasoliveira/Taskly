@@ -184,7 +184,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
   const createMutation = useMutation({ mutationFn: (data: TaskFormData) => createTask({ title: data.title, description: data.description, projectId, assignedUserId: data.assignedUserId || null }), onSuccess: () => { resetTaskView(); refreshTasks(); showToast('Tarefa criada.'); taskForm.reset(); setModal(null) } })
   const editTaskMutation = useMutation({
     mutationFn: async ({ task, data }: { task: TodoTask; data: TaskFormData }) => {
-      await updateTask(task.id, { title: data.title, description: data.description })
+      await updateTask(task.id, { version: task.version, title: data.title, description: data.description })
       const nextAssigned = data.assignedUserId || null
       if (nextAssigned !== task.assignedUserId) await assignTask(task.id, nextAssigned)
     },
@@ -195,7 +195,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
     onSuccess: () => { refreshTasks(); showToast('Status da tarefa atualizado.') },
     onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível alterar a tarefa.', 'error'),
   })
-  const editProjectMutation = useMutation({ mutationFn: (data: ProjectFormData) => updateProject(projectId, { ...data, status: data.status as ProjectStatus }), onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.project(projectId) }); queryClient.invalidateQueries({ queryKey: queryKeys.projects(teamId) }); showToast('Projeto atualizado.'); setModal(null) }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível atualizar o projeto.', 'error') })
+  const editProjectMutation = useMutation({ mutationFn: (data: ProjectFormData) => updateProject(projectId, { ...data, version: projectQuery.data?.version, status: data.status as ProjectStatus }), onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.project(projectId) }); queryClient.invalidateQueries({ queryKey: queryKeys.projects(teamId) }); showToast('Projeto atualizado.'); setModal(null) }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível atualizar o projeto.', 'error') })
   const deleteMutation = useMutation({
     mutationFn: () => deleteTarget === 'project' ? deleteProject(projectId) : deleteTarget ? deleteTask(deleteTarget.id) : Promise.resolve(),
     onSuccess: () => {

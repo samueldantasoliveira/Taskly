@@ -3,8 +3,9 @@ using Taskly.Domain;
 
 namespace Taskly.Application.DTOs
 {
-    public class UpdateUserDto
+public class UpdateUserDto
     {
+        public long? Version { get; set; }
         public string? Name { get; set;}
         public string? Email {get; set;}
         public string? Password { get; set;}
