@@ -15,5 +15,9 @@ namespace Taskly.Application
         public Task<StructuredOperationResult<TeamResponseDto>> GetByIdAsync(Guid teamId, Guid authenticatedUserId, CancellationToken cancellationToken = default);
         public Task<StructuredOperationResult<List<TeamMemberResponseDto>>> GetMembersAsync(Guid teamId, Guid authenticatedUserId, CancellationToken cancellationToken = default);
         public Task<StructuredOperationResult> DeleteTeamAsync(Guid teamId, Guid authenticatedUserId, CancellationToken cancellationToken = default);
+        Task<StructuredOperationResult<TeamInvitationResponseDto>> CreateInvitationAsync(Guid teamId, CreateTeamInvitationDto dto, Guid authenticatedUserId, CancellationToken cancellationToken = default);
+        Task<StructuredOperationResult<List<TeamInvitationResponseDto>>> GetInvitationsAsync(Guid teamId, Guid authenticatedUserId, CancellationToken cancellationToken = default);
+        Task<StructuredOperationResult> RevokeInvitationAsync(Guid teamId, Guid invitationId, Guid authenticatedUserId, CancellationToken cancellationToken = default);
+        Task<StructuredOperationResult<TeamResponseDto>> AcceptInvitationAsync(string token, Guid authenticatedUserId, CancellationToken cancellationToken = default);
     }
 }
