@@ -2,6 +2,9 @@ namespace Taskly.Application.Results;
 
 public static class TodoTaskErrors
 {
+    public static readonly Error InvalidComment = Error.Create("TodoTask.InvalidComment", "Comment must contain between 1 and 1000 characters.");
+    public static readonly Error CommentNotFound = Error.Create("TodoTask.CommentNotFound", "Comment not found.");
+    public static readonly Error NotCommentAuthor = Error.Create("TodoTask.NotCommentAuthor", "Only the comment author can change it.");
     public static readonly Error ProjectNotFound =
         Error.Create(
             "TodoTask.ProjectNotFound", 

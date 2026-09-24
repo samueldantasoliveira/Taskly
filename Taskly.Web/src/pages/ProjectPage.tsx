@@ -14,7 +14,7 @@ import {
   createTask,
   deleteTask,
   getAllProjectTasks,
-  getProjectTasks, getProjectActivities, getTaskComments, addTaskComment,
+  getProjectTasks, getProjectActivities, getTaskComments, addTaskComment, updateTaskComment, deleteTaskComment,
   startTask,
   updateTask,
   type ProjectTaskQuery,
@@ -87,6 +87,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
   const [assigneeId, setAssigneeId] = useState('')
   const [sortOption, setSortOption] = useState<SortOption>('recent')
   const [commentContent, setCommentContent] = useState('')
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const deferredTitle = useDeferredValue(titleFilter.trim())
   const taskForm = useForm<TaskFormData>({ resolver: zodResolver(taskSchema), defaultValues: { title: '', description: '', assignedUserId: '', priority: TaskPriority.Medium, dueDate: '' } })
   const projectForm = useForm<ProjectFormData>({ resolver: zodResolver(projectSchema) })
@@ -219,7 +220,9 @@ function ProjectBoard({ projectId }: { projectId: string }) {
     onSuccess: () => { refreshTasks(); showToast('Status da tarefa atualizado.') },
     onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível alterar a tarefa.', 'error'),
   })
-  const commentMutation = useMutation({ mutationFn: () => addTaskComment(selectedTask!.id, commentContent), onSuccess: () => { setCommentContent(''); queryClient.invalidateQueries({ queryKey: queryKeys.comments(selectedTask!.id) }); showToast('Comentário adicionado.') } })
+  const refreshComments = () => queryClient.invalidateQueries({ queryKey: queryKeys.comments(selectedTask!.id) })
+  const commentMutation = useMutation({ mutationFn: () => editingCommentId ? updateTaskComment(selectedTask!.id, editingCommentId, commentContent) : addTaskComment(selectedTask!.id, commentContent), onSuccess: () => { setCommentContent(''); setEditingCommentId(null); refreshComments(); showToast(editingCommentId ? 'Comentário atualizado.' : 'Comentário adicionado.') } })
+  const deleteCommentMutation = useMutation({ mutationFn: (commentId: string) => deleteTaskComment(selectedTask!.id, commentId), onSuccess: () => { refreshComments(); showToast('Comentário excluído.') } })
   const editProjectMutation = useMutation({ mutationFn: (data: ProjectFormData) => updateProject(projectId, { ...data, version: projectQuery.data?.version, status: data.status as ProjectStatus }), onSuccess: (updated) => { queryClient.invalidateQueries({ queryKey: queryKeys.project(projectId) }); queryClient.invalidateQueries({ queryKey: queryKeys.projects(teamId) }); queryClient.invalidateQueries({ queryKey: queryKeys.projects(updated.teamId) }); showToast('Projeto atualizado.'); setModal(null); if (updated.teamId !== teamId) navigate(`/teams/${updated.teamId}`) }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível atualizar o projeto.', 'error') })
   const deleteMutation = useMutation({
     mutationFn: () => deleteTarget === 'project' ? deleteProject(projectId) : deleteTarget ? deleteTask(deleteTarget.id) : Promise.resolve(),
@@ -359,7 +362,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
           <Field label="Prioridade" htmlFor="task-priority"><select id="task-priority" className="input" disabled={selectedTaskIsReadOnly} {...taskForm.register('priority')}><option value={TaskPriority.Low}>Baixa</option><option value={TaskPriority.Medium}>Média</option><option value={TaskPriority.High}>Alta</option></select></Field><Field label="Prazo" htmlFor="task-due-date"><Input id="task-due-date" type="date" disabled={selectedTaskIsReadOnly} {...taskForm.register('dueDate')} /></Field>
           <Field label="Responsável" htmlFor="task-assignee"><select id="task-assignee" className="input" disabled={selectedTaskIsReadOnly} {...taskForm.register('assignedUserId')}><option value="">Sem responsável</option>{membersQuery.data?.map((member) => <option value={member.id} key={member.id}>{member.name}</option>)}</select></Field>
           {(createMutation.isError || editTaskMutation.isError) && <div className="form-alert">{((createMutation.error || editTaskMutation.error) as Error).message}</div>}
-          {selectedTask && <section className="task-comments"><h3>Comentários</h3>{commentsQuery.data?.map(comment => <article key={comment.id}><Avatar name={comment.authorName} size="sm" /><div><strong>{comment.authorName}</strong><p>{comment.content}</p><small>{new Date(comment.createdAt).toLocaleString('pt-BR')}</small></div></article>)}{commentsQuery.data?.length === 0 && <p className="activity-empty">Ainda não há comentários.</p>}<Textarea aria-label="Novo comentário" rows={3} maxLength={1000} value={commentContent} onChange={event => setCommentContent(event.target.value)} placeholder="Escreva um comentário..." /><Button type="button" size="sm" loading={commentMutation.isPending} disabled={!commentContent.trim()} onClick={() => commentMutation.mutate()}>Comentar</Button></section>}
+          {selectedTask && <section className="task-comments"><h3>Comentários</h3>{commentsQuery.data?.map(comment => <article key={comment.id}><Avatar name={comment.authorName} size="sm" /><div><strong>{comment.authorName}</strong><p>{comment.content}</p><small>{new Date(comment.createdAt).toLocaleString('pt-BR')}{comment.updatedAt !== comment.createdAt ? ' • editado' : ''}</small>{comment.authorId === user?.id && <div className="comment-actions"><Button type="button" size="sm" variant="ghost" onClick={() => { setEditingCommentId(comment.id); setCommentContent(comment.content) }}>Editar</Button><Button type="button" size="sm" variant="ghost" onClick={() => deleteCommentMutation.mutate(comment.id)}>Excluir</Button></div>}</div></article>)}{commentsQuery.data?.length === 0 && <p className="activity-empty">Ainda não há comentários.</p>}<Textarea aria-label={editingCommentId ? 'Editar comentário' : 'Novo comentário'} rows={3} maxLength={1000} value={commentContent} onChange={event => setCommentContent(event.target.value)} placeholder="Escreva um comentário..." /><div className="comment-form-actions">{editingCommentId && <Button type="button" size="sm" variant="ghost" onClick={() => { setEditingCommentId(null); setCommentContent('') }}>Cancelar edição</Button>}<Button type="button" size="sm" loading={commentMutation.isPending} disabled={!commentContent.trim()} onClick={() => commentMutation.mutate()}>{editingCommentId ? 'Salvar comentário' : 'Comentar'}</Button></div></section>}
           <div className="modal__actions modal__actions--split">{selectedTask ? <Button type="button" variant="danger" icon={<Trash2 size={15} />} onClick={() => { setModal(null); setDeleteTarget(selectedTask) }}>Excluir</Button> : <span />}<div><Button type="button" variant="secondary" onClick={() => setModal(null)}>{selectedTaskIsReadOnly ? 'Fechar' : 'Cancelar'}</Button>{!selectedTaskIsReadOnly && <Button type="submit" loading={createMutation.isPending || editTaskMutation.isPending}>{selectedTask ? 'Salvar' : 'Criar tarefa'}</Button>}</div></div>
         </form>
       </Modal>

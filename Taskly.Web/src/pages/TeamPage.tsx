@@ -7,7 +7,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { z } from 'zod'
 import { useAuth } from '../features/auth/auth-context'
 import { createProject, getTeamProjects } from '../features/projects/api'
-import { addTeamMember, deleteTeam, getTeam, getTeamMembers, leaveTeam, removeTeamMember, updateTeam } from '../features/teams/api'
+import { addTeamMember, createTeamInvitation, deleteTeam, getTeam, getTeamInvitations, getTeamMembers, leaveTeam, removeTeamMember, revokeTeamInvitation, updateTeam } from '../features/teams/api'
 import { searchUser } from '../features/users/api'
 import { ApiError } from '../shared/api/client'
 import { Avatar } from '../shared/components/Avatar'
@@ -34,14 +34,17 @@ export function TeamPage() {
   const [modal, setModal] = useState<'project' | 'edit' | 'members' | null>(null)
   const [confirmAction, setConfirmAction] = useState<'delete' | 'leave' | null>(null)
   const [foundUser, setFoundUser] = useState<User | null>(null)
+  const [inviteLink, setInviteLink] = useState('')
   const teamForm = useForm<z.infer<typeof teamSchema>>({ resolver: zodResolver(teamSchema) })
   const projectForm = useForm<z.infer<typeof projectSchema>>({ resolver: zodResolver(projectSchema) })
   const searchForm = useForm<z.infer<typeof searchSchema>>({ resolver: zodResolver(searchSchema) })
+  const inviteForm = useForm<z.infer<typeof searchSchema>>({ resolver: zodResolver(searchSchema) })
 
   const teamQuery = useQuery({ queryKey: queryKeys.team(teamId), queryFn: ({ signal }) => getTeam(teamId, signal), enabled: Boolean(teamId) })
   const membersQuery = useQuery({ queryKey: queryKeys.members(teamId), queryFn: ({ signal }) => getTeamMembers(teamId, signal), enabled: Boolean(teamId) })
   const projectsQuery = useQuery({ queryKey: queryKeys.projects(teamId), queryFn: ({ signal }) => getTeamProjects(teamId, signal), enabled: Boolean(teamId) })
   const isOwner = teamQuery.data?.ownerId === user?.id
+  const invitationsQuery = useQuery({ queryKey: queryKeys.invitations(teamId), queryFn: ({ signal }) => getTeamInvitations(teamId, signal), enabled: Boolean(teamId && isOwner) })
 
   useEffect(() => { if (teamQuery.data) teamForm.reset({ name: teamQuery.data.name, ownerId: teamQuery.data.ownerId }) }, [teamForm, teamQuery.data])
 
@@ -55,6 +58,8 @@ export function TeamPage() {
   const statusMutation = useMutation({ mutationFn: (isActive: boolean) => updateTeam(teamId, { isActive, version: teamQuery.data?.version }), onSuccess: () => { refreshTeam(); showToast('Status da equipe atualizado.') }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível alterar o status.', 'error') })
   const searchMutation = useMutation({ mutationFn: (data: z.infer<typeof searchSchema>) => searchUser(data.email), onSuccess: setFoundUser })
   const addMutation = useMutation({ mutationFn: (userId: string) => addTeamMember(teamId, userId), onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.members(teamId) }); refreshTeam(); setFoundUser(null); searchForm.reset(); showToast('Pessoa adicionada à equipe.') }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível adicionar a pessoa.', 'error') })
+  const inviteMutation = useMutation({ mutationFn: (email: string) => createTeamInvitation(teamId, email), onSuccess: (invitation) => { const link = `${window.location.origin}/invitations/${invitation.token}`; setInviteLink(link); inviteForm.reset(); queryClient.invalidateQueries({ queryKey: queryKeys.invitations(teamId) }); showToast('Convite criado.') }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível criar o convite.', 'error') })
+  const revokeInviteMutation = useMutation({ mutationFn: (id: string) => revokeTeamInvitation(teamId, id), onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.invitations(teamId) }); showToast('Convite revogado.') } })
   const removeMutation = useMutation({ mutationFn: (userId: string) => removeTeamMember(teamId, userId), onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.members(teamId) }); refreshTeam(); showToast('Pessoa removida da equipe.') }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível remover a pessoa.', 'error') })
   const destructiveMutation = useMutation({ mutationFn: () => confirmAction === 'delete' ? deleteTeam(teamId) : leaveTeam(teamId), onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.teams }); showToast(confirmAction === 'delete' ? 'Equipe excluída.' : 'Você saiu da equipe.'); navigate('/teams') }, onError: (error) => showToast(error instanceof ApiError ? error.message : 'Não foi possível concluir a ação.', 'error') })
 
@@ -108,6 +113,7 @@ export function TeamPage() {
       </Modal>
 
       <Modal open={modal === 'members'} title="Gerenciar membros" description="Busque uma pessoa pelo e-mail cadastrado." onClose={() => { setModal(null); setFoundUser(null) }} size="lg">
+        <div className="invite-manager"><h3>Convidar por link</h3><form className="search-form" onSubmit={inviteForm.handleSubmit((data) => inviteMutation.mutate(data.email))}><Field label="E-mail do convite" htmlFor="invite-email" error={inviteForm.formState.errors.email?.message}><Input id="invite-email" type="email" placeholder="pessoa@exemplo.com" {...inviteForm.register('email')} /></Field><Button type="submit" loading={inviteMutation.isPending} icon={<UserPlus size={17} />}>Gerar convite</Button></form>{inviteLink && <div className="invite-link"><Input aria-label="Link do convite" readOnly value={inviteLink} /><Button type="button" size="sm" variant="secondary" onClick={() => { navigator.clipboard.writeText(inviteLink); showToast('Link copiado.') }}>Copiar</Button></div>}<div className="pending-invites">{invitationsQuery.data?.map(invitation => <div key={invitation.id}><span><strong>{invitation.email}</strong><small>Expira em {new Date(invitation.expiresAt).toLocaleDateString('pt-BR')}</small></span><Button type="button" size="sm" variant="ghost" onClick={() => revokeInviteMutation.mutate(invitation.id)}>Revogar</Button></div>)}</div></div>
         <form className="search-form" onSubmit={searchForm.handleSubmit((data) => searchMutation.mutate(data))}><Field label="E-mail" htmlFor="member-email" error={searchForm.formState.errors.email?.message}><Input id="member-email" type="email" placeholder="pessoa@exemplo.com" {...searchForm.register('email')} /></Field><Button type="submit" variant="secondary" loading={searchMutation.isPending} icon={<Search size={17} />}>Buscar</Button></form>
         {searchMutation.isError && <div className="form-alert">{searchMutation.error instanceof ApiError ? searchMutation.error.message : 'Usuário não encontrado.'}</div>}
         {foundUser && <div className="search-result"><Avatar name={foundUser.name} /><span><strong>{foundUser.name}</strong><small>{foundUser.email}</small></span><Button size="sm" loading={addMutation.isPending} onClick={() => addMutation.mutate(foundUser.id)}>Adicionar</Button></div>}

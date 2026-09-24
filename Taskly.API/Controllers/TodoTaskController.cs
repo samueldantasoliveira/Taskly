@@ -54,6 +54,24 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
+        [HttpPut("{taskId}/comments/{commentId}")]
+        public async Task<IActionResult> UpdateComment(Guid taskId, Guid commentId, CreateTaskCommentDto dto, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var userId)) return Unauthorized();
+            var result = await _todoTaskService.UpdateCommentAsync(taskId, commentId, dto, userId, cancellationToken);
+            return result.Success ? Ok(result.Value) : MapErrorToResponse(result.Error!);
+        }
+
+        [Authorize]
+        [HttpDelete("{taskId}/comments/{commentId}")]
+        public async Task<IActionResult> DeleteComment(Guid taskId, Guid commentId, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var userId)) return Unauthorized();
+            var result = await _todoTaskService.DeleteCommentAsync(taskId, commentId, userId, cancellationToken);
+            return result.Success ? NoContent() : MapErrorToResponse(result.Error!);
+        }
+
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
@@ -241,6 +259,12 @@ namespace Taskly.Controllers
                 return NotFound(error.Message);
             if (error == TodoTaskErrors.InvalidTitle)
                 return BadRequest(error.Message);
+            if (error == TodoTaskErrors.InvalidComment)
+                return BadRequest(error.Message);
+            if (error == TodoTaskErrors.CommentNotFound)
+                return NotFound(error.Message);
+            if (error == TodoTaskErrors.NotCommentAuthor)
+                return StatusCode(StatusCodes.Status403Forbidden, error.Message);
             if (error == TodoTaskErrors.InvalidPriority)
                 return BadRequest(error.Message);
             if (error == TodoTaskErrors.NoChangesDetected)

@@ -103,6 +103,42 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
+        [HttpPost("{teamId}/invitations")]
+        public async Task<IActionResult> CreateInvitation(Guid teamId, CreateTeamInvitationDto dto, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var userId)) return Unauthorized();
+            var result = await _teamService.CreateInvitationAsync(teamId, dto, userId, cancellationToken);
+            return result.Success ? Ok(result.Value) : MapErrorToResponse(result.Error!);
+        }
+
+        [Authorize]
+        [HttpGet("{teamId}/invitations")]
+        public async Task<IActionResult> GetInvitations(Guid teamId, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var userId)) return Unauthorized();
+            var result = await _teamService.GetInvitationsAsync(teamId, userId, cancellationToken);
+            return result.Success ? Ok(result.Value) : MapErrorToResponse(result.Error!);
+        }
+
+        [Authorize]
+        [HttpDelete("{teamId}/invitations/{invitationId}")]
+        public async Task<IActionResult> RevokeInvitation(Guid teamId, Guid invitationId, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var userId)) return Unauthorized();
+            var result = await _teamService.RevokeInvitationAsync(teamId, invitationId, userId, cancellationToken);
+            return result.Success ? NoContent() : MapErrorToResponse(result.Error!);
+        }
+
+        [Authorize]
+        [HttpPost("invitations/{token}/accept")]
+        public async Task<IActionResult> AcceptInvitation(string token, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var userId)) return Unauthorized();
+            var result = await _teamService.AcceptInvitationAsync(token, userId, cancellationToken);
+            return result.Success ? Ok(result.Value) : MapErrorToResponse(result.Error!);
+        }
+
+        [Authorize]
         [HttpPost("{teamId}/add-member")]
         public async Task<IActionResult> AddMember(Guid teamId, Guid userId, CancellationToken cancellationToken)
         {
@@ -205,6 +241,15 @@ namespace Taskly.Controllers
             
             if (error == TeamErrors.OwnerCannotBeRemoved)
                 return Conflict(error.Message);
+
+            if (error == TeamErrors.InvalidInvitationEmail)
+                return BadRequest(error.Message);
+            if (error == TeamErrors.InvitationAlreadyPending || error == TeamErrors.InvitationEmailMismatch)
+                return Conflict(error.Message);
+            if (error == TeamErrors.InvitationNotFound)
+                return NotFound(error.Message);
+            if (error == TeamErrors.InvitationExpired)
+                return StatusCode(StatusCodes.Status410Gone, error.Message);
 
             return StatusCode(500, error.Message);
         }
