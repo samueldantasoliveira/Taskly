@@ -10,7 +10,7 @@ test('Kanban combina título e responsável e permite limpar filtros', async ({ 
   await createTask(request, context, 'Documentar projeto')
   await signIn(page, context.user)
   await page.goto(`/projects/${context.projectId}`)
-  const cards = page.getByRole('article')
+  const cards = page.locator('.kanban-board .task-card')
   await expect(cards).toHaveCount(3)
 
   await page.getByRole('textbox', { name: 'Buscar tarefas por título' }).fill('Revisar')
