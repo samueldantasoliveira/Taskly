@@ -12,12 +12,14 @@ namespace Taskly.Application
         private readonly IProjectRepository _projectRepository;
         private readonly ITeamRepository _teamRepository;
         private readonly IUserRepository _userRepository;
-        public TodoTaskService(ITodoTaskRepository todoTaskrepository, IProjectRepository projectService, IUserRepository userService, ITeamRepository teamService)
+        private readonly IProjectActivityRepository? _activityRepository;
+        public TodoTaskService(ITodoTaskRepository todoTaskrepository, IProjectRepository projectService, IUserRepository userService, ITeamRepository teamService, IProjectActivityRepository? activityRepository = null)
         {
             _todoTaskRepository = todoTaskrepository;
             _projectRepository = projectService;
             _userRepository = userService;
             _teamRepository = teamService;
+            _activityRepository = activityRepository;
         }
 
         public async Task<StructuredOperationResult<TodoTaskResponseDto>> AddTodoTaskAsync(CreateTodoTaskDto todoTaskDto, Guid authenticatedUserId, CancellationToken cancellationToken = default)
@@ -62,6 +64,7 @@ namespace Taskly.Application
                 dueDate: todoTaskDto.DueDate
             );
             await _todoTaskRepository.AddAsync(todoTask, cancellationToken);
+            await RecordActivityAsync(todoTask, authenticatedUserId, "criou a tarefa", cancellationToken);
 
             var todoTaskResponseDto = new TodoTaskResponseDto
             {
@@ -263,6 +266,7 @@ namespace Taskly.Application
 
             if (!modified)
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.NoChangesDetected);
+            await RecordActivityAsync(todoTask, authenticatedUserId, "atualizou a tarefa", cancellationToken);
             
             var todoTaskResponseDto = new TodoTaskResponseDto
             {
@@ -307,6 +311,7 @@ namespace Taskly.Application
 
             if (!modified)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
+            await RecordActivityAsync(task, authenticatedUserId, "excluiu a tarefa", cancellationToken);
 
             return StructuredOperationResult.Ok();
         }
@@ -324,6 +329,7 @@ namespace Taskly.Application
             var result = await _todoTaskRepository.UpdateAsync(task, cancellationToken);
             if(!result)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
+            await RecordActivityAsync(task, authenticatedUserId, "iniciou a tarefa", cancellationToken);
 
             return StructuredOperationResult.Ok();
         }
@@ -340,6 +346,7 @@ namespace Taskly.Application
             var result = await _todoTaskRepository.UpdateAsync(task, cancellationToken);
             if(!result)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
+            await RecordActivityAsync(task, authenticatedUserId, "concluiu a tarefa", cancellationToken);
 
             return StructuredOperationResult.Ok();
         }
@@ -356,6 +363,7 @@ namespace Taskly.Application
             var result = await _todoTaskRepository.UpdateAsync(task, cancellationToken);
             if(!result)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
+            await RecordActivityAsync(task, authenticatedUserId, "cancelou a tarefa", cancellationToken);
 
             return StructuredOperationResult.Ok();
         }
@@ -457,7 +465,50 @@ namespace Taskly.Application
             if(!result)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
 
+            await RecordActivityAsync(todoTask, authenticatedUserId, userId.HasValue ? "atribuiu um responsável à tarefa" : "removeu o responsável da tarefa", cancellationToken);
+
             return StructuredOperationResult.Ok();
+        }
+
+        public async Task<StructuredOperationResult<List<ProjectActivityResponseDto>>> GetProjectActivitiesAsync(
+            Guid projectId,
+            Guid authenticatedUserId,
+            CancellationToken cancellationToken = default)
+        {
+            var project = await _projectRepository.GetByIdAsync(projectId, cancellationToken);
+            if (project == null)
+                return StructuredOperationResult<List<ProjectActivityResponseDto>>.Fail(TodoTaskErrors.ProjectNotFound);
+            var team = await _teamRepository.GetByIdAsync(project.TeamId, cancellationToken);
+            if (team == null)
+                return StructuredOperationResult<List<ProjectActivityResponseDto>>.Fail(TodoTaskErrors.TeamNotFound);
+            if (!team.IsActive)
+                return StructuredOperationResult<List<ProjectActivityResponseDto>>.Fail(TodoTaskErrors.TeamInactive);
+            if (!team.UserIds.Contains(authenticatedUserId))
+                return StructuredOperationResult<List<ProjectActivityResponseDto>>.Fail(TodoTaskErrors.UserNotTeamMember);
+
+            var activities = _activityRepository == null
+                ? []
+                : await _activityRepository.GetByProjectIdAsync(projectId, 50, cancellationToken);
+            return StructuredOperationResult<List<ProjectActivityResponseDto>>.Ok(activities.Select(activity => new ProjectActivityResponseDto
+            {
+                Id = activity.Id,
+                ActorId = activity.ActorId,
+                ActorName = activity.ActorName,
+                TaskId = activity.TaskId,
+                TaskTitle = activity.TaskTitle,
+                Description = activity.Description,
+                CreatedAt = activity.CreatedAt
+            }).ToList());
+        }
+
+        private async Task RecordActivityAsync(TodoTask task, Guid actorId, string description, CancellationToken cancellationToken)
+        {
+            if (_activityRepository == null)
+                return;
+            var actor = await _userRepository.GetByIdAsync(actorId, cancellationToken);
+            if (actor == null)
+                return;
+            await _activityRepository.AddAsync(new ProjectActivity(task.ProjectId, actorId, actor.Name, task.Id, task.Title, description), cancellationToken);
         }
     }
 }

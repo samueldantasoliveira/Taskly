@@ -99,6 +99,16 @@ export interface MyWorkDashboard {
   items: MyWorkItem[]
 }
 
+export interface ProjectActivity {
+  id: Id
+  actorId: Id
+  actorName: string
+  taskId: Id | null
+  taskTitle: string
+  description: string
+  createdAt: string
+}
+
 export interface LoginInput {
   email: string
   password: string

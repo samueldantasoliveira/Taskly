@@ -14,7 +14,7 @@ import {
   createTask,
   deleteTask,
   getAllProjectTasks,
-  getProjectTasks,
+  getProjectTasks, getProjectActivities,
   startTask,
   updateTask,
   type ProjectTaskQuery,
@@ -95,6 +95,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
   const teamQuery = useQuery({ queryKey: queryKeys.team(teamId), queryFn: ({ signal }) => getTeam(teamId, signal), enabled: Boolean(teamId) })
   const membersQuery = useQuery({ queryKey: queryKeys.members(teamId), queryFn: ({ signal }) => getTeamMembers(teamId, signal), enabled: Boolean(teamId) })
   const teamsQuery = useQuery({ queryKey: queryKeys.teams, queryFn: ({ signal }) => getTeams(signal) })
+  const activitiesQuery = useQuery({ queryKey: queryKeys.activities(projectId), queryFn: ({ signal }) => getProjectActivities(projectId, signal), enabled: Boolean(projectId) })
   const selectedTeamId = useWatch({ control: projectForm.control, name: 'teamId' }) || teamId
   const destinationMembersQuery = useQuery({ queryKey: queryKeys.members(selectedTeamId), queryFn: ({ signal }) => getTeamMembers(selectedTeamId, signal), enabled: Boolean(selectedTeamId) })
   const taskFilters = useMemo(() => ({
@@ -184,7 +185,10 @@ function ProjectBoard({ projectId }: { projectId: string }) {
     if (projectQuery.data) projectForm.reset({ name: projectQuery.data.name, description: projectQuery.data.description, status: projectQuery.data.status, ownerId: projectQuery.data.ownerId, teamId: projectQuery.data.teamId })
   }, [projectForm, projectQuery.data])
 
-  const refreshTasks = () => queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) })
+  const refreshTasks = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.tasks(projectId) })
+    queryClient.invalidateQueries({ queryKey: queryKeys.activities(projectId) })
+  }
   const resetTaskView = () => {
     setTitleFilter('')
     setAssigneeId('')
@@ -336,6 +340,14 @@ function ProjectBoard({ projectId }: { projectId: string }) {
           </section>
         })}
       </div>}
+
+      <section className="activity-section">
+        <div className="section-heading"><div><h2>Atividade recente</h2><p>Últimas ações registradas neste projeto.</p></div></div>
+        {activitiesQuery.isPending && <PageLoader label="Carregando atividades..." />}
+        {activitiesQuery.isError && <ErrorState message={(activitiesQuery.error as Error).message} onRetry={() => activitiesQuery.refetch()} />}
+        {activitiesQuery.data?.length === 0 && <p className="activity-empty">As próximas ações nas tarefas aparecerão aqui.</p>}
+        <div className="activity-list">{activitiesQuery.data?.map(activity => <article key={activity.id} className="activity-item"><Avatar name={activity.actorName} size="sm" /><div><p><strong>{activity.actorName}</strong> {activity.description}</p><span>{activity.taskTitle} • {new Date(activity.createdAt).toLocaleString('pt-BR')}</span></div></article>)}</div>
+      </section>
 
       <Modal open={modal === 'create' || modal === 'edit-task'} title={modal === 'create' ? 'Nova tarefa' : selectedTaskIsReadOnly ? 'Detalhes da tarefa' : 'Editar tarefa'} description={selectedTaskIsReadOnly ? 'Tarefas concluídas ou canceladas não podem mais ser alteradas.' : 'Mantenha o próximo passo claro e objetivo.'} onClose={() => setModal(null)}>
         <form onSubmit={taskForm.handleSubmit((data) => selectedTask ? !selectedTaskIsReadOnly && editTaskMutation.mutate({ task: selectedTask, data }) : createMutation.mutate(data))}>
