@@ -54,7 +54,19 @@ O turquesa identifica ações principais, foco e progresso. O azul-petróleo cri
 a base de confiança. Cores de erro, alerta e status continuam funcionais e não
 devem ser substituídas apenas por razões estéticas.
 
-## Tipografia
+## Aplicação na interface
+
+As correntes de `Rivulus.Web/public/brand/rivulus-flow.svg` aparecem nas telas de
+autenticação, nos cabeçalhos de boas-vindas e nas capas das equipes. São fundos
+decorativos: não recebem foco, não interceptam cliques e não comunicam estado.
+As áreas de leitura usam superfícies discretas, bordas e relevo suave.
+
+Botões principais usam gradientes de turquesa; os estados do Kanban mantêm
+rótulos e ícones junto das cores. Prioridade e prazo usam cores semânticas
+adaptadas aos temas claro e escuro. No celular, a marca permanece visível no
+login, mesmo sem o painel ilustrado. A interface respeita movimento reduzido.
+
+## Tipografia da interface
 
 A interface usa `Inter`, com fallback para fontes nativas do sistema. Títulos
 usam peso forte e espaçamento compacto; textos de apoio priorizam legibilidade.
