@@ -9,8 +9,8 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       <section className="auth-showcase">
         <Logo className="auth-showcase__logo" />
         <div className="auth-showcase__content">
-          <span className="auth-showcase__pill">Projetos e equipes em movimento</span>
-          <h1>Faça o trabalho<br />seguir em frente.</h1>
+          <span className="auth-showcase__pill">Do plano ao fluxo</span>
+          <h1>Faça o trabalho<br /><span>seguir em frente.</span></h1>
           <p>Transforme planos em um fluxo claro, conectando equipes, projetos e tarefas do início à entrega.</p>
           <div className="auth-feature-grid">
             <article><UsersRound /><strong>Equipes alinhadas</strong><span>Pessoas e projetos no mesmo lugar.</span></article>
@@ -22,6 +22,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
       </section>
       <section className="auth-panel">
         <div className="auth-panel__theme"><ThemeToggle /></div>
+        <Logo className="auth-panel__logo" />
         {children}
       </section>
     </main>

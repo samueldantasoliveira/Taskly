@@ -315,7 +315,7 @@ function ProjectBoard({ projectId }: { projectId: string }) {
       {!boardIsPending && !boardError && totalTaskCount > 0 && <div className="kanban-board">
         {boardColumns.map((column) => {
           const Icon = column.icon
-          return <section className="kanban-column" key={column.status} aria-label={column.label}>
+          return <section className={`kanban-column kanban-column--${column.status}`} key={column.status} aria-label={column.label}>
             <header><span><Icon size={16} /> {column.label}</span><small>{column.totalCount}</small></header>
             <div className="kanban-column__body">
               {column.tasks.map((task) => {
