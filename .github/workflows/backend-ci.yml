@@ -36,21 +36,21 @@ jobs:
           global-json-file: global.json
 
       - name: Restaurar dependências
-        run: dotnet restore Taskly.sln
+        run: dotnet restore Rivulus.sln
 
       - name: Compilar
-        run: dotnet build Taskly.sln --configuration Release --no-restore
+        run: dotnet build Rivulus.sln --configuration Release --no-restore
 
       - name: Executar testes unitários
         run: >
-          dotnet test Taskly.UnitTests/Taskly.UnitTests.csproj
+          dotnet test Rivulus.UnitTests/Rivulus.UnitTests.csproj
           --configuration Release
           --no-build
           --no-restore
 
       - name: Executar testes de integração
         run: >
-          dotnet test Taskly.IntegrationTests/Taskly.IntegrationTests.csproj
+          dotnet test Rivulus.IntegrationTests/Rivulus.IntegrationTests.csproj
           --configuration Release
           --no-build
           --no-restore

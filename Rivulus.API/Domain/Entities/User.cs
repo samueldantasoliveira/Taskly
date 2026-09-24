@@ -1,0 +1,94 @@
+﻿using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
+using Rivulus.Domain.Exceptions;
+
+namespace Rivulus.Domain.Entities
+{
+    public class User
+    {
+        public long Version { get; private set; }
+        internal void AdvanceVersion() => Version++;
+
+        [BsonRepresentation(BsonType.String)]
+        public Guid Id { get; private set; }
+        public string Name { get; private set; } = null!;
+        public string Email { get; private set; } = null!;
+        public DateTime CreatedAt { get; private set;}
+        public DateTime UpdatedAt { get; private set;}
+        public DateTime? DeletedAt { get; private set; }
+
+        // Stores the password hash along with all parameters needed for verification:
+        // algorithm$iterations$saltBase64$hashBase64
+        public string PasswordHash { get; private set; } = null!;
+        // Explicit BSON default keeps legacy documents stable across reads.
+        [BsonDefaultValue("0")]
+        public string SessionVersion { get; private set; } = "0";
+
+        protected User() { }
+        public User(string name, string email, string passwordHash)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new InvalidUserNameException("Name cannot be empty.");
+            if (!IsValidEmail(email))
+                throw new InvalidUserEmailException("Invalid Email format.");
+            if (string.IsNullOrWhiteSpace(passwordHash))
+                throw new InvalidUserPasswordException("Password cannot be empty.");
+
+            Id = Guid.NewGuid();
+            Name = name;
+            Email = email.ToLowerInvariant();
+            PasswordHash = passwordHash;
+            SessionVersion = Guid.NewGuid().ToString("N");
+            var now = DateTime.UtcNow;
+            CreatedAt = now;
+            UpdatedAt = now;
+        }
+
+        public void Update(string? name, string? email, string? passwordHash)
+        {
+            if (name != null)
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                    throw new InvalidUserNameException("Name cannot be empty.");
+                Name = name;
+            }
+                
+
+            if (email != null)
+            {
+                if (!IsValidEmail(email))
+                    throw new InvalidUserEmailException("Invalid Email format.");
+
+                Email = email.ToLowerInvariant();
+            }
+
+
+            if (passwordHash != null)
+            {
+                if (string.IsNullOrWhiteSpace(passwordHash))
+                    throw new InvalidUserPasswordException("Password cannot be empty.");
+
+                PasswordHash = passwordHash;
+                SessionVersion = Guid.NewGuid().ToString("N");
+            }
+
+            if(name != null || email != null || passwordHash != null)
+                UpdatedAt = DateTime.UtcNow;             
+        }
+        
+        public static bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
+    }
+}

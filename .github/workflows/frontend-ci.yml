@@ -17,7 +17,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: Taskly.Web
+        working-directory: Rivulus.Web
 
     steps:
       - name: Baixar código do repositório
@@ -26,9 +26,9 @@ jobs:
       - name: Preparar Node.js
         uses: actions/setup-node@v6
         with:
-          node-version-file: Taskly.Web/.nvmrc
+          node-version-file: Rivulus.Web/.nvmrc
           cache: npm
-          cache-dependency-path: Taskly.Web/package-lock.json
+          cache-dependency-path: Rivulus.Web/package-lock.json
 
       - name: Instalar dependências
         run: npm ci
@@ -42,4 +42,4 @@ jobs:
       - name: Compilar frontend
         run: npm run build
         env:
-          VITE_API_URL: https://api.taskly.test
+          VITE_API_URL: https://api.rivulus.test

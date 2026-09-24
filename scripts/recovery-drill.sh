@@ -21,18 +21,18 @@ done
 [[ "$ready" == true ]] || { echo 'MongoDB did not start.' >&2; exit 1; }
 
 "$engine" exec "$container_id" mongosh --quiet --eval '
-const source = db.getSiblingDB("TasklyDrillSource");
+const source = db.getSiblingDB("RivulusDrillSource");
 source.Users.createIndex({Email:1}, {unique:true});
 source.Users.insertOne({_id:"user-1", Email:"synthetic@example.test"});
 source.Teams.insertOne({_id:"team-1", OwnerId:"user-1", UserIds:["user-1"]});
 source.Projects.insertOne({_id:"project-1", TeamId:"team-1"});
 source.TodoTasks.insertOne({_id:"task-1", ProjectId:"project-1", AssignedUserId:"user-1", Version:3});
 '
-"$engine" exec "$container_id" mongodump --db TasklyDrillSource --gzip --archive=/tmp/taskly-drill.gz
-"$engine" exec "$container_id" mongorestore --gzip --archive=/tmp/taskly-drill.gz \
-  --nsInclude 'TasklyDrillSource.*' --nsFrom 'TasklyDrillSource.*' --nsTo 'TasklyDrillRestored.*' --stopOnError
+"$engine" exec "$container_id" mongodump --db RivulusDrillSource --gzip --archive=/tmp/rivulus-drill.gz
+"$engine" exec "$container_id" mongorestore --gzip --archive=/tmp/rivulus-drill.gz \
+  --nsInclude 'RivulusDrillSource.*' --nsFrom 'RivulusDrillSource.*' --nsTo 'RivulusDrillRestored.*' --stopOnError
 "$engine" exec "$container_id" mongosh --quiet --eval '
-const restored = db.getSiblingDB("TasklyDrillRestored");
+const restored = db.getSiblingDB("RivulusDrillRestored");
 for (const name of ["Users", "Teams", "Projects", "TodoTasks"])
   if (restored.getCollection(name).countDocuments({}) !== 1) throw Error("Invalid count: " + name);
 const task = restored.TodoTasks.findOne({_id:"task-1"});

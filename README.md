@@ -1,3 +1,11 @@
+<p align="center">
+  <img src="Rivulus.Web/public/brand/rivulus-mark.svg" alt="Símbolo da Rivulus" width="96" />
+</p>
+
+<h1 align="center">Rivulus</h1>
+
+<p align="center">Projetos e equipes em movimento.</p>
+
 ![.NET](https://img.shields.io/badge/.NET-10-blue)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Database-green)
 ![React](https://img.shields.io/badge/React-19-61dafb)
@@ -7,11 +15,14 @@
 [![API Container CI](https://github.com/samueldantasoliveira/Taskly/actions/workflows/api-container-ci.yml/badge.svg?branch=main)](https://github.com/samueldantasoliveira/Taskly/actions/workflows/api-container-ci.yml?query=branch%3Amain)
 [![E2E CI](https://github.com/samueldantasoliveira/Taskly/actions/workflows/e2e-ci.yml/badge.svg?branch=main)](https://github.com/samueldantasoliveira/Taskly/actions/workflows/e2e-ci.yml?query=branch%3Amain)
 
-# 🗂️ Taskly
-
-Aplicação para gerenciamento de usuários, equipes, projetos e tarefas, com API em .NET 10, MongoDB e interface web em React.
+Plataforma colaborativa para transformar planos em um fluxo claro de equipes,
+projetos e tarefas, com API em .NET 10, MongoDB e interface web em React.
 
 O projeto foi criado com foco em organização de código, separação de responsabilidades e aplicação prática de conceitos utilizados no desenvolvimento back-end.
+
+A marca, o símbolo, as cores e as regras de linguagem estão documentados no
+[guia de identidade visual](docs/brand.md). A transição segura dos
+identificadores externos está descrita no [plano de migração](docs/rebrand-migration.md).
 
 ---
 
@@ -19,7 +30,7 @@ O projeto foi criado com foco em organização de código, separação de respon
 
 | Recurso | URL |
 | ------- | --- |
-| Aplicação web | <a href="https://taskly-web-samueldantasoliveira.onrender.com" target="_blank" rel="noopener noreferrer">Abrir o Taskly</a> |
+| Aplicação web | <a href="https://taskly-web-samueldantasoliveira.onrender.com" target="_blank" rel="noopener noreferrer">Abrir o Rivulus</a> |
 | API | <a href="https://taskly-api-samueldantasoliveira.onrender.com/health/ready" target="_blank" rel="noopener noreferrer">Health check público</a> |
 
 > A API utiliza o plano gratuito do Render e pode levar aproximadamente um
@@ -52,23 +63,23 @@ O projeto foi criado com foco em organização de código, separação de respon
 O projeto está organizado em arquitetura em camadas, separando responsabilidades entre aplicação, domínio, infraestrutura e endpoints da API.
 
 ```text
-Taskly/
- ├── Taskly.API/
+Rivulus/
+ ├── Rivulus.API/
  │   ├── Application/
  │   ├── Controllers/
  │   ├── Domain/
  │   └── Infrastructure/
  │
- ├── Taskly.UnitTests/
+ ├── Rivulus.UnitTests/
  │   ├── Application/
  │   └── Domain/
  │
- ├── Taskly.IntegrationTests/
+ ├── Rivulus.IntegrationTests/
  │
- ├── Taskly.E2ETests/
+ ├── Rivulus.E2ETests/
  │   └── tests/
  │
- └── Taskly.Web/
+ └── Rivulus.Web/
      └── src/
 ```
 
@@ -230,17 +241,17 @@ docker compose ps
 podman compose ps
 ```
 
-A API containerizada usa o endereço interno `mongodb:27017`. A porta `5219` da máquina é encaminhada para a porta `8080` do container. Para escolher outras portas locais, defina `TASKLY_API_PORT`, `TASKLY_MONGO_PORT` e `TASKLY_MONGO_TEST_PORT`, por exemplo:
+A API containerizada usa o endereço interno `mongodb:27017`. A porta `5219` da máquina é encaminhada para a porta `8080` do container. Para escolher outras portas locais, defina `RIVULUS_API_PORT`, `RIVULUS_MONGO_PORT` e `RIVULUS_MONGO_TEST_PORT`, por exemplo:
 
 ```bash
-TASKLY_API_PORT=5230 TASKLY_MONGO_PORT=27019 docker compose up --build -d
+RIVULUS_API_PORT=5230 RIVULUS_MONGO_PORT=27019 docker compose up --build -d
 ```
 
 As configurações executadas diretamente na máquina continuam apontando para `localhost:27017`, e os testes de integração usam `localhost:27018`.
 O `appsettings.Development.json` não é copiado para a imagem; o Compose injeta
 os valores locais equivalentes como variáveis de ambiente.
 
-O container `mongodb-test` é reutilizado durante a execução da suíte. Cada classe de testes de integração recebe um banco lógico exclusivo, com nome no formato `TasklyIntegrationTests_<guid>`. O MongoDB cria esse banco na primeira gravação, e a `TasklyApiFactory` o remove automaticamente quando a classe termina. Assim, os testes podem executar isoladamente sem acumular dados entre execuções e sem criar um novo container para cada teste.
+O container `mongodb-test` é reutilizado durante a execução da suíte. Cada classe de testes de integração recebe um banco lógico exclusivo, com nome no formato `RivulusIntegrationTests_<guid>`. O MongoDB cria esse banco na primeira gravação, e a `RivulusApiFactory` o remove automaticamente quando a classe termina. Assim, os testes podem executar isoladamente sem acumular dados entre execuções e sem criar um novo container para cada teste.
 
 ### 3. Restaurar as dependências (execução sem container)
 
@@ -255,13 +266,13 @@ dotnet restore
 Se você iniciou o Compose completo na etapa 2, a API já estará disponível. Para executá-la diretamente com o SDK em vez do container:
 
 ```bash
-dotnet run --project Taskly.API/Taskly.API.csproj
+dotnet run --project Rivulus.API/Rivulus.API.csproj
 ```
 
 Em outro terminal, inicie o frontend:
 
 ```bash
-cd Taskly.Web
+cd Rivulus.Web
 nvm use
 npm install
 npm run dev
@@ -274,7 +285,7 @@ A aplicação estará em `http://localhost:5173` e a API em `http://localhost:52
 | Ambiente | Frontend | API | MongoDB |
 | -------- | -------- | --- | ------- |
 | Desenvolvimento | `http://localhost:5173` | `http://localhost:5219` | `localhost:27017` |
-| E2E | `http://127.0.0.1:4173` | `http://127.0.0.1:5220` | `127.0.0.1:27018` (banco `TasklyE2E`) |
+| E2E | `http://127.0.0.1:4173` | `http://127.0.0.1:5220` | `127.0.0.1:27018` (banco `RivulusE2E`) |
 
 O Playwright inicia o frontend e a API do E2E automaticamente; o MongoDB de teste
 deve estar disponível antes da execução. Os testes de integração também usam
@@ -285,7 +296,7 @@ escolher portas alternativas para o desenvolvimento.
 
 ```bash
 dotnet test
-cd Taskly.Web
+cd Rivulus.Web
 npm test
 npm run lint
 VITE_API_URL=https://taskly-api-samueldantasoliveira.onrender.com npm run build
@@ -295,7 +306,7 @@ Os testes unitários e de integração são executados a partir da solução pri
 
 #### Testes de ponta a ponta (E2E)
 
-A suíte em `Taskly.E2ETests` utiliza Playwright e Chromium, com frontend, API
+A suíte em `Rivulus.E2ETests` utiliza Playwright e Chromium, com frontend, API
 e MongoDB reais. Os oito cenários cobrem:
 
 * Cadastro com login automático.
@@ -317,8 +328,8 @@ docker compose up -d --wait mongodb-test
 # Alternativa com Podman:
 # podman-compose up -d mongodb-test
 
-npm ci --prefix Taskly.Web
-cd Taskly.E2ETests
+npm ci --prefix Rivulus.Web
+cd Rivulus.E2ETests
 nvm use
 npm ci
 npx playwright install --with-deps chromium
@@ -328,11 +339,11 @@ npm test
 
 O Playwright inicia a API em `http://127.0.0.1:5220` e o frontend em
 `http://127.0.0.1:4173`, aguardando ambos ficarem disponíveis. A API utiliza
-o banco `TasklyE2E` no MongoDB da porta `27018`. Reserve essas portas para o E2E.
+o banco `RivulusE2E` no MongoDB da porta `27018`. Reserve essas portas para o E2E.
 Os dados desse banco não são apagados ao final de cada teste; usuários exclusivos
 evitam conflitos entre execuções, e o armazenamento do container é temporário.
 
-Dentro de `Taskly.E2ETests`, também é possível acompanhar e depurar os testes:
+Dentro de `Rivulus.E2ETests`, também é possível acompanhar e depurar os testes:
 
 ```bash
 npm run test:ui       # Interface para executar e inspecionar os testes
@@ -476,7 +487,7 @@ Blueprint responsável pelos dois serviços:
 
 | Serviço | Tipo | Status | Configuração principal |
 | ------- | ---- | ------ | ---------------------- |
-| `taskly-api-samueldantasoliveira` | Web Service Docker | ✅ Online | `Taskly.API/Dockerfile` e health check em `/health/ready` |
+| `taskly-api-samueldantasoliveira` | Web Service Docker | ✅ Online | `Rivulus.API/Dockerfile` e health check em `/health/ready` |
 | `taskly-web-samueldantasoliveira` | Static Site | ✅ Online | Node.js 24, `npm ci && npm run build` e publicação de `dist` |
 
 O frontend recebe cache otimizado para assets, cabeçalhos de segurança e o
@@ -495,7 +506,7 @@ versionados. O Blueprint configura estas variáveis:
 | `AllowedHosts` | Host público exato da API |
 | `Cors__AllowedOrigins__0` | URL HTTPS pública exata do frontend |
 | `MongoDb__ConnectionString` | Solicitada de forma secreta ao criar o Blueprint |
-| `MongoDb__DatabaseName` | Definida como `Taskly` no Blueprint |
+| `MongoDb__DatabaseName` | Mantida como `Taskly` para preservar os dados existentes |
 | `Jwt__Key` | Gerada automaticamente pelo Render como Base64 de 256 bits |
 
 Para fazer uma rotação manual futura da chave JWT, gere uma nova com:

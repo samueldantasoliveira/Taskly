@@ -1,0 +1,159 @@
+using System.Net;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+
+namespace Rivulus.IntegrationTests;
+
+public class CorsIntegrationTests : IClassFixture<RivulusApiFactory>
+{
+    private readonly HttpClient _client;
+
+    public CorsIntegrationTests(RivulusApiFactory factory)
+    {
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task Preflight_AllowedOrigin_ReturnsCorsHeaders()
+    {
+        using var request = CreatePreflightRequest(
+            RivulusApiFactory.AllowedOrigin
+        );
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(
+            RivulusApiFactory.AllowedOrigin,
+            response.Headers.GetValues("Access-Control-Allow-Origin").Single()
+        );
+        Assert.Contains(
+            "POST",
+            response.Headers.GetValues("Access-Control-Allow-Methods")
+                .Single()
+        );
+
+        var allowedHeaders = response.Headers
+            .GetValues("Access-Control-Allow-Headers")
+            .Single();
+
+        Assert.Contains("authorization", allowedHeaders);
+        Assert.Contains("content-type", allowedHeaders);
+    }
+
+    [Fact]
+    public async Task Preflight_DisallowedOrigin_DoesNotReturnCorsHeaders()
+    {
+        using var request = CreatePreflightRequest(
+            "https://untrusted.example"
+        );
+
+        var response = await _client.SendAsync(request);
+
+        Assert.False(
+            response.Headers.Contains("Access-Control-Allow-Origin")
+        );
+    }
+
+    private static HttpRequestMessage CreatePreflightRequest(string origin)
+    {
+        var request = new HttpRequestMessage(
+            HttpMethod.Options,
+            "/api/login"
+        );
+
+        request.Headers.Add("Origin", origin);
+        request.Headers.Add("Access-Control-Request-Method", "POST");
+        request.Headers.Add(
+            "Access-Control-Request-Headers",
+            "authorization,content-type"
+        );
+
+        return request;
+    }
+}
+
+public class CorsConfigurationTests
+{
+    [Fact]
+    public void Startup_EmptyAllowedOrigins_ThrowsValidationException()
+    {
+        using var factory = CreateFactory();
+
+        var exception = Assert.Throws<OptionsValidationException>(
+            () => factory.CreateClient()
+        );
+
+        Assert.Contains(
+            "Cors:AllowedOrigins must contain at least one origin.",
+            exception.Failures
+        );
+    }
+
+    [Fact]
+    public void Startup_InvalidAllowedOrigin_ThrowsValidationException()
+    {
+        using var factory = CreateFactory("https://rivulus.test/path");
+
+        var exception = Assert.Throws<OptionsValidationException>(
+            () => factory.CreateClient()
+        );
+
+        Assert.Contains(
+            "Cors:AllowedOrigins must contain only valid HTTP or HTTPS origins.",
+            exception.Failures
+        );
+    }
+
+    [Fact]
+    public void Startup_LocalHttpOriginInProduction_ThrowsValidationException()
+    {
+        using var factory = CreateFactory(
+            "http://localhost:5173",
+            "Production"
+        );
+
+        var exception = Assert.Throws<OptionsValidationException>(
+            () => factory.CreateClient()
+        );
+
+        Assert.Contains(
+            "Cors:AllowedOrigins must contain only HTTPS, non-local origins in Production.",
+            exception.Failures
+        );
+    }
+
+    private static WebApplicationFactory<Program> CreateFactory(
+        string? allowedOrigin = null,
+        string environment = "ConfigurationTests"
+    )
+    {
+        return new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment(environment);
+
+                builder.ConfigureAppConfiguration((context, config) =>
+                {
+                    var settings = new Dictionary<string, string?>
+                    {
+                        ["AllowedHosts"] = "localhost",
+                        ["Jwt:Key"] =
+                            "J2u7k1sH+H1i5hE0zS1V1bW9YbUzwr9vN7oVPy7QxPE=",
+                        ["MongoDb:ConnectionString"] =
+                            "mongodb://localhost:27018",
+                        ["MongoDb:DatabaseName"] = "ConfigurationTests"
+                    };
+
+                    if (allowedOrigin is not null)
+                    {
+                        settings["Cors:AllowedOrigins:0"] = allowedOrigin;
+                    }
+
+                    config.AddInMemoryCollection(settings);
+                });
+            });
+    }
+}

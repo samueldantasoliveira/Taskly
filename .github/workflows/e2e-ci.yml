@@ -17,7 +17,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: Taskly.E2ETests
+        working-directory: Rivulus.E2ETests
 
     services:
       mongodb:
@@ -42,17 +42,17 @@ jobs:
       - name: Preparar Node.js
         uses: actions/setup-node@v6
         with:
-          node-version-file: Taskly.E2ETests/.nvmrc
+          node-version-file: Rivulus.E2ETests/.nvmrc
           cache: npm
           cache-dependency-path: |
-            Taskly.Web/package-lock.json
-            Taskly.E2ETests/package-lock.json
+            Rivulus.Web/package-lock.json
+            Rivulus.E2ETests/package-lock.json
 
       - name: Restaurar dependências da API
-        run: dotnet restore ../Taskly.API/Taskly.API.csproj
+        run: dotnet restore ../Rivulus.API/Rivulus.API.csproj
 
       - name: Instalar dependências do frontend
-        working-directory: Taskly.Web
+        working-directory: Rivulus.Web
         run: npm ci
 
       - name: Instalar dependências dos testes E2E
@@ -73,7 +73,7 @@ jobs:
         with:
           name: e2e-results
           path: |
-            Taskly.E2ETests/playwright-report/
-            Taskly.E2ETests/test-results/
+            Rivulus.E2ETests/playwright-report/
+            Rivulus.E2ETests/test-results/
           retention-days: 7
           if-no-files-found: ignore

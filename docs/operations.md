@@ -15,7 +15,7 @@ o segundo avisa você. Veja [health checks do Render](https://render.com/docs/he
 
 O workflow **API Health Monitor** está preparado para executar a cada seis horas:
 
-1. Após o merge, crie a variável de repositório `TASKLY_HEALTH_URL` com a URL HTTPS
+1. Após o merge, crie a variável de repositório `RIVULUS_HEALTH_URL` com a URL HTTPS
    completa do `/health/ready` (sem credenciais).
 2. Ative notificações de falha de Actions na sua conta e execute o workflow manualmente.
 3. Confirme que recebe uma notificação de falha antes de considerar o alerta ativo.
@@ -41,13 +41,15 @@ Use diretório novo e privado e registre data, versão do MongoDB e origem junto
 
 ```bash
 umask 077
-backup_dir=$(mktemp -d /tmp/taskly-backup.XXXXXXXX)
+backup_dir=$(mktemp -d /tmp/rivulus-backup.XXXXXXXX)
 mongodump --config /CAMINHO/PRIVADO/backup.yml --db Taskly \
-  --gzip --archive="$backup_dir/taskly.archive.gz"
-sha256sum "$backup_dir/taskly.archive.gz"
+  --gzip --archive="$backup_dir/rivulus.archive.gz"
+sha256sum "$backup_dir/rivulus.archive.gz"
 ```
 
-Confirme o nome real do banco antes de executar. Transfira o arquivo para armazenamento
+`Taskly` permanece como identificador interno do banco de produção durante a
+migração de marca para evitar perda aparente dos dados. Confirme o nome real do
+banco antes de executar. Transfira o arquivo para armazenamento
 criptografado; `/tmp` não é retenção. Um dump de banco com escritas concorrentes não
 garante consistência entre coleções: planeje janela sem escritas ou use mecanismo
 de snapshot consistente compatível com seu cluster. Documentação: [mongodump](https://www.mongodb.com/docs/database-tools/mongodump/).
@@ -55,12 +57,12 @@ de snapshot consistente compatível com seu cluster. Documentação: [mongodump]
 ## Recuperação segura
 
 Nunca teste restore no banco de produção. Use outro cluster/banco vazio, credenciais
-próprias e nome como `TasklyRestore_20260923`. Confira o checksum antes de restaurar:
+próprias e nome como `RivulusRestore_20260923`. Confira o checksum antes de restaurar:
 
 ```bash
 mongorestore --config /CAMINHO/PRIVADO/restore.yml \
-  --gzip --archive=/CAMINHO/backup/taskly.archive.gz \
-  --nsInclude 'Taskly.*' --nsFrom 'Taskly.*' --nsTo 'TasklyRestore_20260923.*' \
+  --gzip --archive=/CAMINHO/backup/rivulus.archive.gz \
+  --nsInclude 'Taskly.*' --nsFrom 'Taskly.*' --nsTo 'RivulusRestore_20260923.*' \
   --stopOnError
 ```
 

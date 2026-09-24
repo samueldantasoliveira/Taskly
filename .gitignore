@@ -6,9 +6,9 @@ obj/
 *.db
 
 # End-to-end tests
-Taskly.E2ETests/node_modules/
-Taskly.E2ETests/playwright-report/
-Taskly.E2ETests/test-results/
+Rivulus.E2ETests/node_modules/
+Rivulus.E2ETests/playwright-report/
+Rivulus.E2ETests/test-results/
 
 # Visual Studio
 .vscode/
@@ -25,5 +25,5 @@ backups/
 backup.yml
 restore.yml
 appsettings.*.json
-!Taskly.API/appsettings.Development.json
-!Taskly.API/appsettings.Testing.json
+!Rivulus.API/appsettings.Development.json
+!Rivulus.API/appsettings.Testing.json

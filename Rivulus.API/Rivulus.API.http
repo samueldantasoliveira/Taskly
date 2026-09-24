@@ -1,0 +1,22 @@
+@Rivulus_HostAddress = http://localhost:5219
+@projectId = coloque-o-id-do-projeto-aqui
+@token = coloque-o-token-aqui
+
+### Autenticar usuário
+POST {{Rivulus_HostAddress}}/api/login
+Content-Type: application/json
+
+{
+  "email": "seu-email@example.com",
+  "password": "sua-senha"
+}
+
+### Consultar tarefas paginadas de um projeto
+GET {{Rivulus_HostAddress}}/api/TodoTask/project/{{projectId}}?page=1&pageSize=20
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Consultar a segunda página
+GET {{Rivulus_HostAddress}}/api/TodoTask/project/{{projectId}}?page=2&pageSize=20
+Accept: application/json
+Authorization: Bearer {{token}}
