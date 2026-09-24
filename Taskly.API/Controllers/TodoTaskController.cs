@@ -36,6 +36,24 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
+        [HttpGet("{taskId}/comments")]
+        public async Task<IActionResult> GetComments(Guid taskId, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var userId)) return Unauthorized();
+            var result = await _todoTaskService.GetCommentsAsync(taskId, userId, cancellationToken);
+            return result.Success ? Ok(result.Value) : MapErrorToResponse(result.Error!);
+        }
+
+        [Authorize]
+        [HttpPost("{taskId}/comments")]
+        public async Task<IActionResult> AddComment(Guid taskId, CreateTaskCommentDto dto, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var userId)) return Unauthorized();
+            var result = await _todoTaskService.AddCommentAsync(taskId, dto, userId, cancellationToken);
+            return result.Success ? Ok(result.Value) : MapErrorToResponse(result.Error!);
+        }
+
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {

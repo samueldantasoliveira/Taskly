@@ -28,6 +28,7 @@ namespace Taskly.Infrastructure
         public IMongoCollection<Project> Projects => _database.GetCollection<Project>("Projects");
         public IMongoCollection<ProjectActivity> ProjectActivities => _database.GetCollection<ProjectActivity>("ProjectActivities");
         public IMongoCollection<TeamInvitation> TeamInvitations => _database.GetCollection<TeamInvitation>("TeamInvitations");
+        public IMongoCollection<TaskComment> TaskComments => _database.GetCollection<TaskComment>("TaskComments");
     
         public async Task EnsureIndexesAsync(CancellationToken cancellationToken = default)
         {
@@ -37,6 +38,8 @@ namespace Taskly.Infrastructure
             await EnsureTodoTaskIndexes(cancellationToken);
             await EnsureProjectActivityIndexes(cancellationToken);
             await EnsureTeamInvitationIndexes(cancellationToken);
+            var commentIndex = new CreateIndexModel<TaskComment>(Builders<TaskComment>.IndexKeys.Ascending(comment => comment.TaskId).Ascending(comment => comment.CreatedAt), new CreateIndexOptions { Name = "ix_task_comments_task_created_at" });
+            await TaskComments.Indexes.CreateOneAsync(commentIndex, cancellationToken: cancellationToken);
         }
 
         private async Task EnsureUserIndexes(CancellationToken cancellationToken)

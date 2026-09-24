@@ -119,6 +119,8 @@ export interface ProjectActivity {
   createdAt: string
 }
 
+export interface TaskComment { id: Id; authorId: Id; authorName: string; content: string; createdAt: string }
+
 export interface LoginInput {
   email: string
   password: string
