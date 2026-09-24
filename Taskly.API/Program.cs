@@ -231,6 +231,7 @@ builder.Services.AddScoped<IUserResponsibilities, UserResponsibilities>();
 builder.Services.AddScoped<TodoTaskService>();
 builder.Services.AddScoped<ITodoTaskRepository, TodoTaskRepository>();
 builder.Services.AddScoped<IProjectActivityRepository, ProjectActivityRepository>();
+builder.Services.AddScoped<ITaskCommentRepository, TaskCommentRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITeamService, TeamService>();

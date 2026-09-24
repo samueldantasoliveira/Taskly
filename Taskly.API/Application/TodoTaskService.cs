@@ -13,13 +13,15 @@ namespace Taskly.Application
         private readonly ITeamRepository _teamRepository;
         private readonly IUserRepository _userRepository;
         private readonly IProjectActivityRepository? _activityRepository;
-        public TodoTaskService(ITodoTaskRepository todoTaskrepository, IProjectRepository projectService, IUserRepository userService, ITeamRepository teamService, IProjectActivityRepository? activityRepository = null)
+        private readonly ITaskCommentRepository? _commentRepository;
+        public TodoTaskService(ITodoTaskRepository todoTaskrepository, IProjectRepository projectService, IUserRepository userService, ITeamRepository teamService, IProjectActivityRepository? activityRepository = null, ITaskCommentRepository? commentRepository = null)
         {
             _todoTaskRepository = todoTaskrepository;
             _projectRepository = projectService;
             _userRepository = userService;
             _teamRepository = teamService;
             _activityRepository = activityRepository;
+            _commentRepository = commentRepository;
         }
 
         public async Task<StructuredOperationResult<TodoTaskResponseDto>> AddTodoTaskAsync(CreateTodoTaskDto todoTaskDto, Guid authenticatedUserId, CancellationToken cancellationToken = default)
@@ -509,6 +511,31 @@ namespace Taskly.Application
             if (actor == null)
                 return;
             await _activityRepository.AddAsync(new ProjectActivity(task.ProjectId, actorId, actor.Name, task.Id, task.Title, description), cancellationToken);
+        }
+
+        public async Task<StructuredOperationResult<List<TaskCommentResponseDto>>> GetCommentsAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+        {
+            var task = await _todoTaskRepository.GetByIdAsync(taskId, cancellationToken);
+            if (task == null) return StructuredOperationResult<List<TaskCommentResponseDto>>.Fail(TodoTaskErrors.NotFound);
+            var project = await _projectRepository.GetByIdAsync(task.ProjectId, cancellationToken);
+            var team = project == null ? null : await _teamRepository.GetByIdAsync(project.TeamId, cancellationToken);
+            if (project == null) return StructuredOperationResult<List<TaskCommentResponseDto>>.Fail(TodoTaskErrors.ProjectNotFound);
+            if (team == null) return StructuredOperationResult<List<TaskCommentResponseDto>>.Fail(TodoTaskErrors.TeamNotFound);
+            if (!team.IsActive || !team.UserIds.Contains(userId)) return StructuredOperationResult<List<TaskCommentResponseDto>>.Fail(TodoTaskErrors.UserNotTeamMember);
+            var comments = _commentRepository == null ? [] : await _commentRepository.GetByTaskIdAsync(taskId, cancellationToken);
+            return StructuredOperationResult<List<TaskCommentResponseDto>>.Ok(comments.Select(c => new TaskCommentResponseDto { Id = c.Id, AuthorId = c.AuthorId, AuthorName = c.AuthorName, Content = c.Content, CreatedAt = c.CreatedAt }).ToList());
+        }
+
+        public async Task<StructuredOperationResult<TaskCommentResponseDto>> AddCommentAsync(Guid taskId, CreateTaskCommentDto dto, Guid userId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Content) || dto.Content.Trim().Length > 1000) return StructuredOperationResult<TaskCommentResponseDto>.Fail(TodoTaskErrors.InvalidTitle);
+            var access = await GetCommentsAsync(taskId, userId, cancellationToken);
+            if (!access.Success) return StructuredOperationResult<TaskCommentResponseDto>.Fail(access.Error!);
+            var author = await _userRepository.GetByIdAsync(userId, cancellationToken);
+            if (author == null || _commentRepository == null) return StructuredOperationResult<TaskCommentResponseDto>.Fail(TodoTaskErrors.UserNotFound);
+            var comment = new TaskComment(taskId, userId, author.Name, dto.Content);
+            await _commentRepository.AddAsync(comment, cancellationToken);
+            return StructuredOperationResult<TaskCommentResponseDto>.Ok(new TaskCommentResponseDto { Id = comment.Id, AuthorId = comment.AuthorId, AuthorName = comment.AuthorName, Content = comment.Content, CreatedAt = comment.CreatedAt });
         }
     }
 }
