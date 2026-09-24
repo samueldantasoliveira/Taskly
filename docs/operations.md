@@ -42,14 +42,12 @@ Use diretório novo e privado e registre data, versão do MongoDB e origem junto
 ```bash
 umask 077
 backup_dir=$(mktemp -d /tmp/rivulus-backup.XXXXXXXX)
-mongodump --config /CAMINHO/PRIVADO/backup.yml --db Taskly \
+mongodump --config /CAMINHO/PRIVADO/backup.yml --db Rivulus \
   --gzip --archive="$backup_dir/rivulus.archive.gz"
 sha256sum "$backup_dir/rivulus.archive.gz"
 ```
 
-`Taskly` permanece como identificador interno do banco de produção durante a
-migração de marca para evitar perda aparente dos dados. Confirme o nome real do
-banco antes de executar. Transfira o arquivo para armazenamento
+Confirme o nome real do banco antes de executar. Transfira o arquivo para armazenamento
 criptografado; `/tmp` não é retenção. Um dump de banco com escritas concorrentes não
 garante consistência entre coleções: planeje janela sem escritas ou use mecanismo
 de snapshot consistente compatível com seu cluster. Documentação: [mongodump](https://www.mongodb.com/docs/database-tools/mongodump/).
@@ -62,7 +60,7 @@ próprias e nome como `RivulusRestore_20260923`. Confira o checksum antes de res
 ```bash
 mongorestore --config /CAMINHO/PRIVADO/restore.yml \
   --gzip --archive=/CAMINHO/backup/rivulus.archive.gz \
-  --nsInclude 'Taskly.*' --nsFrom 'Taskly.*' --nsTo 'RivulusRestore_20260923.*' \
+  --nsInclude 'Rivulus.*' --nsFrom 'Rivulus.*' --nsTo 'RivulusRestore_20260923.*' \
   --stopOnError
 ```
 

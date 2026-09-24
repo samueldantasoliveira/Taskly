@@ -506,7 +506,7 @@ versionados. O Blueprint configura estas variáveis:
 | `AllowedHosts` | Host público exato da API |
 | `Cors__AllowedOrigins__0` | URL HTTPS pública exata do frontend |
 | `MongoDb__ConnectionString` | Solicitada de forma secreta ao criar o Blueprint |
-| `MongoDb__DatabaseName` | Mantida como `Taskly` para preservar os dados existentes |
+| `MongoDb__DatabaseName` | Definida como `Rivulus` no Blueprint |
 | `Jwt__Key` | Gerada automaticamente pelo Render como Base64 de 256 bits |
 
 Para fazer uma rotação manual futura da chave JWT, gere uma nova com:

@@ -1,16 +1,11 @@
 # Migração de Taskly para Rivulus
 
 A aplicação, a solution, os projetos, namespaces, pacotes e documentação usam a
-marca **Rivulus**. Alguns identificadores operacionais antigos permanecem
-temporariamente para que a mudança não interrompa a produção nem esconda os
-dados existentes.
+marca **Rivulus**. Os identificadores públicos antigos permanecem temporariamente
+para que links já divulgados continuem funcionando.
 
 ## Compatibilidade mantida
 
-- O banco de produção continua chamado `Taskly`; trocar apenas o nome da
-  configuração faria a aplicação abrir um banco vazio.
-- O emissor e a audiência JWT continuam como `Taskly.Api`, preservando tokens
-  emitidos antes do deploy da nova marca.
 - Os serviços e URLs do Render continuam com o prefixo `taskly-`, evitando uma
   mudança de origem sem coordenação de CORS, CSP e frontend.
 - O frontend migra automaticamente `taskly.session` e `taskly.theme` para as
@@ -19,6 +14,16 @@ dados existentes.
   `TASKLY_HEALTH_URL`.
 
 Esses nomes são detalhes internos e não aparecem como marca na interface.
+
+## Reinicialização dos dados
+
+O banco configurado passa a ser `Rivulus`. Essa decisão inicia a aplicação sem
+as contas e projetos do banco anterior. O emissor e a audiência dos novos tokens
+também passam a ser `Rivulus.Api`.
+
+O banco `Taskly` antigo não é apagado automaticamente e pode ser mantido por um
+curto período como rollback. Depois de validar o novo deploy e confirmar que os
+dados antigos não são necessários, ele pode ser removido manualmente no Atlas.
 
 ## Etapas externas após o merge
 
@@ -37,9 +42,8 @@ Esses nomes são detalhes internos e não aparecem como marca na interface.
 6. Manter os nomes atuais dos serviços Render até existir um domínio próprio.
    Com um domínio estável, migrar API e frontend sem expor o hostname interno ao
    usuário e atualizar, em conjunto, `AllowedHosts`, CORS, `VITE_API_URL` e CSP.
-7. Não renomear o banco diretamente. Se o identificador precisar mudar, criar
-   backup verificado, restaurar em `Rivulus`, validar contagens e índices e só
-   então alterar `MongoDb__DatabaseName`.
+7. Validar a criação dos índices e uma nova conta no banco `Rivulus`; somente
+   depois decidir se o banco antigo pode ser removido no Atlas.
 8. Após estabilizar a marca, atualizar currículo, perfil do GitHub e demais
    referências públicas uma única vez.
 
