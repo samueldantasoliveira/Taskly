@@ -529,12 +529,12 @@ namespace Taskly.Application
             if (team == null) return StructuredOperationResult<List<TaskCommentResponseDto>>.Fail(TodoTaskErrors.TeamNotFound);
             if (!team.IsActive || !team.UserIds.Contains(userId)) return StructuredOperationResult<List<TaskCommentResponseDto>>.Fail(TodoTaskErrors.UserNotTeamMember);
             var comments = _commentRepository == null ? [] : await _commentRepository.GetByTaskIdAsync(taskId, cancellationToken);
-            return StructuredOperationResult<List<TaskCommentResponseDto>>.Ok(comments.Select(c => new TaskCommentResponseDto { Id = c.Id, AuthorId = c.AuthorId, AuthorName = c.AuthorName, Content = c.Content, CreatedAt = c.CreatedAt }).ToList());
+            return StructuredOperationResult<List<TaskCommentResponseDto>>.Ok(comments.Select(ToCommentDto).ToList());
         }
 
         public async Task<StructuredOperationResult<TaskCommentResponseDto>> AddCommentAsync(Guid taskId, CreateTaskCommentDto dto, Guid userId, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(dto.Content) || dto.Content.Trim().Length > 1000) return StructuredOperationResult<TaskCommentResponseDto>.Fail(TodoTaskErrors.InvalidTitle);
+            if (string.IsNullOrWhiteSpace(dto.Content) || dto.Content.Trim().Length > 1000) return StructuredOperationResult<TaskCommentResponseDto>.Fail(TodoTaskErrors.InvalidComment);
             var access = await GetCommentsAsync(taskId, userId, cancellationToken);
             if (!access.Success) return StructuredOperationResult<TaskCommentResponseDto>.Fail(access.Error!);
             var author = await _userRepository.GetByIdAsync(userId, cancellationToken);
@@ -545,6 +545,33 @@ namespace Taskly.Application
             if (task?.AssignedUserId is Guid assignedId && assignedId != userId && _notificationRepository != null)
                 await _notificationRepository.AddAsync(new UserNotification(assignedId, $"{author.Name} comentou em '{task.Title}'.", $"/projects/{task.ProjectId}"), cancellationToken);
             return StructuredOperationResult<TaskCommentResponseDto>.Ok(new TaskCommentResponseDto { Id = comment.Id, AuthorId = comment.AuthorId, AuthorName = comment.AuthorName, Content = comment.Content, CreatedAt = comment.CreatedAt });
+            if (task != null) await RecordActivityAsync(task, userId, "comentou na tarefa", cancellationToken);
+            return StructuredOperationResult<TaskCommentResponseDto>.Ok(ToCommentDto(comment));
         }
+
+        public async Task<StructuredOperationResult<TaskCommentResponseDto>> UpdateCommentAsync(Guid taskId, Guid commentId, CreateTaskCommentDto dto, Guid userId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Content) || dto.Content.Trim().Length > 1000) return StructuredOperationResult<TaskCommentResponseDto>.Fail(TodoTaskErrors.InvalidComment);
+            var access = await GetCommentsAsync(taskId, userId, cancellationToken);
+            if (!access.Success) return StructuredOperationResult<TaskCommentResponseDto>.Fail(access.Error!);
+            var comment = _commentRepository == null ? null : await _commentRepository.GetByIdAsync(commentId, cancellationToken);
+            if (comment == null || comment.TaskId != taskId) return StructuredOperationResult<TaskCommentResponseDto>.Fail(TodoTaskErrors.CommentNotFound);
+            if (comment.AuthorId != userId) return StructuredOperationResult<TaskCommentResponseDto>.Fail(TodoTaskErrors.NotCommentAuthor);
+            comment.Update(dto.Content); await _commentRepository!.UpdateAsync(comment, cancellationToken);
+            return StructuredOperationResult<TaskCommentResponseDto>.Ok(ToCommentDto(comment));
+        }
+
+        public async Task<StructuredOperationResult> DeleteCommentAsync(Guid taskId, Guid commentId, Guid userId, CancellationToken cancellationToken = default)
+        {
+            var access = await GetCommentsAsync(taskId, userId, cancellationToken);
+            if (!access.Success) return StructuredOperationResult.Fail(access.Error!);
+            var comment = _commentRepository == null ? null : await _commentRepository.GetByIdAsync(commentId, cancellationToken);
+            if (comment == null || comment.TaskId != taskId) return StructuredOperationResult.Fail(TodoTaskErrors.CommentNotFound);
+            if (comment.AuthorId != userId) return StructuredOperationResult.Fail(TodoTaskErrors.NotCommentAuthor);
+            comment.Delete(); await _commentRepository!.UpdateAsync(comment, cancellationToken);
+            return StructuredOperationResult.Ok();
+        }
+
+        private static TaskCommentResponseDto ToCommentDto(TaskComment comment) => new() { Id = comment.Id, AuthorId = comment.AuthorId, AuthorName = comment.AuthorName, Content = comment.Content, CreatedAt = comment.CreatedAt, UpdatedAt = comment.UpdatedAt };
     }
 }

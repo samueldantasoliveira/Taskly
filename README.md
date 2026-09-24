@@ -102,6 +102,8 @@ Taskly/
 | Quadro Kanban                       | Filtros, ordenação, prioridades, prazos e histórico incremental por status | ✅      |
 | Dashboard Meu Trabalho              | Tarefas ativas atribuídas ao usuário, com resumo de status e prazos | ✅      |
 | Notificações Internas               | Avisos de atribuição e comentários, com controle de leitura | ✅      |
+| Observabilidade HTTP                | ID de correlação, status, duração e usuário nos logs estruturados | ✅      |
+| Convites para Equipes               | Links com token seguro, validade, aceite e revogação pelo proprietário | ✅      |
 
 O frontend preserva a sessão em falhas temporárias da API e permite tentar novamente.
 Se a edição da tarefa for salva, mas a atribuição falhar, informa o resultado parcial

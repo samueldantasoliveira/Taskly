@@ -57,6 +57,16 @@ export interface TeamMember extends User {
   isOwner: boolean
 }
 
+export interface TeamInvitation {
+  id: Id
+  teamId: Id
+  teamName: string
+  email: string
+  token: string | null
+  expiresAt: string
+  createdAt: string
+}
+
 export interface Project {
   version?: number
   id: Id
@@ -109,7 +119,7 @@ export interface ProjectActivity {
   createdAt: string
 }
 
-export interface TaskComment { id: Id; authorId: Id; authorName: string; content: string; createdAt: string }
+export interface TaskComment { id: Id; authorId: Id; authorName: string; content: string; createdAt: string; updatedAt: string }
 export interface UserNotification { id: Id; message: string; link: string; createdAt: string; readAt: string | null }
 
 export interface LoginInput {

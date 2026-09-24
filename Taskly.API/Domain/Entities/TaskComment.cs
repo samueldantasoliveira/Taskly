@@ -11,10 +11,14 @@ public class TaskComment
     public string AuthorName { get; private set; } = null!;
     public string Content { get; private set; } = null!;
     public DateTime CreatedAt { get; private set; }
+    public DateTime UpdatedAt { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
     protected TaskComment() { }
     public TaskComment(Guid taskId, Guid authorId, string authorName, string content)
     {
         Id = Guid.NewGuid(); TaskId = taskId; AuthorId = authorId; AuthorName = authorName;
-        Content = content.Trim(); CreatedAt = DateTime.UtcNow;
+        Content = content.Trim(); CreatedAt = UpdatedAt = DateTime.UtcNow;
     }
+    public void Update(string content) { Content = content.Trim(); UpdatedAt = DateTime.UtcNow; }
+    public void Delete() { DeletedAt = DateTime.UtcNow; UpdatedAt = DeletedAt.Value; }
 }
