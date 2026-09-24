@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ChevronRight, LogOut, Menu, Plus, Settings, UsersRound, X } from 'lucide-react'
+import { CheckSquare, ChevronRight, LogOut, Menu, Plus, Settings, UsersRound, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../features/auth/auth-context'
@@ -10,6 +10,7 @@ import { ThemeToggle } from '../shared/components/ThemeToggle'
 import { queryKeys } from '../shared/lib/query-keys'
 
 function getPageTitle(pathname: string) {
+  if (pathname === '/my-work') return 'Meu trabalho'
   if (pathname === '/teams') return 'Suas equipes'
   if (pathname === '/profile') return 'Seu perfil'
   if (pathname.startsWith('/projects/')) return 'Projeto'
@@ -36,6 +37,7 @@ export function AppShell() {
           <button className="icon-button sidebar__close" onClick={closeMobile} aria-label="Fechar menu"><X size={20} /></button>
         </div>
         <nav className="sidebar__nav" aria-label="Navegação principal">
+          <NavLink to="/my-work" onClick={closeMobile}><CheckSquare size={18} /> Meu trabalho</NavLink>
           <NavLink to="/teams" end onClick={closeMobile}><UsersRound size={18} /> Equipes</NavLink>
           <NavLink to="/profile" onClick={closeMobile}><Settings size={18} /> Perfil</NavLink>
         </nav>

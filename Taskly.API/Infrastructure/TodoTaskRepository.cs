@@ -1,6 +1,7 @@
 ﻿using MongoDB.Driver;
 using Taskly.Application;
 using Taskly.Domain.Entities;
+using Taskly.Domain;
 using System.Linq.Expressions;
 using Taskly.Application.Queries;
 using MongoDB.Bson;
@@ -30,6 +31,24 @@ namespace Taskly.Infrastructure
         {
             return await _context.TodoTasks.Find(BaseFilter(t => t.ProjectId == projectId && t.AssignedUserId != null))
                 .Project(task => task.AssignedUserId!.Value).ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<TodoTask>> GetActiveAssignedToUserAsync(IEnumerable<Guid> projectIds, Guid userId, CancellationToken cancellationToken = default)
+        {
+            var ids = projectIds.Distinct().ToList();
+            if (ids.Count == 0)
+                return [];
+
+            var filter = Builders<TodoTask>.Filter.And(
+                BaseFilter(task => ids.Contains(task.ProjectId) && task.AssignedUserId == userId),
+                Builders<TodoTask>.Filter.In(task => task.Status, [TodoStatus.Todo, TodoStatus.InProgress]));
+
+            return await _context.TodoTasks.Find(filter)
+                .Sort(Builders<TodoTask>.Sort.Combine(
+                    Builders<TodoTask>.Sort.Descending(task => task.Priority),
+                    Builders<TodoTask>.Sort.Ascending(task => task.DueDate),
+                    Builders<TodoTask>.Sort.Descending(task => task.CreatedAt)))
+                .ToListAsync(cancellationToken);
         }
 
         public async Task<PagedResult<TodoTask>> GetByProjectIdAsync(

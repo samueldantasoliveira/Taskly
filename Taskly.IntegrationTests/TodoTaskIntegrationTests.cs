@@ -29,6 +29,31 @@ public class TodoTaskIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
+    public async Task MyWork_ReturnsOnlyAuthenticatedUsersActiveTasks_WithProjectContext()
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        var member = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        await AddMemberAsync(team.Id, member.User.Id);
+        var project = await _projectHelper.CreateProjectAsync(team.Id);
+        var mine = await CreateTaskAsync(project.Id, owner.User.Id);
+        await CreateTaskAsync(project.Id, member.User.Id);
+
+        var response = await _client.GetAsync("/api/todotask/my-work");
+
+        response.EnsureSuccessStatusCode();
+        var dashboard = await response.Content.ReadFromJsonAsync<MyWorkDashboardResponseDto>();
+        Assert.NotNull(dashboard);
+        Assert.Equal(1, dashboard.TodoCount);
+        var item = Assert.Single(dashboard.Items);
+        Assert.Equal(mine.Id, item.Id);
+        Assert.Equal(project.Id, item.ProjectId);
+        Assert.Equal(project.Name, item.ProjectName);
+        Assert.Equal(team.Name, item.TeamName);
+    }
+
+    [Fact]
     public async Task TodoTask_PersistsPriorityAndDueDate_AndSupportsDueDateSorting()
     {
         var owner = await _userHelper.CreateUserAndLoginAsync();

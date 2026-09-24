@@ -100,6 +100,7 @@ Taskly/
 | Interface Web Responsiva            | Fluxos de autenticação, equipes, projetos e perfil     | ✅      |
 | Temas Noturno e Claro               | Noturno por padrão, com alternância e preferência salva no navegador | ✅      |
 | Quadro Kanban                       | Filtros, ordenação, prioridades, prazos e histórico incremental por status | ✅      |
+| Dashboard Meu Trabalho              | Tarefas ativas atribuídas ao usuário, com resumo de status e prazos | ✅      |
 
 O frontend preserva a sessão em falhas temporárias da API e permite tentar novamente.
 Se a edição da tarefa for salva, mas a atribuição falhar, informa o resultado parcial

@@ -383,6 +383,45 @@ namespace Taskly.Application
             return null;
         }
 
+        public async Task<StructuredOperationResult<MyWorkDashboardResponseDto>> GetMyWorkAsync(
+            Guid authenticatedUserId,
+            CancellationToken cancellationToken = default)
+        {
+            if (await _userRepository.GetByIdAsync(authenticatedUserId, cancellationToken) == null)
+                return StructuredOperationResult<MyWorkDashboardResponseDto>.Fail(TodoTaskErrors.UserNotFound);
+
+            var teams = (await _teamRepository.GetUserTeamsAsync(authenticatedUserId, cancellationToken))
+                .Where(team => team.IsActive)
+                .ToList();
+            var projectsByTeam = await Task.WhenAll(teams.Select(team => _projectRepository.GetByTeamIdAsync(team.Id, cancellationToken)));
+            var projects = projectsByTeam.SelectMany(projects => projects)
+                .Where(project => project.Status == ProjectStatus.Active)
+                .ToList();
+            var projectNames = projects.ToDictionary(project => project.Id, project => project.Name);
+            var teamNames = teams.ToDictionary(team => team.Id, team => team.Name);
+            var teamNamesByProjectId = projects.ToDictionary(project => project.Id, project => teamNames[project.TeamId]);
+            var tasks = await _todoTaskRepository.GetActiveAssignedToUserAsync(projectNames.Keys, authenticatedUserId, cancellationToken);
+            var today = DateTime.UtcNow.Date;
+
+            return StructuredOperationResult<MyWorkDashboardResponseDto>.Ok(new MyWorkDashboardResponseDto
+            {
+                TodoCount = tasks.Count(task => task.Status == TodoStatus.Todo),
+                InProgressCount = tasks.Count(task => task.Status == TodoStatus.InProgress),
+                OverdueCount = tasks.Count(task => task.DueDate.HasValue && task.DueDate.Value.Date < today),
+                Items = tasks.Select(task => new MyWorkItemResponseDto
+                {
+                    Id = task.Id,
+                    Title = task.Title,
+                    Status = task.Status,
+                    Priority = task.Priority,
+                    DueDate = task.DueDate,
+                    ProjectId = task.ProjectId,
+                    ProjectName = projectNames[task.ProjectId],
+                    TeamName = teamNamesByProjectId[task.ProjectId]
+                }).ToList()
+            });
+        }
+
         public async Task<StructuredOperationResult> AssignUserAsync(Guid taskId, Guid? userId, Guid authenticatedUserId, CancellationToken cancellationToken = default)
         {
             var todoTask = await _todoTaskRepository.GetByIdAsync(taskId, cancellationToken);

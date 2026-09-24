@@ -81,6 +81,24 @@ export interface TodoTask {
   updatedAt: string
 }
 
+export interface MyWorkItem {
+  id: Id
+  title: string
+  status: TodoStatus
+  priority: TaskPriority
+  dueDate: string | null
+  projectId: Id
+  projectName: string
+  teamName: string
+}
+
+export interface MyWorkDashboard {
+  todoCount: number
+  inProgressCount: number
+  overdueCount: number
+  items: MyWorkItem[]
+}
+
 export interface LoginInput {
   email: string
   password: string
