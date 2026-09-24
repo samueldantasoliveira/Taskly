@@ -4,6 +4,7 @@ import type {
   Id,
   Team,
   TeamMember,
+  TeamInvitation,
   UpdateTeamInput,
 } from '../../shared/types/api'
 
@@ -54,3 +55,8 @@ export function deleteTeam(id: Id) {
 export function leaveTeam(id: Id) {
   return apiRequest<void>(`/api/team/${id}/leave`, { method: 'DELETE' })
 }
+
+export function getTeamInvitations(teamId: Id, signal?: AbortSignal) { return apiRequest<TeamInvitation[]>(`/api/team/${teamId}/invitations`, { signal }) }
+export function createTeamInvitation(teamId: Id, email: string) { return apiRequest<TeamInvitation>(`/api/team/${teamId}/invitations`, { method: 'POST', body: jsonBody({ email }) }) }
+export function revokeTeamInvitation(teamId: Id, invitationId: Id) { return apiRequest<void>(`/api/team/${teamId}/invitations/${invitationId}`, { method: 'DELETE' }) }
+export function acceptTeamInvitation(token: string) { return apiRequest<Team>(`/api/team/invitations/${encodeURIComponent(token)}/accept`, { method: 'POST' }) }

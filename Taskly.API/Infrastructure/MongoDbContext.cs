@@ -27,6 +27,7 @@ namespace Taskly.Infrastructure
         public IMongoCollection<Team> Teams => _database.GetCollection<Team>("Teams");
         public IMongoCollection<Project> Projects => _database.GetCollection<Project>("Projects");
         public IMongoCollection<ProjectActivity> ProjectActivities => _database.GetCollection<ProjectActivity>("ProjectActivities");
+        public IMongoCollection<TeamInvitation> TeamInvitations => _database.GetCollection<TeamInvitation>("TeamInvitations");
         public IMongoCollection<TaskComment> TaskComments => _database.GetCollection<TaskComment>("TaskComments");
     
         public async Task EnsureIndexesAsync(CancellationToken cancellationToken = default)
@@ -36,6 +37,7 @@ namespace Taskly.Infrastructure
             await EnsureProjectIndexes(cancellationToken);
             await EnsureTodoTaskIndexes(cancellationToken);
             await EnsureProjectActivityIndexes(cancellationToken);
+            await EnsureTeamInvitationIndexes(cancellationToken);
             var commentIndex = new CreateIndexModel<TaskComment>(Builders<TaskComment>.IndexKeys.Ascending(comment => comment.TaskId).Ascending(comment => comment.CreatedAt), new CreateIndexOptions { Name = "ix_task_comments_task_created_at" });
             await TaskComments.Indexes.CreateOneAsync(commentIndex, cancellationToken: cancellationToken);
         }
@@ -105,6 +107,14 @@ namespace Taskly.Infrastructure
                 Builders<ProjectActivity>.IndexKeys.Ascending(activity => activity.ProjectId).Descending(activity => activity.CreatedAt),
                 new CreateIndexOptions { Name = "ix_project_activities_project_created_at" });
             await ProjectActivities.Indexes.CreateOneAsync(index, cancellationToken: cancellationToken);
+        }
+
+        private async Task EnsureTeamInvitationIndexes(CancellationToken cancellationToken)
+        {
+            await TeamInvitations.Indexes.CreateManyAsync([
+                new CreateIndexModel<TeamInvitation>(Builders<TeamInvitation>.IndexKeys.Ascending(x => x.TokenHash), new CreateIndexOptions { Name = "ux_team_invitations_token", Unique = true }),
+                new CreateIndexModel<TeamInvitation>(Builders<TeamInvitation>.IndexKeys.Ascending(x => x.TeamId).Ascending(x => x.Email), new CreateIndexOptions { Name = "ix_team_invitations_team_email" })
+            ], cancellationToken: cancellationToken);
         }
     }
 }

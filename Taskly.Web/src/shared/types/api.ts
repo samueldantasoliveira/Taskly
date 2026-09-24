@@ -57,6 +57,16 @@ export interface TeamMember extends User {
   isOwner: boolean
 }
 
+export interface TeamInvitation {
+  id: Id
+  teamId: Id
+  teamName: string
+  email: string
+  token: string | null
+  expiresAt: string
+  createdAt: string
+}
+
 export interface Project {
   version?: number
   id: Id

@@ -9,6 +9,7 @@ import { RegisterPage } from './pages/RegisterPage'
 import { TeamPage } from './pages/TeamPage'
 import { TeamsPage } from './pages/TeamsPage'
 import { MyWorkPage } from './pages/MyWorkPage'
+import { AcceptInvitationPage } from './pages/AcceptInvitationPage'
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/teams/:teamId" element={<TeamPage />} />
           <Route path="/projects/:projectId" element={<ProjectPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/invitations/:token" element={<AcceptInvitationPage />} />
         </Route>
       </Route>
 
