@@ -7,12 +7,12 @@ permissions:
   contents: read
 jobs:
   health:
-    if: ${{ vars.TASKLY_HEALTH_URL != '' }}
+    if: ${{ vars.RIVULUS_HEALTH_URL != '' || vars.TASKLY_HEALTH_URL != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
       - name: Check readiness
         env:
-          HEALTH_URL: ${{ vars.TASKLY_HEALTH_URL }}
+          HEALTH_URL: ${{ vars.RIVULUS_HEALTH_URL || vars.TASKLY_HEALTH_URL }}
         run: bash scripts/check-health.sh "$HEALTH_URL"

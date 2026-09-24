@@ -1,20 +1,21 @@
 services:
   - type: web
+    # Operational identifier kept until the Render service migration is performed.
     name: taskly-api-samueldantasoliveira
     runtime: docker
     plan: free
     region: virginia
-    dockerfilePath: ./Taskly.API/Dockerfile
+    dockerfilePath: ./Rivulus.API/Dockerfile
     dockerContext: .
     healthCheckPath: /health/ready
     autoDeployTrigger: checksPass
     buildFilter:
       paths:
-        - Taskly.API/**
+        - Rivulus.API/**
         - global.json
         - .dockerignore
       ignoredPaths:
-        - Taskly.API/**/*.md
+        - Rivulus.API/**/*.md
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -30,17 +31,18 @@ services:
         generateValue: true
 
   - type: web
+    # Operational identifier kept until the Render service migration is performed.
     name: taskly-web-samueldantasoliveira
     runtime: static
-    rootDir: Taskly.Web
+    rootDir: Rivulus.Web
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     autoDeployTrigger: checksPass
     buildFilter:
       paths:
-        - Taskly.Web/**
+        - Rivulus.Web/**
       ignoredPaths:
-        - Taskly.Web/**/*.md
+        - Rivulus.Web/**/*.md
     envVars:
       - key: NODE_VERSION
         value: "24"

@@ -11,9 +11,9 @@
 **/*.user
 **/*.suo
 
-Taskly.Web/
-Taskly.UnitTests/
-Taskly.IntegrationTests/
+Rivulus.Web/
+Rivulus.UnitTests/
+Rivulus.IntegrationTests/
 
 **/appsettings.*.json
 

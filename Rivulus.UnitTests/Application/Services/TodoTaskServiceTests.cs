@@ -1,0 +1,2921 @@
+using Rivulus.Application;
+using Rivulus.Domain.Entities;
+using Moq;
+using Rivulus.Application.DTOs;
+using Rivulus.Domain;
+using Rivulus.Application.Results;
+using Rivulus.Application.Queries;
+
+namespace Rivulus.Tests;
+
+public class TodoTaskServiceTests
+{
+    public readonly Mock<IProjectRepository> _projectRepositoryMock;
+    public readonly TodoTaskService _todoTaskService;
+    public readonly Mock<ITodoTaskRepository> _todoTaskRepositoryMock;
+    public readonly Mock<IUserRepository> _userRepositoryMock;
+    public readonly Mock<ITeamRepository> _teamRepositoryMock;
+
+    public TodoTaskServiceTests()
+    {
+        _projectRepositoryMock = new Mock<IProjectRepository>();
+        _todoTaskRepositoryMock = new Mock<ITodoTaskRepository>();
+        _userRepositoryMock = new Mock<IUserRepository>();
+        _teamRepositoryMock = new Mock<ITeamRepository>();
+
+        _todoTaskService = new TodoTaskService(
+            _todoTaskRepositoryMock.Object,
+            _projectRepositoryMock.Object,
+            _userRepositoryMock.Object,
+            _teamRepositoryMock.Object);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_ProjectNotFound_ReturnsFail()
+    {
+        // Arrange
+        CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Description Test",
+            ProjectId = Guid.NewGuid()
+        };
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project?)null);
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(
+            createTodoTaskDto,
+            Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_ProjectInactive_ReturnsFail()
+    {
+        // Arrange
+        CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Description Test",
+            ProjectId = Guid.NewGuid()
+        };
+
+        Project project = new Project(
+            "Project Test",
+            "Description Test",
+            Guid.NewGuid(),
+            ProjectStatus.Inactive,
+            Guid.NewGuid());
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        // Act 
+        var result = await _todoTaskService.AddTodoTaskAsync(
+            createTodoTaskDto,
+            Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_UserNotFound_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Description Test",
+            ProjectId = Guid.NewGuid(),
+            AssignedUserId = Guid.NewGuid()
+        };
+
+        Project project = new Project(
+            "Project Test",
+            "Description Test",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        Team team = new Team("Team Test", authenticatedUserId);
+        team.AddMember(createTodoTaskDto.AssignedUserId.Value);
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        _userRepositoryMock
+            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        // Act 
+        var result = await _todoTaskService.AddTodoTaskAsync(
+            createTodoTaskDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.UserNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_InvalidTitle_ReturnsFail()
+    {
+        // Arrange
+        CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "",
+            Description = "Description Test",
+            ProjectId = Guid.NewGuid(),
+            AssignedUserId = Guid.NewGuid()
+        };
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(
+            createTodoTaskDto,
+            Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal("TodoTask.InvalidTitle", result.Error.Code);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_ValidInput_CallsRepositoryAddAsync()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        User user = new User(
+            "User Test",
+            "Test@Test.com",
+            "Test");
+
+        Team team = new Team(
+            "Team Test",
+            authenticatedUserId);
+
+        team.AddMember(user.Id);
+
+        Project project = new Project(
+            "Project Test",
+            "Description Test",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        CreateTodoTaskDto createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "TodoTask Test",
+            Description = "Description Test",
+            ProjectId = project.Id,
+            AssignedUserId = user.Id
+        };
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        _userRepositoryMock
+            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(
+            createTodoTaskDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(createTodoTaskDto.Title, result.Value.Title);
+        Assert.Equal(createTodoTaskDto.Description, result.Value.Description);
+        Assert.Equal(createTodoTaskDto.ProjectId, result.Value.ProjectId);
+        Assert.Equal(createTodoTaskDto.AssignedUserId, result.Value.AssignedUserId);
+
+        _todoTaskRepositoryMock.Verify(
+            r => r.AddAsync(It.Is<TodoTask>(t =>
+                t.Title == createTodoTaskDto.Title &&
+                t.Description == createTodoTaskDto.Description &&
+                t.ProjectId == createTodoTaskDto.ProjectId &&
+                t.AssignedUserId == createTodoTaskDto.AssignedUserId
+            ), It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task AddTodoTask_TeamNotFound_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var project = new Project(
+            "Project Test",
+            "Description Test",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        var createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "TodoTask Test",
+            Description = "Description Test",
+            ProjectId = project.Id
+        };
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Team?)null);
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(
+            createTodoTaskDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_TeamInactive_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var team = new Team(
+            "Team Test",
+            authenticatedUserId);
+
+        team.Update(null, false);
+
+        var project = new Project(
+            "Project Test",
+            "Description Test",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        var createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "TodoTask Test",
+            Description = "Description Test",
+            ProjectId = project.Id
+        };
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(
+            createTodoTaskDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_AuthenticatedUserNotTeamMember_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var team = new Team(
+            "Team Test",
+            Guid.NewGuid());
+
+        var project = new Project(
+            "Project Test",
+            "Description Test",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        var createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "TodoTask Test",
+            Description = "Description Test",
+            ProjectId = project.Id
+        };
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(
+            createTodoTaskDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
+    }
+
+    [Fact]
+    public async Task AddTodoTask_AssignedUserNotTeamMember_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var assignedUserId = Guid.NewGuid();
+
+        var team = new Team(
+            "Team Test",
+            authenticatedUserId);
+
+        var project = new Project(
+            "Project Test",
+            "Description Test",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        var createTodoTaskDto = new CreateTodoTaskDto
+        {
+            Title = "TodoTask Test",
+            Description = "Description Test",
+            ProjectId = project.Id,
+            AssignedUserId = assignedUserId
+        };
+
+        _projectRepositoryMock
+            .Setup(p => p.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(t => t.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.AddTodoTaskAsync(
+            createTodoTaskDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.AssignedUserNotTeamMember, result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NotFound_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var updateDto = new UpdateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Description Test"
+        };
+
+        // Act
+        var result = await _todoTaskService.UpdateAsync(
+            Guid.NewGuid(),
+            updateDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ProjectNotFound_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var updateDto = new UpdateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Description Test"
+        };
+
+        var todoTask = new TodoTask(
+            "TodoTask Test",
+            "Description Test",
+            Guid.NewGuid(),
+            Guid.NewGuid());
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _projectRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project?)null);
+
+        // Act
+        var result = await _todoTaskService.UpdateAsync(
+            Guid.NewGuid(),
+            updateDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ProjectInactive_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var project = new Project(
+            "Project Test",
+            "Description Test",
+            Guid.NewGuid(),
+            ProjectStatus.Inactive,
+            Guid.NewGuid());
+
+        var updateDto = new UpdateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Desctiption Test"
+        };
+
+        var todoTask = new TodoTask(
+            "TodoTask Title",
+            "Description Test",
+            project.Id,
+            Guid.NewGuid());
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _projectRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        // Act
+        var result = await _todoTaskService.UpdateAsync(
+            Guid.NewGuid(),
+            updateDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
+    }
+
+
+    [Fact]
+    public async Task UpdateAsync_AuthenticatedUserNotTeamMember_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var team = new Team(
+            "Team Test",
+            Guid.NewGuid());
+
+        var project = new Project(
+            "Project Test",
+            "Description Test",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            project.Id,
+            null);
+
+        var updateDto = new UpdateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Desctiption Test"
+        };
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _projectRepositoryMock
+            .Setup(r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.UpdateAsync(
+            todoTask.Id,
+            updateDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_TeamNotFound_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var project = new Project(
+            "Project Test",
+            "Description Test",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            project.Id,
+            null);
+
+        var updateDto = new UpdateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Description Test"
+        };
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _projectRepositoryMock
+            .Setup(r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Team?)null);
+
+        // Act
+        var result = await _todoTaskService.UpdateAsync(
+            todoTask.Id,
+            updateDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_TeamInactive_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var team = new Team(
+            "Team Test",
+            authenticatedUserId);
+
+        team.Update(null, false);
+
+        var project = new Project(
+            "Project Test",
+            "Description Test",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            project.Id,
+            null);
+
+        var updateDto = new UpdateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Desctiption Test"
+        };
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _projectRepositoryMock
+            .Setup(r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(project.TeamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.UpdateAsync(
+            todoTask.Id,
+            updateDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NoChanges_ReturnsFail()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var team = new Team(
+            "Team Test",
+            authenticatedUserId);
+
+        var user = new User(
+            "User Test",
+            "Test@Test.com",
+            "Test");
+
+        team.AddMember(user.Id);
+
+        var project = new Project(
+            "Project Test",
+            "Description Test",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        var updateDto = new UpdateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Description Test"
+        };
+
+        var todoTask = new TodoTask(
+            "Title Test",
+            "Description Test",
+            project.Id,
+            user.Id);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        _projectRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        _userRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        // Act
+        var result = await _todoTaskService.UpdateAsync(
+            todoTask.Id,
+            updateDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NoChangesDetected, result.Error);
+    }
+
+    [Theory]
+    [InlineData("11111111-1111-1111-1111-111111111111")]
+    [InlineData("00000000-0000-0000-0000-000000000000")]
+    public async Task UpdateAsync_ValidInput_CallsRepositoryUpdateAsync(
+        string userIdString)
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        Guid? userId = Guid.Parse(userIdString);
+        User? user = null;
+
+        var team = new Team(
+            "Team Test",
+            authenticatedUserId);
+
+        if (userId != Guid.Empty)
+        {
+            user = new User(
+                "User Test",
+                "Test@Test.com",
+                "Test");
+
+            team.AddMember(user.Id);
+        }
+
+        var project = new Project(
+            "Project Test",
+            "Description Test",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid());
+
+        var updateDto = new UpdateTodoTaskDto
+        {
+            Title = "Title Test",
+            Description = "Description Test"
+        };
+
+        var todoTask = new TodoTask(
+            "Title Test 2",
+            "Description Test",
+            project.Id,
+            userId);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        _projectRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _userRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        _teamRepositoryMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.UpdateAsync(
+            todoTask.Id,
+            updateDto,
+            authenticatedUserId);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(updateDto.Title, result.Value.Title);
+        Assert.Equal(updateDto.Description, result.Value.Description);
+        
+        _todoTaskRepositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<TodoTask>(t =>
+                t.Title == updateDto.Title &&
+                t.Description == updateDto.Description
+            ), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task StartTaskAsync_ShouldReturnNotFound_WhenTaskDoesNotExist()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        // Act
+        var result = await _todoTaskService.StartTaskAsync(
+            Guid.NewGuid(),
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task StartTaskAsync_ShouldReturnNotAssignedUser_WhenTaskHasNoAssignedUser()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            Guid.NewGuid(),
+            null);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        // Act
+        var result = await _todoTaskService.StartTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotAssignedUser, result.Error);
+    }
+
+    [Fact]
+    public async Task StartTaskAsync_ShouldReturnNotAssignedUser_WhenAuthenticatedUserIsNotAssignedToTask()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid());
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        // Act
+        var result = await _todoTaskService.StartTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotAssignedUser, result.Error);
+    }
+
+    [Fact]
+    public async Task StartTaskAsync_ShouldReturnSuccess_WhenAuthenticatedUserIsAssignedToTask()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            projectId,
+            authenticatedUserId);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _todoTaskService.StartTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.True(result.Success);
+
+        _todoTaskRepositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<TodoTask>(t =>
+                t.Id == todoTask.Id &&
+                t.Status == TodoStatus.InProgress), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task StartTaskAsync_ShouldReturnNoChangesDetected_WhenTaskUpdateFails()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            projectId,
+            authenticatedUserId);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _todoTaskService.StartTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NoChangesDetected, result.Error);
+    }
+
+    [Fact]
+    public async Task CompleteTaskAsync_ShouldReturnNotFound_WhenTaskDoesNotExist()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        // Act
+        var result = await _todoTaskService.CompleteTaskAsync(
+            Guid.NewGuid(),
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task CompleteTaskAsync_ShouldReturnNotAssignedUser_WhenTaskHasNoAssignedUser()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            Guid.NewGuid(),
+            null);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        // Act
+        var result = await _todoTaskService.CompleteTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotAssignedUser, result.Error);
+    }
+
+    [Fact]
+    public async Task CompleteTaskAsync_ShouldReturnNotAssignedUser_WhenAuthenticatedUserIsNotAssignedToTask()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid());
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        // Act
+        var result = await _todoTaskService.CompleteTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotAssignedUser, result.Error);
+    }
+
+    [Fact]
+    public async Task CompleteTaskAsync_ShouldReturnSuccess_WhenAuthenticatedUserIsAssignedToTask()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            projectId,
+            authenticatedUserId);
+
+        todoTask.Start();
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _todoTaskService.CompleteTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.True(result.Success);
+
+        _todoTaskRepositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<TodoTask>(t =>
+                t.Id == todoTask.Id &&
+                t.Status == TodoStatus.Done), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CompleteTaskAsync_ShouldReturnNoChangesDetected_WhenTaskUpdateFails()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            projectId,
+            authenticatedUserId);
+
+        todoTask.Start();
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _todoTaskService.CompleteTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NoChangesDetected, result.Error);
+    }
+
+    [Fact]
+    public async Task CancelTaskAsync_ShouldReturnNotFound_WhenTaskDoesNotExist()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        // Act
+        var result = await _todoTaskService.CancelTaskAsync(
+            Guid.NewGuid(),
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task CancelTaskAsync_ShouldReturnNotAssignedUser_WhenTaskHasNoAssignedUser()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            Guid.NewGuid(),
+            null);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        // Act
+        var result = await _todoTaskService.CancelTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotAssignedUser, result.Error);
+    }
+
+    [Fact]
+    public async Task CancelTaskAsync_ShouldReturnNotAssignedUser_WhenAuthenticatedUserIsNotAssignedToTask()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            Guid.NewGuid(),
+            Guid.NewGuid());
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        // Act
+        var result = await _todoTaskService.CancelTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotAssignedUser, result.Error);
+    }
+
+    [Fact]
+    public async Task CancelTaskAsync_ShouldReturnSuccess_WhenAuthenticatedUserIsAssignedToTask()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            projectId,
+            authenticatedUserId);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _todoTaskService.CancelTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.True(result.Success);
+
+        _todoTaskRepositoryMock.Verify(
+            r => r.UpdateAsync(It.Is<TodoTask>(t =>
+                t.Id == todoTask.Id &&
+                t.Status == TodoStatus.Cancelled), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CancelTaskAsync_ShouldReturnNoChangesDetected_WhenTaskUpdateFails()
+    {
+        // Arrange
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = SetUpActiveProject(authenticatedUserId);
+
+        var todoTask = new TodoTask(
+            "Task",
+            "Description",
+            projectId,
+            authenticatedUserId);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.GetByIdAsync(todoTask.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(todoTask);
+
+        _todoTaskRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _todoTaskService.CancelTaskAsync(
+            todoTask.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NoChangesDetected, result.Error);
+    }
+
+    private Guid SetUpActiveProject(Guid memberId)
+    {
+        var team = new Team("Team", memberId);
+        var project = new Project("Project", "Description", team.Id, ProjectStatus.Active, memberId);
+        _projectRepositoryMock.Setup(r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _teamRepositoryMock.Setup(r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+        return project.Id;
+    }
+
+   [Fact]
+    public async Task AssignUserAsync_ShouldAssignUser_WhenUserIsValidAndBelongsToTeam()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+        
+        var projectId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            teamId,
+            ProjectStatus.Active,
+            authenticatedUserId
+        );
+
+        var team = new Team(
+            "Test team",
+            authenticatedUserId
+        );
+        
+        var assignedUser = new User
+        (
+            "Test user",
+            "Email@test.com",
+            "123456"
+        );
+
+        var assignedUserId = assignedUser.Id;
+        team.AddMember(assignedUserId);
+
+        
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(assignedUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(assignedUser);
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.UpdateAsync(task, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            assignedUserId,
+            authenticatedUserId);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Equal(assignedUserId, task.AssignedUserId);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(task, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AssignUserAsync_ShouldRemoveAssignedUser_WhenUserIdIsNull()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            Guid.NewGuid()
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            teamId,
+            ProjectStatus.Active,
+            authenticatedUserId
+        );
+
+        var team = new Team(
+            "Test team",
+            authenticatedUserId
+        );
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.UpdateAsync(task, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            null,
+            authenticatedUserId);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.Null(task.AssignedUserId);
+
+        _userRepositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(task, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task AssignUserAsync_ShouldFail_WhenTaskDoesNotExist()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TodoTask?)null);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            Guid.NewGuid(),
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.NotFound, result.Error);
+
+        _projectRepositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AssignUserAsync_ShouldFail_WhenProjectDoesNotExist()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project?)null);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            Guid.NewGuid(),
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
+
+        _teamRepositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AssignUserAsync_ShouldFail_WhenProjectIsInactive()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            teamId,
+            ProjectStatus.Inactive,
+            authenticatedUserId
+        );
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            Guid.NewGuid(),
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
+
+        _teamRepositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AssignUserAsync_ShouldFail_WhenTeamDoesNotExist()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            teamId,
+            ProjectStatus.Active,
+            authenticatedUserId
+        );
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Team?)null);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            Guid.NewGuid(),
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
+
+        _userRepositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AssignUserAsync_ShouldFail_WhenTeamIsInactive()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+        var assignedUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            teamId,
+            ProjectStatus.Active,
+            authenticatedUserId
+        );
+
+        var team = new Team(
+            "Test team",
+            authenticatedUserId
+        );
+
+        team.Update("Test team", false);
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            assignedUserId,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
+
+        _userRepositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AssignUserAsync_ShouldFail_WhenAuthenticatedUserIsNotTeamMember()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+        var assignedUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            teamId,
+            ProjectStatus.Active,
+            authenticatedUserId
+        );
+
+        var team = new Team(
+            "Test team",
+            Guid.NewGuid()
+        );
+
+        team.AddMember(assignedUserId);
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            assignedUserId,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
+
+        _userRepositoryMock.Verify(
+            x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AssignUserAsync_ShouldFail_WhenAssignedUserDoesNotExist()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+        var assignedUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            teamId,
+            ProjectStatus.Active,
+            authenticatedUserId
+        );
+
+        var team = new Team(
+            "Test team",
+            authenticatedUserId
+        );
+
+        team.AddMember(assignedUserId);
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(assignedUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            assignedUserId,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.UserNotFound, result.Error);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AssignUserAsync_ShouldFail_WhenAssignedUserIsNotTeamMember()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+
+        var projectId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+
+        var assignedUser = new User(
+            "Test user",
+            "email@test.com",
+            "123456"
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            teamId,
+            ProjectStatus.Active,
+            authenticatedUserId
+        );
+
+        var team = new Team(
+            "Test team",
+            authenticatedUserId
+        );
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(assignedUser.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(assignedUser);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            assignedUser.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.AssignedUserNotTeamMember, result.Error);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AssignUserAsync_ShouldFail_WhenRepositoryUpdateFails()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var authenticatedUserId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var teamId = Guid.NewGuid();
+
+        var assignedUser = new User(
+            "Test user",
+            "email@test.com",
+            "123456"
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            teamId,
+            ProjectStatus.Active,
+            authenticatedUserId
+        );
+
+        var team = new Team(
+            "Test team",
+            authenticatedUserId
+        );
+
+        team.AddMember(assignedUser.Id);
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.GetByIdAsync(taskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock
+            .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock
+            .Setup(x => x.GetByIdAsync(teamId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        _userRepositoryMock
+            .Setup(x => x.GetByIdAsync(assignedUser.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(assignedUser);
+
+        _todoTaskRepositoryMock
+            .Setup(x => x.UpdateAsync(task, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _todoTaskService.AssignUserAsync(
+            taskId,
+            assignedUser.Id,
+            authenticatedUserId);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.NoChangesDetected, result.Error);
+
+        _todoTaskRepositoryMock.Verify(
+            x => x.UpdateAsync(task, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnNotFound_WhenTaskDoesNotExist()
+    {
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(Guid.NewGuid(), Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnProjectNotFound_WhenProjectDoesNotExist()
+    {
+        // Arrange
+        var projectId = Guid.NewGuid();
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            projectId,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnProjectInactive_WhenProjectIsInactive()
+    {
+        // Arrange
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Inactive,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnTeamNotFound_WhenTeamDoesNotExist()
+    {
+        // Arrange
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnTeamInactive_WhenTeamIsInactive()
+    {
+        // Arrange
+        var authenticatedUser = Guid.NewGuid();
+
+        var team = new Team(
+            "Test team", 
+            Guid.NewGuid()
+        );
+        team.Update(null, false);
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock.Setup(
+            r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnUserNotTeamMember_WhenAuthenticatedUserIsNotTeamMember()
+    {
+        // Arrange
+        var authenticatedUser = Guid.NewGuid();
+
+        var team = new Team(
+            "Test team", 
+            Guid.NewGuid()
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock.Setup(
+            r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, Guid.NewGuid());
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldReturnNoChangesDetected_WhenRepositoryUpdateFails()
+    {
+        // Arrange
+        var authenticatedUser = Guid.NewGuid();
+
+        var team = new Team(
+            "Test team", 
+            authenticatedUser
+        );
+        
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock.Setup(
+            r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, authenticatedUser);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.NotNull(result.Error);
+        Assert.Equal(TodoTaskErrors.NoChangesDetected, result.Error);
+    }
+
+    [Fact]
+    public async Task DeleteTaskAsync_ShouldDeleteTask_WhenRequestIsValid()
+    {
+         // Arrange
+        var authenticatedUser = Guid.NewGuid();
+
+        var team = new Team(
+            "Test team", 
+            authenticatedUser
+        );
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            Guid.NewGuid()
+        );
+
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null
+        );
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        _projectRepositoryMock.Setup(
+            r => r.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        _teamRepositoryMock.Setup(
+            r => r.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+
+        _todoTaskRepositoryMock.Setup(
+            r => r.UpdateAsync(It.IsAny<TodoTask>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _todoTaskService.DeleteTaskAsync(task.Id, authenticatedUser);
+
+        // Assert
+        Assert.True(result.Success);
+        Assert.NotNull(task.DeletedAt);
+
+        _todoTaskRepositoryMock.Verify(
+            r => r.UpdateAsync(task, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetById_TaskNotFound_ReturnsFail()
+    {
+        var result = await _todoTaskService.GetByIdAsync(
+            Guid.NewGuid(),
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_ProjectNotFound_ReturnsFail()
+    {
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            Guid.NewGuid(),
+            null);
+
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_ProjectInactive_ReturnsFail()
+    {
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Inactive,
+            Guid.NewGuid());
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null);
+
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_TeamNotFound_ReturnsFail()
+    {
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            Guid.NewGuid());
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null);
+
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_TeamInactive_ReturnsFail()
+    {
+        var authenticatedUserId = Guid.NewGuid();
+        var team = new Team("Test team", authenticatedUserId);
+        team.Update(null, false);
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            authenticatedUserId);
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            authenticatedUserId);
+
+        SetupGetByIdDependencies(task, project, team);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            authenticatedUserId);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_UserNotTeamMember_ReturnsFail()
+    {
+        var team = new Team("Test team", Guid.NewGuid());
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            team.OwnerId);
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            null);
+
+        SetupGetByIdDependencies(task, project, team);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            Guid.NewGuid());
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
+    }
+
+    [Fact]
+    public async Task GetById_ValidRequest_ReturnsMappedTask()
+    {
+        var authenticatedUserId = Guid.NewGuid();
+        var team = new Team("Test team", authenticatedUserId);
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            authenticatedUserId);
+        var task = new TodoTask(
+            "Test task",
+            "Test description",
+            project.Id,
+            authenticatedUserId);
+
+        SetupGetByIdDependencies(task, project, team);
+
+        var result = await _todoTaskService.GetByIdAsync(
+            task.Id,
+            authenticatedUserId);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(task.Id, result.Value.Id);
+        Assert.Equal(task.Title, result.Value.Title);
+        Assert.Equal(task.Description, result.Value.Description);
+        Assert.Equal(task.ProjectId, result.Value.ProjectId);
+        Assert.Equal(task.AssignedUserId, result.Value.AssignedUserId);
+        Assert.Equal(task.Status, result.Value.Status);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_UserNotFound_ReturnsFail()
+    {
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            query,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.UserNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_ProjectNotFound_ReturnsFail()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            Guid.NewGuid(),
+            user.Id,
+            query,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.ProjectNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_ProjectInactive_ReturnsFail()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Inactive,
+            user.Id);
+
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.ProjectInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_TeamNotFound_ReturnsFail()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var project = new Project(
+            "Test project",
+            "Test description",
+            Guid.NewGuid(),
+            ProjectStatus.Active,
+            user.Id);
+        
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.TeamNotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_TeamInactive_ReturnsFail()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        team.Update(null, false);
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
+        SetupGetByProjectIdDependencies(user, project, team);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.TeamInactive, result.Error);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_UserNotTeamMember_ReturnsFail()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", Guid.NewGuid());
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            team.OwnerId);
+        
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
+        SetupGetByProjectIdDependencies(user, project, team);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query,
+            CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Equal(TodoTaskErrors.UserNotTeamMember, result.Error);
+        _todoTaskRepositoryMock.Verify(
+            repository => repository.GetByProjectIdAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<TodoTaskQuery>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_NoTasks_ReturnsEmptyList()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+
+        SetupGetByProjectIdDependencies(user, project, team);
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByProjectIdAsync(
+                project.Id,
+                query,
+                cancellationToken))
+            .ReturnsAsync(new PagedResult<TodoTask> { Items = [], TotalCount = 0 });
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query,
+            cancellationToken);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Empty(result.Value.Items);
+        Assert.Equal(0, result.Value.TotalCount);
+        _todoTaskRepositoryMock.Verify(
+            repository => repository.GetByProjectIdAsync(
+                project.Id,
+                query,
+                cancellationToken),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_ValidRequest_ReturnsMappedTasks()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+        var firstTask = new TodoTask(
+            "First task",
+            "First description",
+            project.Id,
+            user.Id);
+        var secondTask = new TodoTask(
+            "Second task",
+            "Second description",
+            project.Id,
+            null);
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+
+        SetupGetByProjectIdDependencies(user, project, team);
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByProjectIdAsync(
+                project.Id,
+                query,
+                cancellationToken))
+            .ReturnsAsync(new PagedResult<TodoTask> { Items = [firstTask, secondTask], TotalCount = 37 });
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query,
+            cancellationToken);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(37, result.Value.TotalCount);
+        Assert.Collection(
+            result.Value.Items,
+            first =>
+            {
+                Assert.Equal(firstTask.Id, first.Id);
+                Assert.Equal(firstTask.CreatedAt, first.CreatedAt);
+                Assert.Equal(firstTask.UpdatedAt, first.UpdatedAt);
+                Assert.Equal(firstTask.Title, first.Title);
+                Assert.Equal(firstTask.Description, first.Description);
+                Assert.Equal(firstTask.ProjectId, first.ProjectId);
+                Assert.Equal(firstTask.AssignedUserId, first.AssignedUserId);
+                Assert.Equal(firstTask.Status, first.Status);
+            },
+            second =>
+            {
+                Assert.Equal(secondTask.Id, second.Id);
+                Assert.Equal(secondTask.CreatedAt, second.CreatedAt);
+                Assert.Equal(secondTask.UpdatedAt, second.UpdatedAt);
+                Assert.Equal(secondTask.Title, second.Title);
+                Assert.Equal(secondTask.Description, second.Description);
+                Assert.Equal(secondTask.ProjectId, second.ProjectId);
+                Assert.Equal(secondTask.AssignedUserId, second.AssignedUserId);
+                Assert.Equal(secondTask.Status, second.Status);
+            });
+    }
+
+    [Fact]
+    public async Task GetByProjectId_PropagatesCancellationTokenToAllRepositories()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        var query = new TodoTaskQuery
+        {
+            Page = 1,
+            PageSize = 20
+        };
+
+        var project = new Project(
+            "Test project",
+            "Test description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id, cancellationToken))
+            .ReturnsAsync(user);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id, cancellationToken))
+            .ReturnsAsync(project);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id, cancellationToken))
+            .ReturnsAsync(team);
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByProjectIdAsync(project.Id, query, cancellationToken))
+            .ReturnsAsync(new PagedResult<TodoTask> { Items = [], TotalCount = 0 });
+
+        await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query,
+            cancellationToken);
+
+        _userRepositoryMock.Verify(
+            repository => repository.GetByIdAsync(user.Id, cancellationToken),
+            Times.Once);
+        _projectRepositoryMock.Verify(
+            repository => repository.GetByIdAsync(project.Id, cancellationToken),
+            Times.Once);
+        _teamRepositoryMock.Verify(
+            repository => repository.GetByIdAsync(team.Id, cancellationToken),
+            Times.Once);
+        _todoTaskRepositoryMock.Verify(
+            repository => repository.GetByProjectIdAsync(project.Id, query, cancellationToken),
+            Times.Once);
+    }
+
+    [Theory]
+    [InlineData(0, 20, "TodoTask.InvalidPage")]
+    [InlineData(-1, 20, "TodoTask.InvalidPage")]
+    [InlineData(1, 0, "TodoTask.InvalidPageSize")]
+    [InlineData(1, -1, "TodoTask.InvalidPageSize")]
+    [InlineData(1, 101, "TodoTask.InvalidPageSize")]
+    [InlineData(int.MaxValue, 100, "TodoTask.PaginationLimitExceeded")]
+    public async Task GetByProjectId_InvalidPagination_DoesNotQueryRepositories(
+        int page, int pageSize, string errorCode)
+    {
+        var query = new TodoTaskQuery
+        {
+            Page = page,
+            PageSize = pageSize
+        };
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            Guid.NewGuid(), Guid.NewGuid(), query);
+
+        Assert.False(result.Success);
+        Assert.Equal(errorCode, result.Error!.Code);
+        _userRepositoryMock.VerifyNoOtherCalls();
+        _projectRepositoryMock.VerifyNoOtherCalls();
+        _teamRepositoryMock.VerifyNoOtherCalls();
+        _todoTaskRepositoryMock.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(2, 1)]
+    [InlineData(3, 100)]
+    [InlineData(1073741824, 2)]
+    [InlineData(int.MaxValue, 1)]
+    public async Task GetByProjectId_ValidPagination_PreservesTotalOnEmptyPage(
+        int page, int pageSize)
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        var project = new Project("Project", "Description", team.Id, ProjectStatus.Active, user.Id);
+        var query = new TodoTaskQuery
+        {
+            Page = page,
+            PageSize = pageSize
+        };
+        using var source = new CancellationTokenSource();
+        SetupGetByProjectIdDependencies(user, project, team);
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByProjectIdAsync(project.Id, query, source.Token))
+            .ReturnsAsync(new PagedResult<TodoTask> { Items = [], TotalCount = 1 });
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id, user.Id, query, source.Token);
+
+        Assert.True(result.Success);
+        Assert.Empty(result.Value!.Items);
+        Assert.Equal(1, result.Value.TotalCount);
+        _todoTaskRepositoryMock.Verify(repository => repository.GetByProjectIdAsync(
+            project.Id, query, source.Token), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("status", "TodoTask.InvalidStatusFilter")]
+    [InlineData("sortBy", "TodoTask.InvalidSortBy")]
+    [InlineData("sortDirection", "TodoTask.InvalidSortDirection")]
+    public async Task GetByProjectId_InvalidQueryEnum_ReturnsFail(
+        string invalidField,
+        string errorCode)
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        var project = new Project(
+            "Project",
+            "Description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+        var query = invalidField switch
+        {
+            "status" => new TodoTaskQuery { Status = (TodoStatus)999 },
+            "sortBy" => new TodoTaskQuery { SortBy = (TodoTaskSortBy)999 },
+            _ => new TodoTaskQuery
+            {
+                SortDirection = (TodoTaskSortDirection)999
+            }
+        };
+        SetupGetByProjectIdDependencies(user, project, team);
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query);
+
+        Assert.False(result.Success);
+        Assert.Equal(errorCode, result.Error!.Code);
+        _todoTaskRepositoryMock.Verify(
+            repository => repository.GetByProjectIdAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<TodoTaskQuery>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetByProjectId_ValidQuery_ForwardsAllCriteriaToRepository()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        var team = new Team("Test team", user.Id);
+        var project = new Project(
+            "Project",
+            "Description",
+            team.Id,
+            ProjectStatus.Active,
+            user.Id);
+        var query = new TodoTaskQuery
+        {
+            Page = 2,
+            PageSize = 15,
+            Title = "api",
+            Status = TodoStatus.Done,
+            AssigneeId = user.Id,
+            SortBy = TodoTaskSortBy.Title,
+            SortDirection = TodoTaskSortDirection.Ascending
+        };
+        SetupGetByProjectIdDependencies(user, project, team);
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByProjectIdAsync(
+                project.Id,
+                It.IsAny<TodoTaskQuery>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PagedResult<TodoTask>
+            {
+                Items = [],
+                TotalCount = 0
+            });
+
+        var result = await _todoTaskService.GetByProjectIdAsync(
+            project.Id,
+            user.Id,
+            query);
+
+        Assert.True(result.Success);
+        _todoTaskRepositoryMock.Verify(
+            repository => repository.GetByProjectIdAsync(
+                project.Id,
+                It.Is<TodoTaskQuery>(received =>
+                    received.Page == 2 &&
+                    received.PageSize == 15 &&
+                    received.Title == "api" &&
+                    received.Status == TodoStatus.Done &&
+                    received.AssigneeId == user.Id &&
+                    received.SortBy == TodoTaskSortBy.Title &&
+                    received.SortDirection == TodoTaskSortDirection.Ascending),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    private void SetupGetByProjectIdDependencies(
+        User user,
+        Project project,
+        Team team)
+    {
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+    }
+
+    private void SetupGetByIdDependencies(
+        TodoTask task,
+        Project project,
+        Team team)
+    {
+        _todoTaskRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(task.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+        _projectRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _teamRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(team.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(team);
+    }
+}

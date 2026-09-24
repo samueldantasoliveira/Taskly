@@ -20,22 +20,22 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Construir imagem da API
-        run: docker build -f Taskly.API/Dockerfile -t taskly-api:ci .
+        run: docker build -f Rivulus.API/Dockerfile -t rivulus-api:ci .
 
       - name: Iniciar MongoDB
         run: |
-          docker network create taskly-ci
+          docker network create rivulus-ci
 
           docker run -d \
-            --name taskly-mongodb-ci \
-            --network taskly-ci \
+            --name rivulus-mongodb-ci \
+            --network rivulus-ci \
             mongo:8
 
       - name: Aguardar MongoDB
         timeout-minutes: 2
         run: |
           for attempt in {1..30}; do
-            if docker exec taskly-mongodb-ci \
+            if docker exec rivulus-mongodb-ci \
               mongosh --quiet --eval \
               'quit(db.adminCommand({ ping: 1 }).ok ? 0 : 1)'; then
               exit 0
@@ -53,17 +53,17 @@ jobs:
           echo "::add-mask::$CI_JWT_KEY"
 
           docker run -d \
-            --name taskly-api-ci \
-            --network taskly-ci \
+            --name rivulus-api-ci \
+            --network rivulus-ci \
             -p 127.0.0.1:10000:10000 \
             -e ASPNETCORE_ENVIRONMENT=Production \
             -e PORT=10000 \
             -e AllowedHosts=localhost \
-            -e Cors__AllowedOrigins__0=https://frontend.taskly.test \
-            -e MongoDb__ConnectionString=mongodb://taskly-mongodb-ci:27017 \
-            -e MongoDb__DatabaseName=TasklyContainerCI \
+            -e Cors__AllowedOrigins__0=https://frontend.rivulus.test \
+            -e MongoDb__ConnectionString=mongodb://rivulus-mongodb-ci:27017 \
+            -e MongoDb__DatabaseName=RivulusContainerCI \
             -e Jwt__Key="$CI_JWT_KEY" \
-            taskly-api:ci
+            rivulus-api:ci
 
       - name: Verificar saúde da API
         timeout-minutes: 3
@@ -89,11 +89,11 @@ jobs:
       - name: Mostrar logs em caso de falha
         if: failure()
         run: |
-          docker logs taskly-api-ci || true
-          docker logs taskly-mongodb-ci || true
+          docker logs rivulus-api-ci || true
+          docker logs rivulus-mongodb-ci || true
 
       - name: Limpar containers e rede
         if: always()
         run: |
-          docker rm -f taskly-api-ci taskly-mongodb-ci || true
-          docker network rm taskly-ci || true
+          docker rm -f rivulus-api-ci rivulus-mongodb-ci || true
+          docker network rm rivulus-ci || true
