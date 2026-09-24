@@ -1,10 +1,8 @@
 <p align="center">
-  <img src="Rivulus.Web/public/brand/rivulus-mark.svg" alt="Símbolo da Rivulus" width="96" />
+  <img src="Rivulus.Web/public/brand/rivulus-banner.svg" alt="Rivulus — Projetos e equipes em movimento." width="1200" />
 </p>
 
 <h1 align="center">Rivulus</h1>
-
-<p align="center">Projetos e equipes em movimento.</p>
 
 ![.NET](https://img.shields.io/badge/.NET-10-blue)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Database-green)

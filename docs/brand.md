@@ -20,14 +20,24 @@ colaborativo e confiável.
 
 ## Símbolo
 
-O símbolo é uma letra **R** construída com um traço contínuo e cantos
-arredondados. A forma representa simultaneamente uma corrente, um caminho e o
-movimento de uma tarefa através do fluxo.
+O símbolo é uma letra **R** esculpida em uma corrente de turquesa e azul,
+sobre um emblema azul-petróleo. Reflexos, relevo e linhas de água dão
+profundidade à marca; a curva interna sugere o movimento do trabalho.
 
 O arquivo principal está em
 `Rivulus.Web/public/brand/rivulus-mark.svg`. Não distorça, gire ou altere as
 cores do símbolo. Preserve ao redor dele um espaço livre equivalente a um
 quarto de sua largura.
+
+- `rivulus-mark.svg`: emblema completo, também utilizado pelo componente `Logo`
+  na navegação e nas telas de autenticação.
+- `rivulus-banner.svg`: capa do README, com assinatura e correntes ao fundo.
+  É autocontida para renderizar como imagem no GitHub.
+- `../favicon.svg`: versão reduzida, sem detalhes finos, para a aba do navegador.
+
+Os três arquivos são vetoriais, sem dependências externas ou animações. A base
+escura do emblema preserva sua aparência nos temas claro e escuro. Ao alterar o
+símbolo, mantenha a silhueta do R consistente nas três versões.
 
 ## Cores
 

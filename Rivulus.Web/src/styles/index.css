@@ -113,8 +113,8 @@ h1, h2, h3 { letter-spacing: -.025em; }
 ::selection { background: var(--selection); }
 
 .logo { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-size: 22px; font-weight: 800; letter-spacing: -.045em; }
-.logo__mark { display: grid; place-items: center; width: 38px; height: 38px; color: #dffffb; background: linear-gradient(145deg, #0d3742, #092630); border: 1px solid rgba(82, 227, 210, .24); border-radius: 12px; box-shadow: 0 9px 24px rgba(4, 25, 33, .28); }
-.logo__mark svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.logo__mark { display: grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px; border-radius: 11px; box-shadow: 0 5px 14px rgba(4, 25, 33, .2); }
+.logo__mark img { display: block; width: 100%; height: 100%; }
 .logo__wordmark { line-height: 1; }
 .eyebrow { display: block; color: var(--primary); font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
 
@@ -201,7 +201,6 @@ h1, h2, h3 { letter-spacing: -.025em; }
 .auth-showcase::before { content: ""; position: absolute; width: 520px; height: 520px; right: -180px; top: -170px; border: 1px solid rgba(255,255,255,.12); border-radius: 50%; box-shadow: 0 0 0 70px rgba(255,255,255,.025), 0 0 0 145px rgba(255,255,255,.02); }
 .auth-showcase::after { content: ""; position: absolute; left: -90px; bottom: -170px; width: 380px; height: 380px; background: radial-gradient(circle, rgba(69,214,197,.3), transparent 68%); }
 .auth-showcase__logo { position: relative; z-index: 1; color: white; }
-.auth-showcase__logo .logo__mark { color: #e7fffc; background: rgba(8, 36, 45, .56); border-color: rgba(82, 227, 210, .42); }
 .auth-showcase__content { position: relative; z-index: 1; max-width: 660px; margin: 80px 0; }
 .auth-showcase__pill { display: inline-flex; padding: 7px 11px; color: #bdf8f1; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.13); border-radius: 99px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .auth-showcase h1 { margin: 26px 0 20px; font-size: clamp(45px, 5vw, 76px); line-height: .99; letter-spacing: -.055em; }
