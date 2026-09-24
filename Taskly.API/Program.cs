@@ -258,6 +258,7 @@ if (app.Environment.IsProduction())
     app.UseForwardedHeaders();
 }
 
+app.UseMiddleware<RequestObservabilityMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsProduction())
