@@ -4,6 +4,7 @@ import type {
   Id,
   MyWorkDashboard,
   ProjectActivity,
+  TaskComment,
   PagedResult,
   TodoTask,
   TodoStatus,
@@ -43,6 +44,8 @@ export function getMyWork(signal?: AbortSignal) {
 export function getProjectActivities(projectId: Id, signal?: AbortSignal) {
   return apiRequest<ProjectActivity[]>(`/api/todotask/project/${projectId}/activity`, { signal })
 }
+export function getTaskComments(taskId: Id, signal?: AbortSignal) { return apiRequest<TaskComment[]>(`/api/todotask/${taskId}/comments`, { signal }) }
+export function addTaskComment(taskId: Id, content: string) { return apiRequest<TaskComment>(`/api/todotask/${taskId}/comments`, { method: 'POST', body: jsonBody({ content }) }) }
 
 export async function getAllProjectTasks(
   projectId: Id,

@@ -357,6 +357,7 @@ h1, h2, h3 { letter-spacing: -.025em; }
 .column-pagination { display: grid; justify-items: center; gap: 8px; padding: 10px 4px 4px; color: var(--muted); border-top: 1px solid var(--line); font-size: 10px; }
 .column-pagination .button { width: 100%; }
 .activity-section { margin-top: 28px; }.activity-list { display: grid; gap: 8px; }.activity-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; }.activity-item p { margin: 2px 0 5px; font-size: 13px; }.activity-item span, .activity-empty { color: var(--muted); font-size: 12px; }.activity-empty { padding: 14px; background: var(--well); border-radius: 10px; }
+.task-comments { display: grid; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }.task-comments h3 { margin: 0; font-size: 15px; }.task-comments article { display: flex; gap: 9px; }.task-comments article strong { font-size: 12px; }.task-comments article p { margin: 3px 0; font-size: 13px; white-space: pre-wrap; }.task-comments article small { color: var(--muted); font-size: 11px; }.task-comments .button { justify-self: end; }
 
 .profile-page { width: min(850px, 100%); }
 .profile-header { display: flex; align-items: center; gap: 18px; padding: 5px 3px; }

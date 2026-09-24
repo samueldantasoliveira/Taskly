@@ -9,6 +9,7 @@ export const queryKeys = {
   project: (id: Id) => ['projects', id] as const,
   tasks: (projectId: Id) => ['projects', projectId, 'tasks'] as const,
   activities: (projectId: Id) => ['projects', projectId, 'activities'] as const,
+  comments: (taskId: Id) => ['tasks', taskId, 'comments'] as const,
   taskList: (projectId: Id, scope: string, filters: object) =>
     ['projects', projectId, 'tasks', scope, filters] as const,
 }
