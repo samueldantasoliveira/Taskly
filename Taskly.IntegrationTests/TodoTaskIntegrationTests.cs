@@ -29,6 +29,27 @@ public class TodoTaskIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
+    public async Task ProjectActivity_RecordsTaskChanges_AndRestrictsProjectAccess()
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        var project = await _projectHelper.CreateProjectAsync(team.Id);
+        var task = await CreateTaskAsync(project.Id, owner.User.Id);
+
+        var activities = await _client.GetFromJsonAsync<List<ProjectActivityResponseDto>>($"/api/todotask/project/{project.Id}/activity");
+
+        var activity = Assert.Single(activities!);
+        Assert.Equal(owner.User.Id, activity.ActorId);
+        Assert.Equal(task.Id, activity.TaskId);
+        Assert.Equal("criou a tarefa", activity.Description);
+
+        var outsider = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(outsider.Token);
+        Assert.Equal(HttpStatusCode.Forbidden, (await _client.GetAsync($"/api/todotask/project/{project.Id}/activity")).StatusCode);
+    }
+
+    [Fact]
     public async Task MyWork_ReturnsOnlyAuthenticatedUsersActiveTasks_WithProjectContext()
     {
         var owner = await _userHelper.CreateUserAndLoginAsync();

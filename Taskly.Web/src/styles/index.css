@@ -356,6 +356,7 @@ h1, h2, h3 { letter-spacing: -.025em; }
 .column-empty { display: grid; place-items: center; min-height: 90px; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 10px; font-size: 10px; }
 .column-pagination { display: grid; justify-items: center; gap: 8px; padding: 10px 4px 4px; color: var(--muted); border-top: 1px solid var(--line); font-size: 10px; }
 .column-pagination .button { width: 100%; }
+.activity-section { margin-top: 28px; }.activity-list { display: grid; gap: 8px; }.activity-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; }.activity-item p { margin: 2px 0 5px; font-size: 13px; }.activity-item span, .activity-empty { color: var(--muted); font-size: 12px; }.activity-empty { padding: 14px; background: var(--well); border-radius: 10px; }
 
 .profile-page { width: min(850px, 100%); }
 .profile-header { display: flex; align-items: center; gap: 18px; padding: 5px 3px; }

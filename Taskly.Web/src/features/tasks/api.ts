@@ -3,6 +3,7 @@ import type {
   CreateTaskInput,
   Id,
   MyWorkDashboard,
+  ProjectActivity,
   PagedResult,
   TodoTask,
   TodoStatus,
@@ -37,6 +38,10 @@ export function getProjectTasks(projectId: Id, options: ProjectTaskQuery = {}, s
 
 export function getMyWork(signal?: AbortSignal) {
   return apiRequest<MyWorkDashboard>('/api/todotask/my-work', { signal })
+}
+
+export function getProjectActivities(projectId: Id, signal?: AbortSignal) {
+  return apiRequest<ProjectActivity[]>(`/api/todotask/project/${projectId}/activity`, { signal })
 }
 
 export async function getAllProjectTasks(

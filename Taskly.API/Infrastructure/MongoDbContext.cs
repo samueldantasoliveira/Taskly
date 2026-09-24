@@ -26,6 +26,7 @@ namespace Taskly.Infrastructure
         public IMongoCollection<User> Users => _database.GetCollection<User>("Users");
         public IMongoCollection<Team> Teams => _database.GetCollection<Team>("Teams");
         public IMongoCollection<Project> Projects => _database.GetCollection<Project>("Projects");
+        public IMongoCollection<ProjectActivity> ProjectActivities => _database.GetCollection<ProjectActivity>("ProjectActivities");
     
         public async Task EnsureIndexesAsync(CancellationToken cancellationToken = default)
         {
@@ -33,6 +34,7 @@ namespace Taskly.Infrastructure
             await EnsureTeamIndexes(cancellationToken);
             await EnsureProjectIndexes(cancellationToken);
             await EnsureTodoTaskIndexes(cancellationToken);
+            await EnsureProjectActivityIndexes(cancellationToken);
         }
 
         private async Task EnsureUserIndexes(CancellationToken cancellationToken)
@@ -92,6 +94,14 @@ namespace Taskly.Infrastructure
                     .Ascending(task => task.DueDate),
                 new CreateIndexOptions { Name = "ix_todo_tasks_assignee_status_priority_due_date" });
             await TodoTasks.Indexes.CreateOneAsync(myWorkIndex, cancellationToken: cancellationToken);
+        }
+
+        private async Task EnsureProjectActivityIndexes(CancellationToken cancellationToken)
+        {
+            var index = new CreateIndexModel<ProjectActivity>(
+                Builders<ProjectActivity>.IndexKeys.Ascending(activity => activity.ProjectId).Descending(activity => activity.CreatedAt),
+                new CreateIndexOptions { Name = "ix_project_activities_project_created_at" });
+            await ProjectActivities.Indexes.CreateOneAsync(index, cancellationToken: cancellationToken);
         }
     }
 }

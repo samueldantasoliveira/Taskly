@@ -65,6 +65,17 @@ namespace Taskly.Controllers
         }
 
         [Authorize]
+        [HttpGet("project/{projectId}/activity")]
+        public async Task<IActionResult> GetProjectActivities(Guid projectId, CancellationToken cancellationToken)
+        {
+            if (!TryGetAuthenticatedUserId(out var authenticatedUserId))
+                return Unauthorized();
+
+            var result = await _todoTaskService.GetProjectActivitiesAsync(projectId, authenticatedUserId, cancellationToken);
+            return result.Success ? Ok(result.Value) : MapErrorToResponse(result.Error!);
+        }
+
+        [Authorize]
         [HttpGet("project/{projectId}")]
         public async Task<IActionResult> GetByProjectId(
             Guid projectId,
