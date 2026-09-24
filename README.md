@@ -101,6 +101,7 @@ Taskly/
 | Temas Noturno e Claro               | Noturno por padrão, com alternância e preferência salva no navegador | ✅      |
 | Quadro Kanban                       | Filtros, ordenação, prioridades, prazos e histórico incremental por status | ✅      |
 | Dashboard Meu Trabalho              | Tarefas ativas atribuídas ao usuário, com resumo de status e prazos | ✅      |
+| Notificações Internas               | Avisos de atribuição e comentários, com controle de leitura | ✅      |
 | Observabilidade HTTP                | ID de correlação, status, duração e usuário nos logs estruturados | ✅      |
 | Convites para Equipes               | Links com token seguro, validade, aceite e revogação pelo proprietário | ✅      |
 

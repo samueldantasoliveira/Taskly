@@ -120,6 +120,7 @@ export interface ProjectActivity {
 }
 
 export interface TaskComment { id: Id; authorId: Id; authorName: string; content: string; createdAt: string; updatedAt: string }
+export interface UserNotification { id: Id; message: string; link: string; createdAt: string; readAt: string | null }
 
 export interface LoginInput {
   email: string

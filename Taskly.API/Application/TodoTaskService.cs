@@ -14,7 +14,8 @@ namespace Taskly.Application
         private readonly IUserRepository _userRepository;
         private readonly IProjectActivityRepository? _activityRepository;
         private readonly ITaskCommentRepository? _commentRepository;
-        public TodoTaskService(ITodoTaskRepository todoTaskrepository, IProjectRepository projectService, IUserRepository userService, ITeamRepository teamService, IProjectActivityRepository? activityRepository = null, ITaskCommentRepository? commentRepository = null)
+        private readonly IUserNotificationRepository? _notificationRepository;
+        public TodoTaskService(ITodoTaskRepository todoTaskrepository, IProjectRepository projectService, IUserRepository userService, ITeamRepository teamService, IProjectActivityRepository? activityRepository = null, ITaskCommentRepository? commentRepository = null, IUserNotificationRepository? notificationRepository = null)
         {
             _todoTaskRepository = todoTaskrepository;
             _projectRepository = projectService;
@@ -22,6 +23,7 @@ namespace Taskly.Application
             _teamRepository = teamService;
             _activityRepository = activityRepository;
             _commentRepository = commentRepository;
+            _notificationRepository = notificationRepository;
         }
 
         public async Task<StructuredOperationResult<TodoTaskResponseDto>> AddTodoTaskAsync(CreateTodoTaskDto todoTaskDto, Guid authenticatedUserId, CancellationToken cancellationToken = default)
@@ -67,6 +69,8 @@ namespace Taskly.Application
             );
             await _todoTaskRepository.AddAsync(todoTask, cancellationToken);
             await RecordActivityAsync(todoTask, authenticatedUserId, "criou a tarefa", cancellationToken);
+            if (todoTask.AssignedUserId is Guid createdAssignee && createdAssignee != authenticatedUserId && _notificationRepository != null)
+                await _notificationRepository.AddAsync(new UserNotification(createdAssignee, $"Você foi atribuído à tarefa '{todoTask.Title}'.", $"/projects/{todoTask.ProjectId}"), cancellationToken);
 
             var todoTaskResponseDto = new TodoTaskResponseDto
             {
@@ -468,6 +472,8 @@ namespace Taskly.Application
                 return StructuredOperationResult.Fail(TodoTaskErrors.NoChangesDetected);
 
             await RecordActivityAsync(todoTask, authenticatedUserId, userId.HasValue ? "atribuiu um responsável à tarefa" : "removeu o responsável da tarefa", cancellationToken);
+            if (userId is Guid assignedId && assignedId != authenticatedUserId && _notificationRepository != null)
+                await _notificationRepository.AddAsync(new UserNotification(assignedId, $"Você foi atribuído à tarefa '{todoTask.Title}'.", $"/projects/{todoTask.ProjectId}"), cancellationToken);
 
             return StructuredOperationResult.Ok();
         }
@@ -536,6 +542,9 @@ namespace Taskly.Application
             var comment = new TaskComment(taskId, userId, author.Name, dto.Content);
             await _commentRepository.AddAsync(comment, cancellationToken);
             var task = await _todoTaskRepository.GetByIdAsync(taskId, cancellationToken);
+            if (task?.AssignedUserId is Guid assignedId && assignedId != userId && _notificationRepository != null)
+                await _notificationRepository.AddAsync(new UserNotification(assignedId, $"{author.Name} comentou em '{task.Title}'.", $"/projects/{task.ProjectId}"), cancellationToken);
+            return StructuredOperationResult<TaskCommentResponseDto>.Ok(new TaskCommentResponseDto { Id = comment.Id, AuthorId = comment.AuthorId, AuthorName = comment.AuthorName, Content = comment.Content, CreatedAt = comment.CreatedAt });
             if (task != null) await RecordActivityAsync(task, userId, "comentou na tarefa", cancellationToken);
             return StructuredOperationResult<TaskCommentResponseDto>.Ok(ToCommentDto(comment));
         }

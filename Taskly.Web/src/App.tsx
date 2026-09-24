@@ -9,6 +9,7 @@ import { RegisterPage } from './pages/RegisterPage'
 import { TeamPage } from './pages/TeamPage'
 import { TeamsPage } from './pages/TeamsPage'
 import { MyWorkPage } from './pages/MyWorkPage'
+import { NotificationsPage } from './pages/NotificationsPage'
 import { AcceptInvitationPage } from './pages/AcceptInvitationPage'
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
         <Route element={<AppShell />}>
           <Route index element={<Navigate to="/teams" replace />} />
           <Route path="/my-work" element={<MyWorkPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/teams" element={<TeamsPage />} />
           <Route path="/teams/:teamId" element={<TeamPage />} />
           <Route path="/projects/:projectId" element={<ProjectPage />} />
