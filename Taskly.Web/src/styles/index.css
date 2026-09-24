@@ -166,6 +166,7 @@ h1, h2, h3 { letter-spacing: -.025em; }
 .confirm-message__icon { display: grid; place-items: center; flex: 0 0 42px; height: 42px; color: var(--danger); background: var(--danger-soft); border-radius: 12px; }
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes modal-in { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.nav-count { margin-left: auto; padding: 2px 6px; color: var(--on-primary); background: var(--primary); border-radius: 99px; font-size: 10px; }.notification-list { display: grid; gap: 9px; }.notification-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px; text-align: left; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }.notification-item--unread { border-color: var(--primary); background: var(--primary-soft); }.notification-item > svg { color: var(--primary); }.notification-item span { display: grid; gap: 5px; }.notification-item small { color: var(--muted); }
 
 .page-feedback { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 180px; color: var(--muted); font-size: 14px; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 280px; padding: 38px 20px; text-align: center; background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 16px; }

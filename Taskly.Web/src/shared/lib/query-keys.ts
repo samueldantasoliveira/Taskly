@@ -2,6 +2,7 @@ import type { Id } from '../types/api'
 
 export const queryKeys = {
   myWork: ['my-work'] as const,
+  notifications: ['notifications'] as const,
   teams: ['teams'] as const,
   team: (id: Id) => ['teams', id] as const,
   members: (teamId: Id) => ['teams', teamId, 'members'] as const,

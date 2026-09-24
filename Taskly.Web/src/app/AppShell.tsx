@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { CheckSquare, ChevronRight, LogOut, Menu, Plus, Settings, UsersRound, X } from 'lucide-react'
+import { Bell, CheckSquare, ChevronRight, LogOut, Menu, Plus, Settings, UsersRound, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../features/auth/auth-context'
@@ -8,9 +8,11 @@ import { Avatar } from '../shared/components/Avatar'
 import { Logo } from '../shared/components/Logo'
 import { ThemeToggle } from '../shared/components/ThemeToggle'
 import { queryKeys } from '../shared/lib/query-keys'
+import { getNotifications } from '../features/notifications/api'
 
 function getPageTitle(pathname: string) {
   if (pathname === '/my-work') return 'Meu trabalho'
+  if (pathname === '/notifications') return 'Notificações'
   if (pathname === '/teams') return 'Suas equipes'
   if (pathname === '/profile') return 'Seu perfil'
   if (pathname.startsWith('/projects/')) return 'Projeto'
@@ -26,6 +28,8 @@ export function AppShell() {
     queryKey: queryKeys.teams,
     queryFn: ({ signal }) => getTeams(signal),
   })
+  const { data: notifications = [] } = useQuery({ queryKey: queryKeys.notifications, queryFn: ({ signal }) => getNotifications(signal), refetchInterval: 60_000 })
+  const unreadCount = notifications.filter(item => !item.readAt).length
   const closeMobile = () => setMobileOpen(false)
 
   return (
@@ -38,6 +42,7 @@ export function AppShell() {
         </div>
         <nav className="sidebar__nav" aria-label="Navegação principal">
           <NavLink to="/my-work" onClick={closeMobile}><CheckSquare size={18} /> Meu trabalho</NavLink>
+          <NavLink to="/notifications" onClick={closeMobile}><Bell size={18} /> Notificações {unreadCount > 0 && <span className="nav-count">{unreadCount}</span>}</NavLink>
           <NavLink to="/teams" end onClick={closeMobile}><UsersRound size={18} /> Equipes</NavLink>
           <NavLink to="/profile" onClick={closeMobile}><Settings size={18} /> Perfil</NavLink>
         </nav>
