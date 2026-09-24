@@ -46,6 +46,8 @@ export function getProjectActivities(projectId: Id, signal?: AbortSignal) {
 }
 export function getTaskComments(taskId: Id, signal?: AbortSignal) { return apiRequest<TaskComment[]>(`/api/todotask/${taskId}/comments`, { signal }) }
 export function addTaskComment(taskId: Id, content: string) { return apiRequest<TaskComment>(`/api/todotask/${taskId}/comments`, { method: 'POST', body: jsonBody({ content }) }) }
+export function updateTaskComment(taskId: Id, commentId: Id, content: string) { return apiRequest<TaskComment>(`/api/todotask/${taskId}/comments/${commentId}`, { method: 'PUT', body: jsonBody({ content }) }) }
+export function deleteTaskComment(taskId: Id, commentId: Id) { return apiRequest<void>(`/api/todotask/${taskId}/comments/${commentId}`, { method: 'DELETE' }) }
 
 export async function getAllProjectTasks(
   projectId: Id,

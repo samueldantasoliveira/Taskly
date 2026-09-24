@@ -29,6 +29,31 @@ public class TodoTaskIntegrationTests : IClassFixture<TasklyApiFactory>
     }
 
     [Fact]
+    public async Task Comments_AuthorCanEditAndDelete_ButAnotherMemberCannot()
+    {
+        var owner = await _userHelper.CreateUserAndLoginAsync();
+        var member = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(owner.Token);
+        var team = await _teamHelper.CreateTeamAsync();
+        await AddMemberAsync(team.Id, member.User.Id);
+        var project = await _projectHelper.CreateProjectAsync(team.Id);
+        var task = await CreateTaskAsync(project.Id, owner.User.Id);
+        var createdResponse = await _client.PostAsJsonAsync($"/api/todotask/{task.Id}/comments", new { Content = "Primeiro comentário" });
+        createdResponse.EnsureSuccessStatusCode();
+        var created = (await createdResponse.Content.ReadFromJsonAsync<TaskCommentResponseDto>())!;
+
+        SetBearerToken(member.Token);
+        Assert.Equal(HttpStatusCode.Forbidden, (await _client.PutAsJsonAsync($"/api/todotask/{task.Id}/comments/{created.Id}", new { Content = "Alteração indevida" })).StatusCode);
+
+        SetBearerToken(owner.Token);
+        var update = await _client.PutAsJsonAsync($"/api/todotask/{task.Id}/comments/{created.Id}", new { Content = "Comentário editado" });
+        update.EnsureSuccessStatusCode();
+        Assert.Equal("Comentário editado", (await update.Content.ReadFromJsonAsync<TaskCommentResponseDto>())!.Content);
+        Assert.Equal(HttpStatusCode.NoContent, (await _client.DeleteAsync($"/api/todotask/{task.Id}/comments/{created.Id}")).StatusCode);
+        Assert.Empty((await _client.GetFromJsonAsync<List<TaskCommentResponseDto>>($"/api/todotask/{task.Id}/comments"))!);
+    }
+
+    [Fact]
     public async Task ProjectActivity_RecordsTaskChanges_AndRestrictsProjectAccess()
     {
         var owner = await _userHelper.CreateUserAndLoginAsync();
