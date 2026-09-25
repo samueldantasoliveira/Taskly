@@ -8,6 +8,6 @@ test('trocar a senha encerra a sessão e permite entrar com a nova senha', async
   await page.getByLabel('Nova senha').fill('NewPassword123!')
   await page.getByRole('button', { name: 'Salvar alterações' }).click()
   await expect(page).toHaveURL(/\/login$/)
-  await signIn(page, { ...user, password: 'NewPassword123!' })
-  await expect(page.getByRole('heading', { name: 'Suas equipes' })).toBeVisible()
+  await signIn(page, { ...user, password: 'NewPassword123!' }, /\/profile$/)
+  await expect(page.getByRole('heading', { name: 'Informações pessoais' })).toBeVisible()
 })
