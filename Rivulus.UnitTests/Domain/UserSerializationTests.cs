@@ -31,5 +31,6 @@ public class UserSerializationTests
         Assert.Equal(document["CreatedAt"].ToUniversalTime(), first.CreatedAt);
         Assert.Equal(document["UpdatedAt"].ToUniversalTime(), first.UpdatedAt);
         Assert.Null(first.DeletedAt);
+        Assert.Null(first.AvatarKey);
     }
 }

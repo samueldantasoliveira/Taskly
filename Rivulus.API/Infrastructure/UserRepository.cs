@@ -65,6 +65,7 @@ namespace Rivulus.Infrastructure
                 .Inc(u => u.Version, 1)
                 .Set(u => u.Name, user.Name)
                 .Set(u => u.Email, user.Email)
+                .Set(u => u.AvatarKey, user.AvatarKey)
                 .Set(u => u.PasswordHash, user.PasswordHash)
                 .Set(u => u.SessionVersion, user.SessionVersion)
                 .Set(u => u.UpdatedAt, DateTime.UtcNow);
@@ -74,11 +75,11 @@ namespace Rivulus.Infrastructure
                 update,
                 cancellationToken: cancellationToken
             );
-            
+
             var updated = await ConcurrencyGuard.CheckWrite(_context.Users, filter, result.MatchedCount, cancellationToken);
             if (updated) user.AdvanceVersion();
             return updated;
-        }       
+        }
         private FilterDefinition<User> BaseFilter(Expression<Func<User, bool>> filter)
         {
             return Builders<User>.Filter.And(

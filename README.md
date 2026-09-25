@@ -113,6 +113,7 @@ Rivulus/
 | Notificações Internas               | Avisos de atribuição e comentários, com controle de leitura | ✅      |
 | Observabilidade HTTP                | ID de correlação, status, duração e usuário nos logs estruturados | ✅      |
 | Convites para Equipes               | Links com token seguro, validade, aceite e revogação pelo proprietário | ✅      |
+| Avatares                            | Oito animais do ecossistema Rivulus, selecionáveis no perfil           | ✅      |
 
 O frontend preserva a sessão em falhas temporárias da API e permite tentar novamente.
 Se a edição da tarefa for salva, mas a atribuição falhar, informa o resultado parcial

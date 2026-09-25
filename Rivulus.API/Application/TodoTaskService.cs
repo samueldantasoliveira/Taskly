@@ -44,7 +44,7 @@ namespace Rivulus.Application
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.TeamNotFound);
             if (!team.IsActive)
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.TeamInactive);
-            
+
             if (!team.UserIds.Contains(authenticatedUserId))
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.UserNotTeamMember);
 
@@ -57,7 +57,7 @@ namespace Rivulus.Application
                 if (user == null)
                     return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.UserNotFound);
             }
-            
+
 
             var todoTask = new TodoTask(
                 title: todoTaskDto.Title,
@@ -185,7 +185,7 @@ namespace Rivulus.Application
             if (!team.UserIds.Contains(authenticatedUserId))
                 return StructuredOperationResult<PagedResult<TodoTaskResponseDto>>
                     .Fail(TodoTaskErrors.UserNotTeamMember);
-            
+
             if (query.Status.HasValue &&
                 !Enum.IsDefined(query.Status.Value))
             {
@@ -227,10 +227,10 @@ namespace Rivulus.Application
                     UpdatedAt = todoTask.UpdatedAt
                 })
                 .ToList();
-            
+
             var response = new PagedResult<TodoTaskResponseDto>
             {
-                Items = todoTasksDto, 
+                Items = todoTasksDto,
                 TotalCount = pagedResult.TotalCount
             };
 
@@ -252,13 +252,13 @@ namespace Rivulus.Application
 
             if (project.Status == ProjectStatus.Inactive)
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.ProjectInactive);
-            
+
             var team = await _teamRepository.GetByIdAsync(project.TeamId, cancellationToken);
             if (team == null)
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.TeamNotFound);
             if (!team.IsActive)
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.TeamInactive);
-            
+
             if (!team.UserIds.Contains(authenticatedUserId))
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.UserNotTeamMember);
 
@@ -266,14 +266,14 @@ namespace Rivulus.Application
             if (!Enum.IsDefined(dto.Priority))
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.InvalidPriority);
             todoTask.Update(dto.Title, dto.Description, dto.Priority, dto.DueDate);
-            
+
 
             var modified = await _todoTaskRepository.UpdateAsync(todoTask, cancellationToken);
 
             if (!modified)
                 return StructuredOperationResult<TodoTaskResponseDto>.Fail(TodoTaskErrors.NoChangesDetected);
             await RecordActivityAsync(todoTask, authenticatedUserId, "atualizou a tarefa", cancellationToken);
-            
+
             var todoTaskResponseDto = new TodoTaskResponseDto
             {
                 Id = todoTask.Id,
@@ -297,7 +297,7 @@ namespace Rivulus.Application
             var task = await _todoTaskRepository.GetByIdAsync(taskId, cancellationToken);
             if(task == null)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
-            
+
             var project = await _projectRepository.GetByIdAsync(task.ProjectId, cancellationToken);
             if (project == null)
                 return StructuredOperationResult.Fail(TodoTaskErrors.ProjectNotFound);
@@ -311,7 +311,7 @@ namespace Rivulus.Application
                 return StructuredOperationResult.Fail(TodoTaskErrors.TeamInactive);
             if (!team.UserIds.Contains(authenticatedUserId))
                 return StructuredOperationResult.Fail(TodoTaskErrors.UserNotTeamMember);
-            
+
             task.Delete();
             var modified = await _todoTaskRepository.UpdateAsync(task, cancellationToken);
 
@@ -441,7 +441,7 @@ namespace Rivulus.Application
             var todoTask = await _todoTaskRepository.GetByIdAsync(taskId, cancellationToken);
             if (todoTask == null)
                 return StructuredOperationResult.Fail(TodoTaskErrors.NotFound);
-            
+
             var project = await _projectRepository.GetByIdAsync(todoTask.ProjectId, cancellationToken);
             if (project == null)
                 return StructuredOperationResult.Fail(TodoTaskErrors.ProjectNotFound);
@@ -502,6 +502,7 @@ namespace Rivulus.Application
                 Id = activity.Id,
                 ActorId = activity.ActorId,
                 ActorName = activity.ActorName,
+                ActorAvatarKey = activity.ActorAvatarKey,
                 TaskId = activity.TaskId,
                 TaskTitle = activity.TaskTitle,
                 Description = activity.Description,
@@ -516,7 +517,7 @@ namespace Rivulus.Application
             var actor = await _userRepository.GetByIdAsync(actorId, cancellationToken);
             if (actor == null)
                 return;
-            await _activityRepository.AddAsync(new ProjectActivity(task.ProjectId, actorId, actor.Name, task.Id, task.Title, description), cancellationToken);
+            await _activityRepository.AddAsync(new ProjectActivity(task.ProjectId, actorId, actor.Name, task.Id, task.Title, description, actor.AvatarKey), cancellationToken);
         }
 
         public async Task<StructuredOperationResult<List<TaskCommentResponseDto>>> GetCommentsAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
@@ -539,12 +540,11 @@ namespace Rivulus.Application
             if (!access.Success) return StructuredOperationResult<TaskCommentResponseDto>.Fail(access.Error!);
             var author = await _userRepository.GetByIdAsync(userId, cancellationToken);
             if (author == null || _commentRepository == null) return StructuredOperationResult<TaskCommentResponseDto>.Fail(TodoTaskErrors.UserNotFound);
-            var comment = new TaskComment(taskId, userId, author.Name, dto.Content);
+            var comment = new TaskComment(taskId, userId, author.Name, dto.Content, author.AvatarKey);
             await _commentRepository.AddAsync(comment, cancellationToken);
             var task = await _todoTaskRepository.GetByIdAsync(taskId, cancellationToken);
             if (task?.AssignedUserId is Guid assignedId && assignedId != userId && _notificationRepository != null)
                 await _notificationRepository.AddAsync(new UserNotification(assignedId, $"{author.Name} comentou em '{task.Title}'.", $"/projects/{task.ProjectId}"), cancellationToken);
-            return StructuredOperationResult<TaskCommentResponseDto>.Ok(new TaskCommentResponseDto { Id = comment.Id, AuthorId = comment.AuthorId, AuthorName = comment.AuthorName, Content = comment.Content, CreatedAt = comment.CreatedAt });
             if (task != null) await RecordActivityAsync(task, userId, "comentou na tarefa", cancellationToken);
             return StructuredOperationResult<TaskCommentResponseDto>.Ok(ToCommentDto(comment));
         }
@@ -572,6 +572,6 @@ namespace Rivulus.Application
             return StructuredOperationResult.Ok();
         }
 
-        private static TaskCommentResponseDto ToCommentDto(TaskComment comment) => new() { Id = comment.Id, AuthorId = comment.AuthorId, AuthorName = comment.AuthorName, Content = comment.Content, CreatedAt = comment.CreatedAt, UpdatedAt = comment.UpdatedAt };
+        private static TaskCommentResponseDto ToCommentDto(TaskComment comment) => new() { Id = comment.Id, AuthorId = comment.AuthorId, AuthorName = comment.AuthorName, AuthorAvatarKey = comment.AuthorAvatarKey, Content = comment.Content, CreatedAt = comment.CreatedAt, UpdatedAt = comment.UpdatedAt };
     }
 }

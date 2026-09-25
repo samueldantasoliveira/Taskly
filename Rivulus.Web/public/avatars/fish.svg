@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Peixe">
+  <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#b7f3ee"/><stop offset="1" stop-color="#3d9fd2"/></linearGradient><linearGradient id="f" x2="1"><stop stop-color="#52e3d2"/><stop offset="1" stop-color="#188bb7"/></linearGradient></defs>
+  <rect width="128" height="128" rx="34" fill="url(#b)"/><circle cx="27" cy="28" r="5" fill="none" stroke="#e8fffb" stroke-width="3"/><circle cx="20" cy="44" r="3" fill="none" stroke="#e8fffb" stroke-width="2"/><path d="M91 65c12-13 22-18 29-16-1 11-5 20-13 27 8 7 12 16 13 27-8 1-18-5-30-18Z" fill="#197fa9"/>
+  <path d="M20 75c19-30 55-36 82-9v18c-27 27-63 21-82-9Z" fill="url(#f)"/><path d="M54 49c8 4 14 10 18 17M52 101c8-4 15-10 19-18" fill="#2aa7d6" stroke="#08758f" stroke-width="3"/><circle cx="45" cy="70" r="6" fill="#f4ffff"/><circle cx="45" cy="70" r="3" fill="#092630"/><path d="M26 82c8 5 17 5 25 0" fill="none" stroke="#076f84" stroke-width="3" stroke-linecap="round"/><path d="M68 58c4 5 7 11 7 18s-3 13-7 18M80 57c4 5 7 11 7 18s-3 13-7 18" stroke="#d1fff4" stroke-width="2" opacity=".55"/>
+</svg>

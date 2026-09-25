@@ -52,4 +52,13 @@ public class UserTests
         Assert.Throws<InvalidUserPasswordException>(() => new User("NameTest", "Email@Test.com", invalidPassword));
     }
 
+    [Fact]
+    public void UpdateUser_UnknownAvatar_ThrowsException()
+    {
+        var user = new User("Name Test", "email@test.com", "PasswordTest");
+
+        Assert.Throws<InvalidUserAvatarException>(
+            () => user.Update(null, null, null, "dragon"));
+    }
+
 }

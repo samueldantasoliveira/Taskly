@@ -59,7 +59,7 @@ export function AppShell() {
         </div>
         <div className="sidebar__account">
           <Link to="/profile" onClick={closeMobile}>
-            <Avatar name={user?.name ?? 'Usuário'} size="sm" />
+            <Avatar name={user?.name ?? 'Usuário'} avatarKey={user?.avatarKey} size="sm" />
             <span><strong>{user?.name}</strong><small>{user?.email}</small></span>
           </Link>
           <button className="icon-button" onClick={signOut} title="Sair" aria-label="Sair"><LogOut size={18} /></button>
@@ -70,7 +70,7 @@ export function AppShell() {
           <button className="icon-button topbar__menu" onClick={() => setMobileOpen(true)} aria-label="Abrir menu"><Menu size={21} /></button>
           <div><span className="eyebrow">Espaço de trabalho</span><strong>{getPageTitle(location.pathname)}</strong></div>
           <ThemeToggle />
-          <Avatar name={user?.name ?? 'Usuário'} size="sm" />
+          <Avatar name={user?.name ?? 'Usuário'} avatarKey={user?.avatarKey} size="sm" />
         </header>
         <main className="page-container"><Outlet /></main>
       </div>

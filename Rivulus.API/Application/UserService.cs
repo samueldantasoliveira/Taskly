@@ -33,7 +33,8 @@ namespace Rivulus.Application
                 Id = user.Id,
                 Version = user.Version,
                 Name = user.Name,
-                Email = user.Email
+                Email = user.Email,
+                AvatarKey = user.AvatarKey
             };
             return StructuredOperationResult<UserResponseDto>.Ok(userResponse);
         }
@@ -57,7 +58,8 @@ namespace Rivulus.Application
                 Id = user.Id,
                 Version = user.Version,
                 Name = user.Name,
-                Email = user.Email
+                Email = user.Email,
+                AvatarKey = user.AvatarKey
             };
 
             return userResponseDto;
@@ -87,7 +89,8 @@ namespace Rivulus.Application
                 Id = user.Id,
                 Version = user.Version,
                 Name = user.Name,
-                Email = user.Email
+                Email = user.Email,
+                AvatarKey = user.AvatarKey
             });
         }
 
@@ -101,7 +104,8 @@ namespace Rivulus.Application
                 Id = user.Id,
                 Version = user.Version,
                 Name = user.Name,
-                Email = user.Email
+                Email = user.Email,
+                AvatarKey = user.AvatarKey
             };
 
             return userResponseDto;
@@ -113,6 +117,9 @@ namespace Rivulus.Application
             var user = await _userRepository.GetByIdAsync(id, cancellationToken);
             if (user == null)
                 return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.NotFound);
+
+            if (userDto.AvatarKey != null && !UserAvatar.IsValid(userDto.AvatarKey))
+                return StructuredOperationResult<UserResponseDto>.Fail(UserErrors.InvalidAvatar);
 
             if (normalizedEmail != null && user.Email != normalizedEmail)
             {
@@ -130,7 +137,7 @@ namespace Rivulus.Application
             }
 
             ConcurrencyConflictException.Check(userDto.Version, user.Version);
-            user.Update(userDto.Name, normalizedEmail, passwordHash);
+            user.Update(userDto.Name, normalizedEmail, passwordHash, userDto.AvatarKey);
 
             var updated = await _userRepository.UpdateAsync(user, cancellationToken);
 
@@ -141,7 +148,8 @@ namespace Rivulus.Application
                 Id = user.Id,
                 Version = user.Version,
                 Name = user.Name,
-                Email = user.Email
+                Email = user.Email,
+                AvatarKey = user.AvatarKey
             };
             return StructuredOperationResult<UserResponseDto>.Ok(userResponse);
         }

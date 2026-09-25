@@ -36,6 +36,7 @@ export interface User {
   id: Id
   name: string
   email: string
+  avatarKey?: string | null
 }
 
 export interface LoginResponse {
@@ -113,13 +114,14 @@ export interface ProjectActivity {
   id: Id
   actorId: Id
   actorName: string
+  actorAvatarKey?: string | null
   taskId: Id | null
   taskTitle: string
   description: string
   createdAt: string
 }
 
-export interface TaskComment { id: Id; authorId: Id; authorName: string; content: string; createdAt: string; updatedAt: string }
+export interface TaskComment { id: Id; authorId: Id; authorName: string; authorAvatarKey?: string | null; content: string; createdAt: string; updatedAt: string }
 export interface UserNotification { id: Id; message: string; link: string; createdAt: string; readAt: string | null }
 
 export interface LoginInput {
@@ -179,4 +181,5 @@ export interface UpdateUserInput {
   name?: string
   email?: string
   password?: string
+  avatarKey?: string
 }

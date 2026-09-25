@@ -12,6 +12,8 @@ public static class UserErrors
         Error.Create("User.InvalidPassword", "Password must contain between 6 and 128 characters and cannot be blank.");
     public readonly static Error InvalidEmail =
         Error.Create("User.InvalidEmail", "Email is invalid");
+    public readonly static Error InvalidAvatar =
+        Error.Create("User.InvalidAvatar", "Avatar is invalid");
     public readonly static Error EmailAlreadyExists =
         Error.Create("User.EmailAlreadyExists", "Email already exists");
     public readonly static Error InvalidCredentials =
