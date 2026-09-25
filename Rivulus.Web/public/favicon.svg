@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <title>Rivulus</title>
   <defs>
     <linearGradient id="current" x1="16" y1="14" x2="112" y2="114" gradientUnits="userSpaceOnUse">
       <stop stop-color="#BCFFF0"/>
@@ -6,6 +7,6 @@
       <stop offset="1" stop-color="#2AA7D6"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="18" fill="#092630"/>
-  <path transform="scale(.5)" d="M31 99V25h34c20 0 31 10 31 25 0 12-7 20-18 24l22 25H77L55 73h-6v26Zm18-43h15c9 0 14-3 14-9s-5-9-14-9H49Z" fill="url(#current)"/>
+  <rect width="128" height="128" rx="35" fill="#092630"/>
+  <path d="M72 20C24 39 31 56 58 66C80 75 75 87 32 108H66C111 87 108 67 81 55C59 45 55 36 91 20Z" fill="url(#current)"/>
 </svg>

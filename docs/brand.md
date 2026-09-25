@@ -20,9 +20,10 @@ colaborativo e confiável.
 
 ## Símbolo
 
-O símbolo é uma letra **R** esculpida em uma corrente de turquesa e azul,
-sobre um emblema azul-petróleo. Reflexos, relevo e linhas de água dão
-profundidade à marca; a curva interna sugere o movimento do trabalho.
+O símbolo é um **rio sinuoso visto de cima**, em turquesa e azul, sobre um
+emblema azul-petróleo. O curso se alarga em direção à base, traduzindo o
+movimento da intenção à entrega. Margens discretas, reflexos e uma linha de
+corrente dão profundidade à versão completa.
 
 O arquivo principal está em
 `Rivulus.Web/public/brand/rivulus-mark.svg`. Não distorça, gire ou altere as
@@ -37,7 +38,8 @@ quarto de sua largura.
 
 Os três arquivos são vetoriais, sem dependências externas ou animações. A base
 escura do emblema preserva sua aparência nos temas claro e escuro. Ao alterar o
-símbolo, mantenha a silhueta do R consistente nas três versões.
+símbolo, mantenha a silhueta do rio consistente nas três versões. No favicon,
+preserve apenas a água e o fundo: margens e reflexos não são legíveis em 16 px.
 
 ## Cores
 
