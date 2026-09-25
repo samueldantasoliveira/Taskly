@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { ArrowRight } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { z } from 'zod'
 import { AuthLayout } from '../features/auth/AuthLayout'
 import { useAuth } from '../features/auth/auth-context'
@@ -22,6 +22,8 @@ type FormData = z.infer<typeof schema>
 export function RegisterPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const destination = (location.state as { from?: string } | null)?.from ?? '/teams'
   const form = useForm<FormData>({ resolver: zodResolver(schema) })
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -30,7 +32,7 @@ export function RegisterPage() {
     },
     onSuccess: (session) => {
       signIn(session)
-      navigate('/teams', { replace: true })
+      navigate(destination, { replace: true })
     },
   })
 
@@ -45,7 +47,7 @@ export function RegisterPage() {
           {mutation.isError && <div className="form-alert" role="alert">{mutation.error instanceof ApiError ? mutation.error.message : 'Não foi possível criar sua conta.'}</div>}
           <Button type="submit" className="button--full" loading={mutation.isPending} icon={<ArrowRight size={18} />}>Criar minha conta</Button>
         </form>
-        <p className="auth-card__switch">Já tem uma conta? <Link to="/login">Entrar</Link></p>
+        <p className="auth-card__switch">Já tem uma conta? <Link to="/login" state={{ from: destination }}>Entrar</Link></p>
       </div>
     </AuthLayout>
   )
