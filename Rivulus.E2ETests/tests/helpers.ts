@@ -53,10 +53,14 @@ export async function createTask(
   })).json() as { id: string }
 }
 
-export async function signIn(page: Page, user: { email: string; password: string }) {
+export async function signIn(
+  page: Page,
+  user: { email: string; password: string },
+  expectedPath: RegExp = /\/teams$/,
+) {
   await page.goto('/login')
   await page.getByLabel('E-mail').fill(user.email)
   await page.getByLabel('Senha').fill(user.password)
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
-  await expect(page).toHaveURL(/\/teams$/)
+  await expect(page).toHaveURL(expectedPath)
 }

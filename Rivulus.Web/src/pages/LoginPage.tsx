@@ -22,12 +22,12 @@ export function LoginPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const destination = (location.state as { from?: string } | null)?.from ?? '/teams'
   const form = useForm<FormData>({ resolver: zodResolver(schema) })
   const mutation = useMutation({
     mutationFn: login,
     onSuccess: (session) => {
       signIn(session)
-      const destination = (location.state as { from?: string } | null)?.from ?? '/teams'
       navigate(destination, { replace: true })
     },
   })
@@ -46,7 +46,7 @@ export function LoginPage() {
           {mutation.isError && <div className="form-alert" role="alert">{mutation.error instanceof ApiError ? mutation.error.message : 'Não foi possível entrar.'}</div>}
           <Button type="submit" className="button--full" loading={mutation.isPending} icon={<ArrowRight size={18} />}>Entrar</Button>
         </form>
-        <p className="auth-card__switch">Ainda não tem uma conta? <Link to="/register">Criar conta</Link></p>
+        <p className="auth-card__switch">Ainda não tem uma conta? <Link to="/register" state={{ from: destination }}>Criar conta</Link></p>
       </div>
     </AuthLayout>
   )

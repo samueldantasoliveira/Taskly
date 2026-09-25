@@ -17,7 +17,8 @@ export function ProtectedRoute() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    const destination = `${location.pathname}${location.search}${location.hash}`
+    return <Navigate to="/login" replace state={{ from: destination }} />
   }
 
   return <Outlet />
@@ -25,6 +26,8 @@ export function ProtectedRoute() {
 
 export function PublicOnlyRoute() {
   const { isAuthenticated, isBootstrapping } = useAuth()
+  const location = useLocation()
   if (isBootstrapping) return <div className="splash-screen"><PageLoader /></div>
-  return isAuthenticated ? <Navigate to="/teams" replace /> : <Outlet />
+  const destination = (location.state as { from?: string } | null)?.from ?? '/teams'
+  return isAuthenticated ? <Navigate to={destination} replace /> : <Outlet />
 }
