@@ -1,11 +1,9 @@
 export const avatarOptions = [
   { key: 'capybara', label: 'Capivara' },
   { key: 'otter', label: 'Lontra' },
-  { key: 'frog', label: 'Sapo' },
   { key: 'duck', label: 'Pato' },
   { key: 'turtle', label: 'Tartaruga' },
   { key: 'fish', label: 'Peixe' },
-  { key: 'heron', label: 'Garça' },
   { key: 'kingfisher', label: 'Martim-pescador' },
 ] as const
 
