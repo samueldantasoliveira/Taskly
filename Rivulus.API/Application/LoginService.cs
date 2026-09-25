@@ -42,7 +42,8 @@ public class LoginService
                     Id = user.Id,
                     Version = user.Version,
                     Name = user.Name,
-                    Email = user.Email
+                    Email = user.Email,
+                    AvatarKey = user.AvatarKey
                 }
             }
         );

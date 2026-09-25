@@ -13,6 +13,8 @@ namespace Rivulus.Domain.Entities
         public Guid Id { get; private set; }
         public string Name { get; private set; } = null!;
         public string Email { get; private set; } = null!;
+        [BsonIgnoreIfDefault]
+        public string? AvatarKey { get; private set; }
         public DateTime CreatedAt { get; private set;}
         public DateTime UpdatedAt { get; private set;}
         public DateTime? DeletedAt { get; private set; }
@@ -44,7 +46,7 @@ namespace Rivulus.Domain.Entities
             UpdatedAt = now;
         }
 
-        public void Update(string? name, string? email, string? passwordHash)
+        public void Update(string? name, string? email, string? passwordHash, string? avatarKey = null)
         {
             if (name != null)
             {
@@ -52,7 +54,7 @@ namespace Rivulus.Domain.Entities
                     throw new InvalidUserNameException("Name cannot be empty.");
                 Name = name;
             }
-                
+
 
             if (email != null)
             {
@@ -72,10 +74,17 @@ namespace Rivulus.Domain.Entities
                 SessionVersion = Guid.NewGuid().ToString("N");
             }
 
-            if(name != null || email != null || passwordHash != null)
-                UpdatedAt = DateTime.UtcNow;             
+            if (avatarKey != null)
+            {
+                if (!UserAvatar.IsValid(avatarKey))
+                    throw new InvalidUserAvatarException("Avatar is invalid.");
+                AvatarKey = avatarKey;
+            }
+
+            if(name != null || email != null || passwordHash != null || avatarKey != null)
+                UpdatedAt = DateTime.UtcNow;
         }
-        
+
         public static bool IsValidEmail(string email)
         {
             try

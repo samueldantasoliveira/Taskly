@@ -67,7 +67,7 @@ export function TeamsPage() {
                     <span><UsersRound size={15} /> {team.userIds.length} {team.userIds.length === 1 ? 'membro' : 'membros'}</span>
                     {isOwner && <span><Crown size={15} /> Você gerencia</span>}
                   </div>
-                  <div className="team-card__footer"><div className="avatar-stack"><Avatar name={user?.name ?? 'Você'} size="sm" /></div><span className={`badge ${team.isActive ? 'badge--success' : 'badge--neutral'}`}>{team.isActive ? 'Ativa' : 'Inativa'}</span></div>
+                  <div className="team-card__footer"><div className="avatar-stack"><Avatar name={user?.name ?? 'Você'} avatarKey={user?.avatarKey} size="sm" /></div><span className={`badge ${team.isActive ? 'badge--success' : 'badge--neutral'}`}>{team.isActive ? 'Ativa' : 'Inativa'}</span></div>
                 </div>
               </Link>
             )

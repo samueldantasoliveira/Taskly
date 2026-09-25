@@ -5,5 +5,6 @@ public class TeamMemberResponseDto
     public Guid Id { get; init; }
     public required string Name { get; init; }
     public required string Email { get; init; }
+    public string? AvatarKey { get; init; }
     public bool IsOwner { get; init; }
 }

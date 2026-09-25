@@ -24,7 +24,7 @@ namespace Rivulus.Application
         {
             if (!IsValidName(teamDto.Name))
                 return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.InvalidName);
-                
+
             var team = new Team(teamDto.Name, userId);
 
             await _teamRepository.AddAsync(team, cancellationToken);
@@ -97,7 +97,7 @@ namespace Rivulus.Application
 
             team.AddMember(user.Id);
             var added = await _teamRepository.UpdateAsync(team, cancellationToken);
-            
+
             if (!added)
                 return StructuredOperationResult<AddMemberResponseDto>
                     .Fail(TeamErrors.NotFound);
@@ -122,7 +122,7 @@ namespace Rivulus.Application
 
             if (team.OwnerId != authenticatedUserId)
                 return StructuredOperationResult<RemoveMemberResponseDto>.Fail(TeamErrors.NotOwner);
-                    
+
             team.RemoveMember(userId);
             var removed = await _teamRepository.UpdateAsync(team, cancellationToken);
 
@@ -168,7 +168,7 @@ namespace Rivulus.Application
 
             if (!team.UserIds.Contains(authenticatedUserId))
                 return StructuredOperationResult<TeamResponseDto>.Fail(TeamErrors.NotAuthorized);
-                
+
             var teamResponseDto = new TeamResponseDto
             {
                 Id = team.Id,
@@ -210,6 +210,7 @@ namespace Rivulus.Application
                     Id = user.Id,
                     Name = user.Name,
                     Email = user.Email,
+                    AvatarKey = user.AvatarKey,
                     IsOwner = user.Id == team.OwnerId
                 })
                 .ToList();
@@ -228,7 +229,7 @@ namespace Rivulus.Application
             var deleted = await _teamRepository.DeleteAsync(teamId, cancellationToken);
             if (!deleted)
                 return StructuredOperationResult.Fail(TeamErrors.NotFound);
-            
+
             return StructuredOperationResult.Ok();
         }
 
@@ -237,7 +238,7 @@ namespace Rivulus.Application
             var user = await _userRepository.GetByIdAsync(authenticatedUserId, cancellationToken);
             if(user == null)
                 return StructuredOperationResult<List<TeamResponseDto>>.Fail(TeamErrors.UserNotFound);
-            
+
             var teams = await _teamRepository.GetUserTeamsAsync(authenticatedUserId, cancellationToken);
 
             var response = teams

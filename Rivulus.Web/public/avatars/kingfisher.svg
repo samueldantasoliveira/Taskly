@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Martim-pescador">
+  <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#b4ede1"/><stop offset="1" stop-color="#438cb8"/></linearGradient><linearGradient id="w" x2="1" y2="1"><stop stop-color="#2aa7d6"/><stop offset="1" stop-color="#07577d"/></linearGradient></defs>
+  <rect width="128" height="128" rx="34" fill="url(#b)"/><path d="M0 108c27-14 45 5 70-4s41-3 58 4v20H0Z" fill="#166b86" opacity=".48"/><ellipse cx="62" cy="73" rx="35" ry="43" fill="url(#w)"/><path d="M34 79c9-18 26-25 48-19-2 27-17 42-43 43Z" fill="#1782a4"/><ellipse cx="68" cy="82" rx="22" ry="28" fill="#ed9e48"/>
+  <circle cx="68" cy="40" r="26" fill="#167fa3"/><path d="M50 27c12-11 29-11 41 1-15-4-27-1-36 8Z" fill="#075a7b"/><path d="M89 40h37L91 53Z" fill="#313a3b"/><circle cx="75" cy="39" r="5" fill="white"/><circle cx="76" cy="39" r="3" fill="#071b24"/><path d="M51 47c9 9 20 11 32 5-6 14-23 18-35 9Z" fill="#f4e6d2"/><path d="M51 108v16M72 110v14" stroke="#d68036" stroke-width="3" stroke-linecap="round"/>
+</svg>

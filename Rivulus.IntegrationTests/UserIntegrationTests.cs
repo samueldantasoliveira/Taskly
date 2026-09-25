@@ -124,6 +124,31 @@ public class UserIntegrationTests : IClassFixture<RivulusApiFactory>
     }
 
     [Fact]
+    public async Task UpdateUser_AvatarPersistsAndInvalidKeyIsRejected()
+    {
+        var login = await _userHelper.CreateUserAndLoginAsync();
+        SetBearerToken(login.Token);
+
+        var updateResponse = await _client.PutAsJsonAsync(
+            $"/api/user/{login.User.Id}",
+            new { login.User.Version, AvatarKey = "otter" });
+
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+        var updated = await updateResponse.Content.ReadFromJsonAsync<UserResponseDto>();
+        Assert.NotNull(updated);
+        Assert.Equal("otter", updated.AvatarKey);
+
+        var current = await (await _client.GetAsync("/api/user/me"))
+            .Content.ReadFromJsonAsync<UserResponseDto>();
+        Assert.Equal("otter", current?.AvatarKey);
+
+        var invalidResponse = await _client.PutAsJsonAsync(
+            $"/api/user/{login.User.Id}",
+            new { Version = updated.Version, AvatarKey = "dragon" });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task GetCurrentUser_DeletedUser_ReturnsUnauthorized()
     {
         var login = await _userHelper.CreateUserAndLoginAsync();

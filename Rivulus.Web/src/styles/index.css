@@ -187,6 +187,16 @@ h1, h2, h3 { letter-spacing: -.025em; }
 .avatar--sm { width: 34px; height: 34px; font-size: 10px; }
 .avatar--md { width: 42px; height: 42px; font-size: 12px; }
 .avatar--lg { width: 74px; height: 74px; font-size: 20px; border-width: 4px; box-shadow: var(--shadow-sm); }
+.avatar img { display: block; width: 100%; height: 100%; border-radius: inherit; }
+.avatar-picker { margin: 0 0 25px; padding: 0; border: 0; }
+.avatar-picker legend { margin-bottom: 12px; font-size: 13px; font-weight: 750; }
+.avatar-picker__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.avatar-option { position: relative; display: grid; justify-items: center; gap: 7px; padding: 10px 6px 9px; color: var(--muted); background: var(--surface-hover); border: 1px solid var(--line); border-radius: 13px; cursor: pointer; font-size: 10px; font-weight: 700; transition: transform .15s, border-color .15s, background .15s; }
+.avatar-option:hover { transform: translateY(-2px); border-color: var(--line-strong); }
+.avatar-option--selected { color: var(--primary); background: var(--primary-soft); border-color: var(--primary); box-shadow: 0 0 0 2px var(--focus); }
+.avatar-option input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+.avatar-option:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.avatar-option img { width: 58px; height: 58px; }
 .badge { display: inline-flex; align-items: center; width: fit-content; padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; letter-spacing: .03em; white-space: nowrap; text-transform: uppercase; }
 .badge--success { color: var(--primary); background: var(--primary-soft); }
 .badge--neutral { color: var(--muted); background: var(--line); }
@@ -414,6 +424,7 @@ h1, h2, h3 { letter-spacing: -.025em; }
 }
 
 @media (max-width: 600px) {
+  .avatar-picker__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .auth-panel__theme .theme-toggle { width: 40px; padding: 0; }
   .auth-panel__theme .theme-toggle span { display: none; }
   .welcome-banner > div { min-width: 0; }

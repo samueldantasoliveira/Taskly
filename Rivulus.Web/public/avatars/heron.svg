@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Garça">
+  <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#e5f4ef"/><stop offset="1" stop-color="#7dbfc5"/></linearGradient></defs>
+  <rect width="128" height="128" rx="34" fill="url(#b)"/><path d="M0 107c24-13 42 7 68-4s42-2 60 4v21H0Z" fill="#278e9b" opacity=".55"/><path d="M45 112c2-24 4-41 9-50 4-8 5-16 2-25 18 7 25 19 20 35-4 11-5 24-3 40Z" fill="#f2f7f4"/>
+  <path d="M55 37c-2-12 6-21 18-21 12 0 21 9 21 21 0 11-9 20-21 20-7 0-13-3-18-8Z" fill="#f6faf7"/><path d="M93 34h30L94 45Z" fill="#e2a53c"/><path d="M59 22c8-9 19-10 31-3-12 1-20 5-25 12Z" fill="#315966"/><circle cx="80" cy="33" r="4" fill="#092630"/><circle cx="81" cy="32" r="1" fill="white"/><path d="M52 75c14 0 24 7 29 20-15-2-26-8-34-18Z" fill="#b5d2d2"/><path d="M54 112v13M72 112v13" stroke="#d89a3b" stroke-width="3" stroke-linecap="round"/>
+</svg>

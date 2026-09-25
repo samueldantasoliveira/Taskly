@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Capivara">
+  <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#bff3e7"/><stop offset="1" stop-color="#70cfc8"/></linearGradient></defs>
+  <rect width="128" height="128" rx="34" fill="url(#b)"/><path d="M0 101c24-15 43 8 67-3s37-4 61 5v25H0Z" fill="#239aa5" opacity=".55"/>
+  <path d="M31 60c0-22 14-36 37-36 25 0 40 15 40 39v30c0 12-10 21-22 21H53c-16 0-29-13-29-29 0-10 3-18 7-25Z" fill="#a66c43"/>
+  <circle cx="43" cy="32" r="10" fill="#815033"/><circle cx="94" cy="34" r="10" fill="#815033"/><path d="M36 58c7-13 18-18 33-18 17 0 29 7 34 21v25c-4 15-17 24-35 24-22 0-37-12-37-31 0-8 2-15 5-21Z" fill="#bb7d4e"/>
+  <circle cx="51" cy="66" r="4" fill="#092630"/><circle cx="87" cy="66" r="4" fill="#092630"/><ellipse cx="70" cy="82" rx="13" ry="10" fill="#8a5638"/><path d="M64 82h12M70 82v8" stroke="#402b24" stroke-width="3" stroke-linecap="round"/><path d="M47 89h-15M48 95H29M92 89h15M91 95h18" stroke="#e6bc8e" stroke-width="2" stroke-linecap="round"/>
+</svg>

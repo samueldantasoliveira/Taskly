@@ -12,6 +12,7 @@ public class ProjectActivity
     [BsonRepresentation(BsonType.String)]
     public Guid ActorId { get; private set; }
     public string ActorName { get; private set; } = null!;
+    public string? ActorAvatarKey { get; private set; }
     [BsonRepresentation(BsonType.String)]
     public Guid? TaskId { get; private set; }
     public string TaskTitle { get; private set; } = null!;
@@ -20,12 +21,13 @@ public class ProjectActivity
 
     protected ProjectActivity() { }
 
-    public ProjectActivity(Guid projectId, Guid actorId, string actorName, Guid? taskId, string taskTitle, string description)
+    public ProjectActivity(Guid projectId, Guid actorId, string actorName, Guid? taskId, string taskTitle, string description, string? actorAvatarKey = null)
     {
         Id = Guid.NewGuid();
         ProjectId = projectId;
         ActorId = actorId;
         ActorName = actorName;
+        ActorAvatarKey = actorAvatarKey;
         TaskId = taskId;
         TaskTitle = taskTitle;
         Description = description;

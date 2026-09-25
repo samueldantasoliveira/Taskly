@@ -286,6 +286,45 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task UpdateUser_ValidAvatar_StoresAndReturnsAvatar()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _userRepositoryMock
+            .Setup(repository => repository.UpdateAsync(user, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await _userService.UpdateUserAsync(
+            user.Id,
+            new UpdateUserDto { AvatarKey = "capybara" });
+
+        Assert.True(result.Success);
+        Assert.Equal("capybara", user.AvatarKey);
+        Assert.Equal("capybara", result.Value?.AvatarKey);
+    }
+
+    [Fact]
+    public async Task UpdateUser_UnknownAvatar_ReturnsInvalidAvatar()
+    {
+        var user = new User("User Test", "user@test.com", "HashTest");
+        _userRepositoryMock
+            .Setup(repository => repository.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        var result = await _userService.UpdateUserAsync(
+            user.Id,
+            new UpdateUserDto { AvatarKey = "dragon" });
+
+        Assert.False(result.Success);
+        Assert.Equal(UserErrors.InvalidAvatar, result.Error);
+        _userRepositoryMock.Verify(
+            repository => repository.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task DeleteUser_PropagatesCancellationTokenToRepository()
     {
         var userId = Guid.NewGuid();

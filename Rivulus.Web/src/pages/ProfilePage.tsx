@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { useAuth } from '../features/auth/auth-context'
 import { deleteUser, updateUser } from '../features/users/api'
 import { ApiError } from '../shared/api/client'
-import { Avatar } from '../shared/components/Avatar'
+import { Avatar, AvatarPicker } from '../shared/components/Avatar'
 import { Button } from '../shared/components/Button'
 import { ConfirmDialog } from '../shared/components/ConfirmDialog'
 import { Field, Input } from '../shared/components/Field'
@@ -18,6 +18,7 @@ const schema = z.object({
   name: z.string().trim().min(2, 'Informe seu nome.'),
   email: z.string().trim().email('Informe um e-mail válido.'),
   password: z.string().max(128, 'Use no máximo 128 caracteres.').refine((value) => !value || (value.length >= 6 && value.trim().length > 0), 'Use pelo menos 6 caracteres e não apenas espaços.'),
+  avatarKey: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
 
@@ -26,9 +27,9 @@ export function ProfilePage() {
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { name: user?.name ?? '', email: user?.email ?? '', password: '' } })
+  const form = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { name: user?.name ?? '', email: user?.email ?? '', password: '', avatarKey: user?.avatarKey ?? undefined } })
   const updateMutation = useMutation({
-    mutationFn: (data: FormData) => updateUser(user!.id, { version: user!.version, name: data.name, email: data.email, ...(data.password ? { password: data.password } : {}) }),
+    mutationFn: (data: FormData) => updateUser(user!.id, { version: user!.version, name: data.name, email: data.email, ...(data.password ? { password: data.password } : {}), ...(data.avatarKey ? { avatarKey: data.avatarKey } : {}) }),
     onSuccess: (updated, submitted) => {
       if (submitted.password) {
         signOut()
@@ -37,7 +38,7 @@ export function ProfilePage() {
         return
       }
       updateSessionUser(updated)
-      form.reset({ name: updated.name, email: updated.email, password: '' })
+      form.reset({ name: updated.name, email: updated.email, password: '', avatarKey: updated.avatarKey ?? undefined })
       showToast('Perfil atualizado.')
     },
   })
@@ -47,10 +48,11 @@ export function ProfilePage() {
 
   return (
     <div className="page-stack profile-page">
-      <section className="profile-header"><Avatar name={user.name} size="lg" /><div><span className="eyebrow">Conta pessoal</span><h1>{user.name}</h1><p>{user.email}</p></div></section>
+      <section className="profile-header"><Avatar name={user.name} avatarKey={form.watch('avatarKey')} size="lg" /><div><span className="eyebrow">Conta pessoal</span><h1>{user.name}</h1><p>{user.email}</p></div></section>
       <section className="settings-card">
         <div className="settings-card__heading"><div><h2>Informações pessoais</h2><p>Atualize como você aparece para sua equipe.</p></div><UserRound size={20} /></div>
         <form onSubmit={form.handleSubmit((data) => updateMutation.mutate(data))}>
+          <AvatarPicker value={form.watch('avatarKey')} onChange={(avatarKey) => form.setValue('avatarKey', avatarKey, { shouldDirty: true })} />
           <div className="form-grid"><Field label="Nome" htmlFor="profile-name" error={form.formState.errors.name?.message}><div className="input-with-icon"><UserRound size={17} /><Input id="profile-name" {...form.register('name')} /></div></Field><Field label="E-mail" htmlFor="profile-email" error={form.formState.errors.email?.message}><div className="input-with-icon"><Mail size={17} /><Input id="profile-email" type="email" {...form.register('email')} /></div></Field></div>
           <Field label="Nova senha" htmlFor="profile-password" hint="Deixe em branco para manter a senha atual." error={form.formState.errors.password?.message}><div className="input-with-icon"><KeyRound size={17} /><Input id="profile-password" type="password" autoComplete="new-password" placeholder="••••••••" {...form.register('password')} /></div></Field>
           {updateMutation.isError && <div className="form-alert">{updateMutation.error instanceof ApiError ? updateMutation.error.message : 'Não foi possível atualizar.'}</div>}

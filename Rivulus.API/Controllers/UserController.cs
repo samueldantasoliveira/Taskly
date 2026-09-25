@@ -114,6 +114,8 @@ namespace Rivulus.Controllers
                 return BadRequest(error.Message);
             if (error == UserErrors.InvalidEmail)
                 return BadRequest(error.Message);
+            if (error == UserErrors.InvalidAvatar)
+                return BadRequest(error.Message);
             if (error == UserErrors.NotFound)
                 return NotFound(error.Message);
                 
